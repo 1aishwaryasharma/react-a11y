@@ -1,0 +1,27 @@
+{
+  "name": "@react-a11y/core",
+  "version": "0.1.0",
+  "description": "Platform-agnostic static analysis engine for React accessibility auditing (web and native).",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/1aishwaryasharma/react-a11y",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1aishwaryasharma/react-a11y.git",
+    "directory": "packages/core"
+  }
+}

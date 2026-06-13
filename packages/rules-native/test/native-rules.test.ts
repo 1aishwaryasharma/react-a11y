@@ -1,0 +1,90 @@
+import { describe, expect, it } from 'vitest';
+import { analyze } from '@react-a11y/core';
+import { nativeRules } from '@react-a11y/rules-native';
+
+const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, TouchableOpacity } from 'react-native';\n`;
+
+function run(jsx: string): string[] {
+  return analyze({
+    code: `${RN_IMPORT}const x = ${jsx};`,
+    filename: 'App.tsx',
+    platform: 'native',
+    rules: nativeRules,
+  }).map((d) => d.ruleId);
+}
+
+describe('touchable-has-label', () => {
+  it('flags empty unlabeled touchables', () => {
+    expect(run(`<Pressable onPress={f} accessibilityRole="button" />`)).toContain('touchable-has-label');
+  });
+  it('accepts labels and children', () => {
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={f} />`)).not.toContain('touchable-has-label');
+    expect(run(`<Pressable accessibilityRole="button" onPress={f}><Text>Save</Text></Pressable>`)).not.toContain('touchable-has-label');
+    expect(run(`<Pressable aria-label="Close" accessibilityRole="button" onPress={f} />`)).not.toContain('touchable-has-label');
+  });
+});
+
+describe('touchable-has-role', () => {
+  it('flags missing accessibilityRole', () => {
+    expect(run(`<TouchableOpacity onPress={f}><Text>Go</Text></TouchableOpacity>`)).toContain('touchable-has-role');
+    expect(run(`<TouchableOpacity accessibilityRole="button" onPress={f}><Text>Go</Text></TouchableOpacity>`)).not.toContain('touchable-has-role');
+  });
+  it('skips wrappers imported from other modules', () => {
+    const diags = analyze({
+      code: `import { Pressable } from './my-design-system';\nconst x = <Pressable onPress={f} />;`,
+      filename: 'App.tsx',
+      platform: 'native',
+      rules: nativeRules,
+    });
+    expect(diags).toHaveLength(0);
+  });
+});
+
+describe('no-nested-touchables', () => {
+  it('flags touchables inside touchables', () => {
+    expect(
+      run(`<Pressable accessibilityRole="button" onPress={f}><View><TouchableOpacity accessibilityRole="button" onPress={g}><Text>Inner</Text></TouchableOpacity></View></Pressable>`),
+    ).toContain('no-nested-touchables');
+  });
+});
+
+describe('touch-target-size', () => {
+  it('tiers by WCAG 2.5.8 / 2.5.5', () => {
+    const tiny = analyze({
+      code: `${RN_IMPORT}const x = <Pressable accessibilityRole="button" accessibilityLabel="x" style={{ width: 20, height: 20 }} onPress={f} />;`,
+      filename: 'App.tsx', platform: 'native', rules: nativeRules,
+    }).find((d) => d.ruleId === 'touch-target-size');
+    expect(tiny?.severity).toBe('serious');
+    const small = analyze({
+      code: `${RN_IMPORT}const x = <Pressable accessibilityRole="button" accessibilityLabel="x" style={{ width: 32, height: 32 }} onPress={f} />;`,
+      filename: 'App.tsx', platform: 'native', rules: nativeRules,
+    }).find((d) => d.ruleId === 'touch-target-size');
+    expect(small?.severity).toBe('moderate');
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" style={{ width: 44, height: 44 }} onPress={f} />`)).not.toContain('touch-target-size');
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" style={{ width: 20, height: 20 }} hitSlop={12} onPress={f} />`)).not.toContain('touch-target-size');
+  });
+});
+
+describe('component rules', () => {
+  it('image-has-label', () => {
+    expect(run(`<Image source={pic} />`)).toContain('image-has-label');
+    expect(run(`<Image source={pic} accessibilityLabel="Team photo" />`)).not.toContain('image-has-label');
+    expect(run(`<Image source={pic} accessible={false} />`)).not.toContain('image-has-label');
+    expect(run(`<Image source={pic} alt="" />`)).not.toContain('image-has-label');
+  });
+  it('textinput-has-label', () => {
+    expect(run(`<TextInput placeholder="Email" />`)).toContain('textinput-has-label');
+    expect(run(`<TextInput accessibilityLabel="Email" />`)).not.toContain('textinput-has-label');
+  });
+  it('valid-accessibility-role', () => {
+    expect(run(`<View accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
+    expect(run(`<View accessibilityRole="button" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
+  });
+  it('valid-accessibility-props catches typos', () => {
+    const diags = analyze({
+      code: `${RN_IMPORT}const x = <View accessibilitylabel="oops" />;`,
+      filename: 'App.tsx', platform: 'native', rules: nativeRules,
+    });
+    expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
+  });
+});
