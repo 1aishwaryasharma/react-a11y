@@ -2,6 +2,7 @@
   "name": "@aish/react-a11y",
   "version": "0.1.0",
   "description": "Static accessibility scanner for React and React Native — reports WCAG 2.2 issues with file:line locations.",
+  "keywords": ["accessibility", "a11y", "wcag", "wcag-2.2", "react", "react-native", "expo", "linter", "cli", "sarif"],
   "type": "module",
   "bin": {
     "react-a11y": "dist/index.js"

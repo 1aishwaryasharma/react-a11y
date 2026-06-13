@@ -1,11 +1,18 @@
 # @aish/react-a11y-rules-web
 
-WCAG 2.2 accessibility rules for React DOM and other React web frameworks.
-A rule pack for the
-[`@aish/react-a11y-core`](https://www.npmjs.com/package/@aish/react-a11y-core) engine —
-covering alternative text, accessible names, ARIA 1.2 validity, document
-structure, keyboard access and focus visibility, color contrast and target
-size, forms, media, and document language.
+The web rule pack for [`@aish/react-a11y`](https://www.npmjs.com/package/@aish/react-a11y) —
+the WCAG 2.2 criteria, document structure, focus visibility and project-wide
+checks that [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
+does **not** cover. Run jsx-a11y in your ESLint config for standard web a11y
+(alt text, ARIA validity, role/element semantics); this pack covers the gaps
+with no overlap, so the two run together cleanly.
+
+Covers: color contrast, target size, label-in-name, pointer cancellation,
+viewport zoom, meta-refresh, reading order, document structure (heading order,
+lists, tables, fieldsets, duplicate landmarks), focus visibility, ARIA
+required-context, the WCAG 2.2 form criteria (accessible authentication, error
+identification, autocomplete-off), and cross-file `htmlFor` ↔ `id` label
+resolution (a project-wide pass).
 
 ```ts
 import { analyze } from '@aish/react-a11y-core';

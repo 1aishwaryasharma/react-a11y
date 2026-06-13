@@ -1,5 +1,8 @@
 # react-a11y
 
+[![npm](https://img.shields.io/npm/v/@aish/react-a11y)](https://www.npmjs.com/package/@aish/react-a11y)
+[![license: MIT](https://img.shields.io/npm/l/@aish/react-a11y)](LICENSE)
+
 A static accessibility scanner for **React Native and React** that catches what
 your ESLint setup can't: full React Native accessibility (including focus and
 reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
@@ -281,11 +284,13 @@ node packages/cli/dist/index.js examples/native-demo
 
 ### Publishing (maintainers)
 
-Four packages publish to npm under the `@react-a11y` scope — the engine
+Four packages publish to npm under the `@aish` scope — the engine
 (`@aish/react-a11y-core`), both rule packs, and the CLI (`@aish/react-a11y`). They
 must go out in dependency order; `npm run release` builds, tests, and publishes
-all four in that order. One-time setup: create a free npm org named
-`react-a11y` (Settings → organizations) so the scope is yours, then `npm login`.
+all four in that order. One-time setup: own the `@aish` scope (it's automatic if
+your npm username is `aish`, otherwise create a free org named `aish` under
+Settings → organizations), then `npm login`. Run with nvm's node so the test
+step doesn't hit the hardened-runtime addon issue.
 
 ```sh
 npm version patch --workspaces --include-workspace-root   # bump all packages in lockstep
@@ -312,7 +317,7 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 - ~~Broader rule coverage~~ ✓ 42 rules (22 web + 20 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
-- ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)
+- ~~Autofixes for mechanical findings~~ ✓ `--fix` (e.g. miscapitalized React Native accessibility props)
 - ~~Cross-file label resolution (`htmlFor` ↔ `id`)~~ ✓ project-wide pass
 - ~~`--changed` mode~~ ✓ scan only files changed in git
 - ~~Editor integration~~ ✓ VS Code extension with quick fixes and fix-on-save

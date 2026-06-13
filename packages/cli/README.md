@@ -20,7 +20,7 @@ npx @aish/react-a11y . --format sarif --output a11y.sarif   # GitHub code scanni
 # gate CI: exit 1 when serious or critical issues exist (default)
 npx @aish/react-a11y . --fail-on serious
 
-# apply safe mechanical fixes (ARIA casing, redundant roles, RN prop typos, …)
+# apply safe mechanical fixes (e.g. miscapitalized React Native accessibility props)
 npx @aish/react-a11y . --fix
 
 # scan only files changed in git — fast PR checks

@@ -1,8 +1,10 @@
 {
   "name": "@aish/react-a11y-rules-web",
   "version": "0.1.0",
-  "description": "WCAG 2.2 accessibility rules for React DOM and other React web frameworks.",
+  "description": "WCAG 2.2 web accessibility rules that complement eslint-plugin-jsx-a11y — the criteria, structure and focus checks it doesn't cover.",
+  "keywords": ["accessibility", "a11y", "wcag", "wcag-2.2", "react", "jsx-a11y", "linter"],
   "type": "module",
+  "sideEffects": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
