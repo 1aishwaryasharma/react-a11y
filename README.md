@@ -61,14 +61,69 @@ npx react-a11y --list-rules
 npx react-a11y --coverage
 ```
 
-### VS Code
+### VS Code extension
 
-The [`packages/vscode`](packages/vscode) extension surfaces the same rules as
-you type: severity-mapped squiggles with WCAG citations, 💡 quick fixes,
-`source.fixAll.reactA11y` on save, and per-workspace platform detection.
-Build with `npm run build -w react-a11y-vscode`, press F5 to develop, or
-`npx @vscode/vsce package --no-dependencies` to produce an installable
-`.vsix`.
+The [`packages/vscode`](packages/vscode) extension surfaces the same rules
+live as you type — squiggles with WCAG citations, clickable rule docs,
+💡 quick fixes for the mechanical issues, and fix-on-save.
+
+**Install** (not yet on the Marketplace — build the `.vsix` once):
+
+```sh
+npm install && npm run build
+npm run build -w react-a11y-vscode
+cd packages/vscode && npx @vscode/vsce package --no-dependencies
+code --install-extension react-a11y-vscode-0.1.0.vsix
+```
+
+Or for development: open this repo in VS Code and press **F5** to launch an
+Extension Development Host with the extension loaded.
+
+**Use it:** open any React or React Native project. The platform is detected
+per workspace folder (React Native/Expo → native rules), and
+`react-a11y.config.json` rule overrides and ignore globs are respected.
+Issues appear in the editor and the Problems panel; put the cursor on one and
+press `Cmd+.` for quick fixes, or run **react-a11y: Fix all auto-fixable
+issues** from the command palette. To fix on every save:
+
+```json
+// settings.json
+"editor.codeActionsOnSave": { "source.fixAll.reactA11y": "explicit" }
+```
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| `react-a11y.enable` | `true` | Toggle diagnostics. |
+| `react-a11y.platform` | `auto` | Force `web` or `native` instead of auto-detection. |
+
+### Expo / React Native projects
+
+No setup needed — `npx react-a11y .` detects `react-native`/`expo` in
+package.json and runs the native rule pack, including project-config checks
+that go beyond JSX. Orientation locks (WCAG 1.3.4) are flagged wherever they
+live:
+
+```
+$ npx react-a11y .
+
+app.json
+  6:5   moderate  no-orientation-lock
+        Expo config locks orientation to "portrait". WCAG 1.3.4 (AA) requires content
+        to work in both portrait and landscape — users with mounted devices cannot
+        rotate. Use "default" to allow rotation.
+            6 |     "orientation": "portrait",
+```
+
+Checked locations: `app.json`, `app.config.{js,ts,mjs,cjs}`,
+`android/app/src/main/AndroidManifest.xml` (`android:screenOrientation`),
+and `ios/*/Info.plist` (`UISupportedInterfaceOrientations`). If portrait
+really is essential for your app (e.g. a camera viewfinder), disable it per
+project:
+
+```json
+// react-a11y.config.json
+{ "rules": { "no-orientation-lock": "off" } }
+```
 
 ### CI (GitHub Actions)
 
