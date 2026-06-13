@@ -287,3 +287,90 @@ describe('forms', () => {
     expect(run(`<a href="/docs">Docs</a>`)).not.toContain('anchor-is-valid');
   });
 });
+
+describe('role semantics', () => {
+  it('interactive-supports-focus', () => {
+    expect(run(`<div role="button" onClick={f}>Go</div>`)).toContain('interactive-supports-focus');
+    expect(run(`<div role="button" tabIndex={0} onClick={f} onKeyDown={f}>Go</div>`)).not.toContain('interactive-supports-focus');
+    expect(run(`<div role="article" onClick={f}>Go</div>`)).not.toContain('interactive-supports-focus');
+  });
+
+  it('no-noninteractive-element-interactions', () => {
+    expect(run(`<li onClick={f}>Item</li>`)).toContain('no-noninteractive-element-interactions');
+    expect(run(`<main onClick={f}>Body</main>`)).toContain('no-noninteractive-element-interactions');
+    expect(run(`<li role="menuitem" onClick={f} onKeyDown={f} tabIndex={0}>Item</li>`)).not.toContain('no-noninteractive-element-interactions');
+    expect(run(`<div onClick={f}>generic</div>`)).not.toContain('no-noninteractive-element-interactions');
+  });
+
+  it('no-interactive-element-to-noninteractive-role', () => {
+    expect(run(`<button role="article">x</button>`)).toContain('no-interactive-element-to-noninteractive-role');
+    expect(run(`<a href="/x" role="presentation">x</a>`)).toContain('no-interactive-element-to-noninteractive-role');
+    expect(run(`<button role="tab">x</button>`)).not.toContain('no-interactive-element-to-noninteractive-role');
+    expect(run(`<div role="article">x</div>`)).not.toContain('no-interactive-element-to-noninteractive-role');
+  });
+
+  it('no-noninteractive-element-to-interactive-role', () => {
+    expect(run(`<li role="button">x</li>`)).toContain('no-noninteractive-element-to-interactive-role');
+    expect(run(`<main role="tab">x</main>`)).toContain('no-noninteractive-element-to-interactive-role');
+    expect(run(`<div role="button">x</div>`)).not.toContain('no-noninteractive-element-to-interactive-role');
+    expect(run(`<li role="listitem">x</li>`)).not.toContain('no-noninteractive-element-to-interactive-role');
+  });
+
+  it('no-noninteractive-tabindex', () => {
+    expect(run(`<li tabIndex={0}>x</li>`)).toContain('no-noninteractive-tabindex');
+    expect(run(`<main tabIndex={0}>x</main>`)).toContain('no-noninteractive-tabindex');
+    expect(run(`<div tabIndex={0}>x</div>`)).not.toContain('no-noninteractive-tabindex');
+    expect(run(`<li role="menuitem" tabIndex={0}>x</li>`)).not.toContain('no-noninteractive-tabindex');
+    expect(run(`<input tabIndex={0} id="a" />`)).not.toContain('no-noninteractive-tabindex');
+  });
+
+  it('prefer-tag-over-role', () => {
+    expect(run(`<div role="button">x</div>`)).toContain('prefer-tag-over-role');
+    expect(run(`<span role="navigation">x</span>`)).toContain('prefer-tag-over-role');
+    expect(run(`<button role="button">x</button>`)).not.toContain('prefer-tag-over-role');
+    expect(run(`<div role="tabpanel">x</div>`)).not.toContain('prefer-tag-over-role');
+  });
+});
+
+describe('keyboard and aria support', () => {
+  it('click-events-have-key-events', () => {
+    expect(run(`<div onClick={f}>x</div>`)).toContain('click-events-have-key-events');
+    expect(run(`<div onClick={f} onKeyDown={f}>x</div>`)).not.toContain('click-events-have-key-events');
+    expect(run(`<button onClick={f}>x</button>`)).not.toContain('click-events-have-key-events');
+  });
+
+  it('role-supports-aria-props', () => {
+    expect(run(`<div role="menuitem" aria-selected="true" />`)).toContain('role-supports-aria-props');
+    expect(run(`<div role="link" aria-checked="true" />`)).toContain('role-supports-aria-props');
+    expect(run(`<div role="checkbox" aria-checked="true" tabIndex={0} onClick={f} onKeyDown={f} />`)).not.toContain('role-supports-aria-props');
+    expect(run(`<div role="link" aria-label="Home" />`)).not.toContain('role-supports-aria-props');
+  });
+
+  it('aria-unsupported-elements', () => {
+    expect(run(`<meta name="x" content="y" aria-hidden="true" />`)).toContain('aria-unsupported-elements');
+    expect(run(`<html role="main"><body /></html>`)).toContain('aria-unsupported-elements');
+    expect(run(`<div aria-hidden="true" />`)).not.toContain('aria-unsupported-elements');
+    const diags = analyze({ code: `const x = <meta content="y" aria-hidden="true" />;`, filename: 'test.tsx', platform: 'web', rules: webRules });
+    const fix = diags.find((d) => d.ruleId === 'aria-unsupported-elements')?.fix;
+    expect(fix).toBeDefined();
+  });
+
+  it('aria-activedescendant-has-tabindex', () => {
+    expect(run(`<div role="combobox" aria-activedescendant="opt-1" aria-expanded="true" />`)).toContain('aria-activedescendant-has-tabindex');
+    expect(run(`<div tabIndex={0} aria-activedescendant="opt-1" />`)).not.toContain('aria-activedescendant-has-tabindex');
+    expect(run(`<input id="a" aria-activedescendant="opt-1" />`)).not.toContain('aria-activedescendant-has-tabindex');
+  });
+
+  it('anchor-ambiguous-text', () => {
+    expect(run(`<a href="/x">Click here</a>`)).toContain('anchor-ambiguous-text');
+    expect(run(`<a href="/x">Read more</a>`)).toContain('anchor-ambiguous-text');
+    expect(run(`<a href="/x">Download the 2024 report</a>`)).not.toContain('anchor-ambiguous-text');
+    expect(run(`<a href="/x" aria-label="Download the 2024 report">Read more</a>`)).not.toContain('anchor-ambiguous-text');
+    expect(run(`<a href="/x">{label}</a>`)).not.toContain('anchor-ambiguous-text');
+  });
+
+  it('img-alt also flags standalone redundant words', () => {
+    expect(run(`<img src="/a.png" alt="Profile photo" />`)).toContain('img-alt');
+    expect(run(`<img src="/a.png" alt="A golden retriever" />`)).not.toContain('img-alt');
+  });
+});

@@ -229,6 +229,98 @@ export const ariaAttrValueValid = defineRule(
   },
 );
 
+/**
+ * Role-specific ARIA states/properties and the roles that support them.
+ * Global states (aria-label, aria-busy, …) are allowed everywhere and omitted.
+ */
+const PROP_ALLOWED_ROLES: Record<string, Set<string>> = {
+  'aria-checked': new Set(['checkbox', 'menuitemcheckbox', 'menuitemradio', 'option', 'radio', 'switch', 'treeitem']),
+  'aria-selected': new Set(['columnheader', 'gridcell', 'option', 'row', 'rowheader', 'tab', 'treeitem']),
+  'aria-pressed': new Set(['button']),
+  'aria-valuenow': new Set(['meter', 'progressbar', 'scrollbar', 'separator', 'slider', 'spinbutton']),
+  'aria-valuemin': new Set(['meter', 'progressbar', 'scrollbar', 'separator', 'slider', 'spinbutton']),
+  'aria-valuemax': new Set(['meter', 'progressbar', 'scrollbar', 'separator', 'slider', 'spinbutton']),
+  'aria-valuetext': new Set(['meter', 'progressbar', 'scrollbar', 'separator', 'slider', 'spinbutton']),
+  'aria-level': new Set(['heading', 'listitem', 'row', 'treeitem']),
+  'aria-sort': new Set(['columnheader', 'rowheader']),
+  'aria-multiline': new Set(['textbox', 'searchbox']),
+};
+
+/** ARIA states/properties must be supported by the element's explicit role. */
+export const roleSupportsAriaProps = defineRule(
+  {
+    id: 'role-supports-aria-props',
+    description: 'ARIA states/properties must be supported by the element role.',
+    severity: 'serious',
+    wcag: ['4.1.2'],
+  },
+  (el, ctx) => {
+    if (el.hasSpread) return;
+    const role = staticString(el, 'role')?.trim();
+    if (!role || !ROLES.has(role)) return;
+    for (const name of el.attrs.keys()) {
+      const allowed = PROP_ALLOWED_ROLES[name.toLowerCase()];
+      if (allowed && !allowed.has(role)) {
+        ctx.report({
+          el,
+          message: `${name} is not supported by role="${role}" — it is ignored. Supported on: ${[...allowed].join(', ')}.`,
+        });
+      }
+    }
+  },
+);
+
+/** HTML elements (per HTML-AAM) that do not support role or aria-* at all. */
+const ARIA_RESERVED_TAGS = new Set([
+  'base', 'col', 'colgroup', 'head', 'html', 'link', 'meta', 'noscript',
+  'param', 'script', 'source', 'style', 'title', 'track',
+]);
+
+/** role and aria-* are silently ignored on elements that do not support them. */
+export const ariaUnsupportedElements = defineRule(
+  {
+    id: 'aria-unsupported-elements',
+    description: 'role and aria-* must not be placed on elements that do not support them.',
+    severity: 'serious',
+    wcag: ['4.1.2'],
+    fixable: true,
+  },
+  (el, ctx) => {
+    if (el.isComponent || !ARIA_RESERVED_TAGS.has(el.name)) return;
+    for (const name of el.attrs.keys()) {
+      if (name === 'role' || /^aria-/i.test(name)) {
+        ctx.report({
+          el,
+          message: `<${el.name}> does not support "${name}" — it is ignored by assistive technology. Remove it.`,
+          fix: fixRemoveAttr(el, name),
+        });
+      }
+    }
+  },
+);
+
+/**
+ * aria-activedescendant points focus at a child, so the managing element must
+ * itself be focusable — otherwise the active descendant is never reached.
+ */
+export const ariaActivedescendantHasTabindex = defineRule(
+  {
+    id: 'aria-activedescendant-has-tabindex',
+    description: 'Elements with aria-activedescendant must be focusable.',
+    severity: 'serious',
+    wcag: ['4.1.2', '2.1.1'],
+  },
+  (el, ctx) => {
+    if (el.isComponent || el.hasSpread) return;
+    if (!hasAttr(el, 'aria-activedescendant')) return;
+    if (isFocusable(el) || hasAttr(el, 'tabIndex')) return;
+    ctx.report({
+      el,
+      message: `<${el.name}> has aria-activedescendant but is not focusable, so the active descendant is unreachable. Add tabIndex={0}.`,
+    });
+  },
+);
+
 /** scope is only valid on <th>. */
 export const scopeOnTh = defineRule(
   {

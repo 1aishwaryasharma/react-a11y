@@ -12,6 +12,9 @@ import {
 import { defineRule, isDomTag } from '../util.js';
 
 const REDUNDANT_ALT = /\b(image|picture|photo|photograph|graphic|icon|screenshot)\s+of\b/i;
+// Standalone redundant words (covers jsx-a11y's img-redundant-alt) — screen
+// readers already announce the element as an image.
+const REDUNDANT_ALT_WORD = /\b(image|photo|picture)\b/i;
 const FILENAME_ALT = /\.(png|jpe?g|gif|svg|webp|avif|bmp)\s*$/i;
 
 /**
@@ -43,7 +46,7 @@ export const imgAlt = defineRule(
     if (alt.kind !== 'static' || typeof alt.value !== 'string') return;
     const text = alt.value.trim();
     if (text.length === 0) return; // decorative — valid
-    if (REDUNDANT_ALT.test(text)) {
+    if (REDUNDANT_ALT.test(text) || REDUNDANT_ALT_WORD.test(text)) {
       ctx.report({
         el,
         message: `alt text "${text}" contains redundant words — screen readers already announce images. Describe the content instead.`,
@@ -76,6 +79,40 @@ export const anchorHasContent = defineRule(
       el,
       message: `<${el.name}> has no accessible name. Add text content, aria-label, or an image with alt text.`,
     });
+  },
+);
+
+/** Link text that conveys nothing out of context (read by screen readers in a links list). */
+const AMBIGUOUS_LINK_TEXT = new Set([
+  'click here', 'click', 'here', 'read more', 'more', 'learn more', 'details',
+  'see more', 'link', 'this', 'this link', 'more info', 'more information',
+  'continue', 'read', 'go', 'start', 'view', 'view more',
+]);
+
+/**
+ * WCAG 2.4.4: "click here" / "read more" tells screen reader users nothing when
+ * links are read out of context. Only fires when the link text is fully static.
+ */
+export const anchorAmbiguousText = defineRule(
+  {
+    id: 'anchor-ambiguous-text',
+    description: 'Link text must describe its destination, not be generic ("click here").',
+    severity: 'moderate',
+    wcag: ['2.4.4'],
+  },
+  (el, ctx) => {
+    const isNextLink = el.isComponent && el.importSource === 'next/link';
+    if (!isDomTag(el, 'a') && !isNextLink) return;
+    if (isAriaHidden(el)) return;
+    const ariaLabel = staticString(el, 'aria-label');
+    const text = ariaLabel?.trim() ? ariaLabel : deepStaticText(el);
+    if (!text) return;
+    if (AMBIGUOUS_LINK_TEXT.has(normalize(text))) {
+      ctx.report({
+        el,
+        message: `Link text "${text.trim()}" is ambiguous out of context. Describe where the link goes (screen readers list links by their text).`,
+      });
+    }
   },
 );
 

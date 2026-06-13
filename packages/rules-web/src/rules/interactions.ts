@@ -5,6 +5,7 @@ import {
   hasAttr,
   inlineStyleValue,
   isAriaHidden,
+  isPresentational,
   staticString,
   staticValue,
 } from '@react-a11y/core';
@@ -41,6 +42,31 @@ export const noStaticElementInteractions = defineRule(
     ctx.report({
       el,
       message: `<${el.name}> handles clicks but is missing ${missing.join(', ')}. Prefer a native <button>.`,
+    });
+  },
+);
+
+/**
+ * onClick on a non-interactive element with no keyboard handler cannot be
+ * triggered with the keyboard. Native controls (<button>, <a>, …) are exempt
+ * because they handle Enter/Space themselves.
+ */
+export const clickEventsHaveKeyEvents = defineRule(
+  {
+    id: 'click-events-have-key-events',
+    description: 'onClick on non-interactive elements must be paired with a keyboard handler.',
+    severity: 'serious',
+    wcag: ['2.1.1'],
+  },
+  (el, ctx) => {
+    if (el.isComponent || el.hasSpread) return;
+    if (!hasAttr(el, 'onClick')) return;
+    if (INTERACTIVE_TAGS.has(el.name)) return; // native keyboard activation
+    if (isAriaHidden(el) || isPresentational(el)) return;
+    if (KEY_HANDLERS.some((h) => hasAttr(el, h))) return;
+    ctx.report({
+      el,
+      message: `<${el.name}> has onClick but no keyboard handler (onKeyDown/onKeyUp). Keyboard users cannot activate it — add a key handler or use a <button>.`,
     });
   },
 );

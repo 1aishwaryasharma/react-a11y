@@ -49,6 +49,17 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | [no-autocomplete-off](#no-autocomplete-off) | moderate | 3.3.7, 1.3.5 |
 | [meaningful-order](#meaningful-order) | minor | 1.3.2, 2.4.3 |
 | [no-duplicate-main](#no-duplicate-main) | moderate | 1.3.1, 2.4.1 |
+| [anchor-ambiguous-text](#anchor-ambiguous-text) | moderate | 2.4.4 |
+| [click-events-have-key-events](#click-events-have-key-events) | serious | 2.1.1 |
+| [interactive-supports-focus](#interactive-supports-focus) | serious | 2.1.1, 4.1.2 |
+| [no-noninteractive-element-interactions](#no-noninteractive-element-interactions) | serious | 2.1.1, 4.1.2 |
+| [no-interactive-element-to-noninteractive-role](#no-interactive-element-to-noninteractive-role) | serious | 4.1.2, 1.3.1 |
+| [no-noninteractive-element-to-interactive-role](#no-noninteractive-element-to-interactive-role) | serious | 4.1.2, 1.3.1 |
+| [no-noninteractive-tabindex](#no-noninteractive-tabindex) | moderate | 2.4.3, 4.1.2 |
+| [prefer-tag-over-role](#prefer-tag-over-role) | minor | 4.1.2 |
+| [role-supports-aria-props](#role-supports-aria-props) | serious | 4.1.2 |
+| [aria-unsupported-elements](#aria-unsupported-elements) | serious | 4.1.2 |
+| [aria-activedescendant-has-tabindex](#aria-activedescendant-has-tabindex) | serious | 4.1.2, 2.1.1 |
 
 ## img-alt
 
@@ -290,6 +301,75 @@ screen readers and Tab follow (1.3.2).
 
 `<main>` is the screen reader's "skip to content" target; duplicates make
 landmark navigation ambiguous.
+
+## anchor-ambiguous-text
+
+Link text like "click here", "read more" or "details" conveys nothing when a
+screen reader lists links out of context. Describe the destination instead.
+Only fires when the link's accessible name is fully static.
+
+## click-events-have-key-events
+
+An `onClick` on a non-interactive element (`div`, `span`, …) with no keyboard
+handler cannot be triggered with the keyboard. Native controls (`<button>`,
+`<a>`) handle Enter/Space themselves and are exempt.
+
+## interactive-supports-focus
+
+An element with an interactive role and a handler (`role="button" onClick`)
+must be focusable — add `tabIndex={0}` so keyboard users can reach it.
+
+## no-noninteractive-element-interactions
+
+Handlers on semantic non-interactive elements (`<li>`, `<main>`, `<h2>`, …) are
+unreachable by keyboard and assistive technology. Move the action to a
+`<button>`/`<a>`, or give the element an interactive role with focus and key
+support. `<div>`/`<span>` are generic and handled by
+`no-static-element-interactions` instead.
+
+## no-interactive-element-to-noninteractive-role
+
+A native control given a non-interactive role (`<button role="article">`,
+`<a href role="presentation">`) loses its semantics — screen reader users no
+longer perceive it as a control.
+
+## no-noninteractive-element-to-interactive-role
+
+A semantic non-interactive element given an interactive role (`<li
+role="button">`) should be a native control or a generic `<div>`/`<span>` with
+the role, which carries the expected behavior.
+
+## no-noninteractive-tabindex
+
+`tabIndex` on a non-interactive element adds a tab stop with no interactive
+purpose. Remove it, or make the element a real control. (Positive values are
+also flagged by `no-positive-tabindex`.)
+
+## prefer-tag-over-role
+
+A role on a generic `<div>`/`<span>` that re-implements a native element
+(`role="button"`, `role="navigation"`) — prefer the native tag (`<button>`,
+`<nav>`) for built-in keyboard handling and semantics. Redundant roles on the
+matching element itself are handled by `no-redundant-roles`.
+
+## role-supports-aria-props
+
+ARIA states/properties must be supported by the element's explicit role —
+`aria-selected` on `role="menuitem"` (it belongs on `option`/`tab`) is silently
+ignored. Checks a curated set of role-specific properties; global properties
+(`aria-label`, `aria-busy`, …) are allowed everywhere.
+
+## aria-unsupported-elements
+
+`role` and `aria-*` are ignored on elements that do not support them
+(`<meta>`, `<html>`, `<script>`, `<link>`, …). Fixable — the attribute is
+removed.
+
+## aria-activedescendant-has-tabindex
+
+`aria-activedescendant` points focus at a child, so the managing element must
+itself be focusable. Add `tabIndex={0}`, or the active descendant is never
+reached.
 
 ## Cross-file label resolution
 

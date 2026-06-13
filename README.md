@@ -157,12 +157,13 @@ project:
 
 ## Rules
 
-- **Web** — 44 rules covering alternative text, accessible names, ARIA 1.2
-  validity (attributes, values, roles, required context), document structure
-  (headings, lists, tables, fieldsets), keyboard access and focus visibility,
-  color contrast and target size, label-in-name, pointer cancellation, forms
-  (labels, autofill purpose, error identification, accessible
-  authentication), media, viewport zoom and document language.
+- **Web** — 55 rules covering alternative text, accessible names, ARIA 1.2
+  validity (attributes, values, roles, required context, supported props),
+  element/role semantics (interactive vs. non-interactive, focus support),
+  document structure (headings, lists, tables, fieldsets), keyboard access and
+  focus visibility, color contrast and target size, label-in-name, pointer
+  cancellation, forms (labels, autofill purpose, error identification,
+  accessible authentication), media, viewport zoom and document language.
   [Full list →](docs/rules/web.md)
 - **React Native** — 15 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
@@ -170,8 +171,8 @@ project:
   silent prop typos, and orientation locks in project config (app.json,
   AndroidManifest, Info.plist). [Full list →](docs/rules/native.md)
 
-`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **29 of the 55
-Level A+AA criteria are checked automatically (53%)**. The remaining 26 — things
+`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **31 of the 55
+Level A+AA criteria are checked automatically (56%)**. The remaining 24 — things
 like reflow, use of color, and consistent navigation that a static tool cannot
 decide — are listed as a manual checklist, so all 55 A+AA criteria are addressed
 by either a rule or an explicit verification step.
@@ -243,7 +244,7 @@ ships as a `.vsix`, not to npm.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 58 rules; all 55 A+AA criteria addressed (55% automated + guided checklist)
+- ~~Broader rule coverage~~ ✓ 70 rules (55 web + 15 native); all 55 A+AA criteria addressed (automated + manual checklist)
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)
