@@ -61,6 +61,15 @@ npx react-a11y --list-rules
 npx react-a11y --coverage
 ```
 
+### VS Code
+
+The [`packages/vscode`](packages/vscode) extension surfaces the same rules as
+you type: severity-mapped squiggles with WCAG citations, 💡 quick fixes,
+`source.fixAll.reactA11y` on save, and per-workspace platform detection.
+Build with `npm run build -w react-a11y-vscode`, press F5 to develop, or
+`npx @vscode/vsce package --no-dependencies` to produce an installable
+`.vsix`.
+
 ### CI (GitHub Actions)
 
 ```yaml
@@ -115,6 +124,8 @@ packages/
   rules-web/      @react-a11y/rules-web — WCAG-mapped rules for React DOM/Next.js
   rules-native/   @react-a11y/rules-native — rules for React Native/Expo
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
+  vscode/         react-a11y-vscode — VS Code extension: live diagnostics,
+                  quick fixes, fix-on-save (esbuild-bundled, ships as .vsix)
 ```
 
 Rules are ~30-line pure functions over a normalized `ElementNode` (attributes
@@ -159,7 +170,9 @@ node packages/cli/dist/index.js examples/native-demo
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)
 - ~~Cross-file label resolution (`htmlFor` ↔ `id`)~~ ✓ project-wide pass
 - ~~`--changed` mode~~ ✓ scan only files changed in git
-- Editor integration (LSP / VS Code extension) on top of `analyze()`
+- ~~Editor integration~~ ✓ VS Code extension with quick fixes and fix-on-save
+- Marketplace publishing for the VS Code extension (icon, publisher account)
+- LSP server for other editors (Neovim, JetBrains) on top of `analyze()`
 - Expo config checks (orientation lock in app.json)
 
 ## License

@@ -12,7 +12,7 @@ import {
   applyFixes,
   detectPlatform,
   loadConfig,
-  readPackageMeta,
+  readOwnPackageMeta,
   scanProject,
   toJson,
   toSarif,
@@ -27,7 +27,7 @@ import { createLabelForPass, webRules } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 import { printPretty } from './pretty.js';
 
-const PKG = readPackageMeta(new URL('../package.json', import.meta.url));
+const PKG = readOwnPackageMeta(import.meta.url);
 const VERSION = PKG.version ?? '0.0.0';
 
 const HELP = `

@@ -21,3 +21,17 @@ export function readPackageMeta(packageJsonUrl: URL | string): PackageMeta {
     return {};
   }
 }
+
+/**
+ * Like readPackageMeta, but safe when `import.meta.url` is unavailable
+ * (e.g. the package was bundled to CJS for a VS Code extension) — the URL
+ * construction itself is guarded, returning {} instead of throwing at
+ * module load.
+ */
+export function readOwnPackageMeta(importMetaUrl: string | undefined, rel = '../package.json'): PackageMeta {
+  try {
+    return readPackageMeta(new URL(rel, importMetaUrl));
+  } catch {
+    return {};
+  }
+}

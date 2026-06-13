@@ -1,0 +1,77 @@
+{
+  "name": "react-a11y-vscode",
+  "displayName": "react-a11y",
+  "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React, Next.js and React Native.",
+  "version": "0.1.0",
+  "publisher": "aishwaryasharma",
+  "private": true,
+  "license": "MIT",
+  "homepage": "https://github.com/1aishwaryasharma/react-a11y",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/1aishwaryasharma/react-a11y.git",
+    "directory": "packages/vscode"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "react",
+    "react-native"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
+  "contributes": {
+    "configuration": {
+      "title": "react-a11y",
+      "properties": {
+        "react-a11y.enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable react-a11y diagnostics."
+        },
+        "react-a11y.platform": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "web",
+            "native"
+          ],
+          "default": "auto",
+          "description": "Rule pack to run. \"auto\" detects React Native/Expo from the workspace package.json."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "react-a11y.fixAll",
+        "title": "react-a11y: Fix all auto-fixable issues in this file"
+      }
+    ]
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --define:import.meta.url=__importMetaUrl \"--banner:js=const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;\"",
+    "typecheck": "tsc --noEmit",
+    "package": "vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@react-a11y/core": "0.1.0",
+    "@react-a11y/rules-native": "0.1.0",
+    "@react-a11y/rules-web": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0"
+  }
+}
