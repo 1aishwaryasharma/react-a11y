@@ -13,7 +13,7 @@ import {
   type Platform,
   type Severity,
 } from '@react-a11y/core';
-import { webRules, createLabelForPass } from '@react-a11y/rules-web';
+import { webRules, webProjectPasses } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 
 const LANGUAGES = ['javascript', 'javascriptreact', 'typescript', 'typescriptreact'];
@@ -40,6 +40,9 @@ interface A11yVsDiagnostic extends vscode.Diagnostic {
 const folderCache = new Map<string, FolderInfo>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 let collection: vscode.DiagnosticCollection;
+// Project-wide scan results live in their own collection so per-file live
+// linting (which replaces entries in `collection` on edit) never wipes them.
+let projectCollection: vscode.DiagnosticCollection;
 
 function folderInfoForRoot(root: string): FolderInfo {
   let info = folderCache.get(root);
@@ -158,7 +161,8 @@ class A11yCodeActionProvider implements vscode.CodeActionProvider {
  * Live linting is per-file, so it can't run project-wide checks (cross-file
  * label resolution, Expo config). This command scans each workspace folder with
  * scanProject — including project passes and projectCheck rules — and publishes
- * the results across all files.
+ * the results into their own collection, which persists until the next scan
+ * (per-file edits never overwrite them).
  */
 async function scanWorkspace(): Promise<void> {
   const folders = vscode.workspace.workspaceFolders ?? [];
@@ -169,13 +173,13 @@ async function scanWorkspace(): Promise<void> {
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window, title: 'react-a11y: scanning workspace…' },
     async () => {
-      collection.clear();
+      projectCollection.clear();
       let total = 0;
       for (const folder of folders) {
         const root = folder.uri.fsPath;
         const info = folderInfoForRoot(root);
         const rules = info.platform === 'native' ? nativeRules : webRules;
-        const projectPasses = info.platform === 'web' ? [createLabelForPass(info.config.rules)] : [];
+        const projectPasses = info.platform === 'web' ? webProjectPasses(info.config) : [];
         const result = scanProject({ root, rules, platform: info.platform, config: info.config, projectPasses });
         const byFile = new Map<string, A11yVsDiagnostic[]>();
         for (const d of result.diagnostics) {
@@ -184,11 +188,11 @@ async function scanWorkspace(): Promise<void> {
           byFile.set(d.file, list);
         }
         for (const [file, diags] of byFile) {
-          collection.set(vscode.Uri.file(path.join(root, file)), diags);
+          projectCollection.set(vscode.Uri.file(path.join(root, file)), diags);
           total += diags.length;
         }
       }
-      vscode.window.setStatusBarMessage(`react-a11y: workspace scan found ${total} issue${total === 1 ? '' : 's'}`, 4000);
+      vscode.window.setStatusBarMessage(`react-a11y: workspace scan found ${total} issue${total === 1 ? '' : 's'} (re-run after edits)`, 4000);
     },
   );
 }
@@ -214,7 +218,8 @@ async function fixAllInActiveEditor(): Promise<void> {
 
 export function activate(context: vscode.ExtensionContext): void {
   collection = vscode.languages.createDiagnosticCollection('react-a11y');
-  context.subscriptions.push(collection);
+  projectCollection = vscode.languages.createDiagnosticCollection('react-a11y (project)');
+  context.subscriptions.push(collection, projectCollection);
 
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(lint),

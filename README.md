@@ -309,7 +309,7 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 42 rules (22 web + 20 native), zero overlap with jsx-a11y; all 55 A+AA criteria addressed (react-a11y + jsx-a11y + manual checklist)
+- ~~Broader rule coverage~~ ✓ 42 rules (22 web + 20 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)

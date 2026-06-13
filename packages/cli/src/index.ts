@@ -23,7 +23,7 @@ import {
   type Severity,
   type WcagLevel,
 } from '@react-a11y/core';
-import { createLabelForPass, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
+import { webProjectPasses, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 import { printPretty } from './pretty.js';
 
@@ -278,7 +278,7 @@ function main(): void {
   // Cross-file passes need the whole project; skip them on partial scans.
   // Passes are stateful, so each scan gets fresh instances.
   const makePasses = () =>
-    platform === 'web' && !args.changed ? [createLabelForPass(config.rules)] : [];
+    platform === 'web' && !args.changed ? webProjectPasses(config) : [];
 
   const scan = () => scanProject({ root: args.root, rules, platform, config, projectPasses: makePasses(), files });
   let result = scan();

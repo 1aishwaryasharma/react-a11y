@@ -1,4 +1,4 @@
-import type { Rule } from '@react-a11y/core';
+import type { A11yConfig, ProjectPass, Rule } from '@react-a11y/core';
 import { buttonHasName, labelInName, mediaNoAutoplay } from './rules/names.js';
 import { pointerCancellation, noOutlineNone } from './rules/interactions.js';
 import {
@@ -18,9 +18,19 @@ import {
   noDuplicateMain,
 } from './rules/structure.js';
 import { colorContrast, targetSize } from './rules/contrast.js';
-import { formControlHasLabel } from './project/labels.js';
+import { createLabelForPass, formControlHasLabel } from './project/labels.js';
 
 export { createLabelForPass, formControlHasLabel } from './project/labels.js';
+
+/**
+ * The project-wide passes the web pack runs (currently the cross-file label
+ * resolution behind `form-control-has-label`). Single source of truth so the
+ * CLI, VS Code, and any future consumer wire the same passes — the registered
+ * `formControlHasLabel` rule is a no-op without this.
+ */
+export function webProjectPasses(config: A11yConfig): ProjectPass[] {
+  return [createLabelForPass(config.rules)];
+}
 
 export {
   buttonHasName,

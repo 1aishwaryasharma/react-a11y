@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, buildFileModel, parseSource } from '@react-a11y/core';
-import { createLabelForPass, webRules } from '@react-a11y/rules-web';
+import { analyze, buildFileModel, parseSource, WCAG22_A_AA } from '@react-a11y/core';
+import { createLabelForPass, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
 
 function run(code: string): string[] {
   return analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules }).map((d) => d.ruleId);
@@ -31,6 +31,15 @@ describe('the web pack is the jsx-a11y complement', () => {
     expect(webRules.map((r) => r.meta.id)).toContain('form-control-has-label');
     // ...but the per-file visitor is empty; the cross-file pass does the work.
     expect(run(`<input type="email" id="email" />`)).not.toContain('form-control-has-label');
+  });
+
+  it('JSX_A11Y_COVERED_WCAG lists only valid Level A/AA criteria, no duplicates', () => {
+    const seen = new Set<string>();
+    for (const sc of JSX_A11Y_COVERED_WCAG) {
+      expect(WCAG22_A_AA).toContain(sc); // a real A/AA criterion, not a typo
+      expect(seen.has(sc)).toBe(false);
+      seen.add(sc);
+    }
   });
 });
 
