@@ -184,3 +184,43 @@ describe('component rules', () => {
     expect(output).toContain(`accessibilityLabel="profile"`);
   });
 });
+
+describe('focus and reading order', () => {
+  it('accessible-grouping-hides-interactive', () => {
+    expect(run(`<View accessible={true}><Pressable accessibilityRole="button" onPress={f}><Text>Go</Text></Pressable></View>`)).toContain('accessible-grouping-hides-interactive');
+    expect(run(`<View accessible={true}><TextInput accessibilityLabel="Email" /></View>`)).toContain('accessible-grouping-hides-interactive');
+    // grouping non-interactive text is the intended use — not flagged
+    expect(run(`<View accessible={true}><Text>Name</Text><Text>Detail</Text></View>`)).not.toContain('accessible-grouping-hides-interactive');
+    // not grouped — children stay individually focusable
+    expect(run(`<View><Pressable accessibilityRole="button" onPress={f}><Text>Go</Text></Pressable></View>`)).not.toContain('accessible-grouping-hides-interactive');
+  });
+
+  it('label-needs-accessible', () => {
+    expect(run(`<View accessibilityLabel="Rating 4 of 5"><Text>****</Text></View>`)).toContain('label-needs-accessible');
+    expect(run(`<View accessibilityState={{ selected: true }}><Text>Tab</Text></View>`)).toContain('label-needs-accessible');
+    expect(run(`<View accessible={true} accessibilityLabel="Rating 4 of 5"><Text>****</Text></View>`)).not.toContain('label-needs-accessible');
+    expect(run(`<View accessible={isA11y} accessibilityLabel="x"><Text>y</Text></View>`)).not.toContain('label-needs-accessible');
+    // Pressable is accessible by default, so its label is not dropped
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="Close" onPress={f} />`)).not.toContain('label-needs-accessible');
+  });
+});
+
+describe('action and platform validation', () => {
+  it('accessibility-actions-handled', () => {
+    expect(run(`<View accessibilityActions={[{ name: 'activate' }]} />`)).toContain('accessibility-actions-handled');
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" onAccessibilityAction={h} onPress={f} />`)).toContain('accessibility-actions-handled');
+    expect(run(`<View accessibilityActions={[{ name: 'activate' }]} onAccessibilityAction={h} />`)).not.toContain('accessibility-actions-handled');
+  });
+
+  it('valid-important-for-accessibility', () => {
+    expect(run(`<View importantForAccessibility="false" />`)).toContain('valid-important-for-accessibility');
+    expect(run(`<View importantForAccessibility="auto" />`)).not.toContain('valid-important-for-accessibility');
+  });
+
+  it('hidden-cross-platform', () => {
+    expect(run(`<View accessibilityElementsHidden={true}><Text>x</Text></View>`)).toContain('hidden-cross-platform');
+    expect(run(`<View importantForAccessibility="no-hide-descendants"><Text>x</Text></View>`)).toContain('hidden-cross-platform');
+    expect(run(`<View accessibilityElementsHidden={true} importantForAccessibility="no-hide-descendants"><Text>x</Text></View>`)).not.toContain('hidden-cross-platform');
+    expect(run(`<View aria-hidden={true} accessibilityElementsHidden={true}><Text>x</Text></View>`)).not.toContain('hidden-cross-platform');
+  });
+});

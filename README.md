@@ -165,11 +165,14 @@ project:
   cancellation, forms (labels, autofill purpose, error identification,
   accessible authentication), media, viewport zoom and document language.
   [Full list →](docs/rules/web.md)
-- **React Native** — 15 rules covering touchable labels/roles, nested
+- **React Native** — 20 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
   inputs, switches, modal keyboard traps, live regions, state/value props,
-  silent prop typos, and orientation locks in project config (app.json,
-  AndroidManifest, Info.plist). [Full list →](docs/rules/native.md)
+  silent prop typos, accessibility actions, cross-platform hiding, **focus and
+  reading order** (`accessible={true}` grouping that swallows interactive
+  children, or descriptors dropped for lack of it), and orientation locks in
+  project config (app.json, AndroidManifest, Info.plist).
+  [Full list →](docs/rules/native.md)
 
 `npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **31 of the 55
 Level A+AA criteria are checked automatically (56%)**. The remaining 24 — things
@@ -244,7 +247,7 @@ ships as a `.vsix`, not to npm.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 70 rules (55 web + 15 native); all 55 A+AA criteria addressed (automated + manual checklist)
+- ~~Broader rule coverage~~ ✓ 75 rules (55 web + 20 native); all 55 A+AA criteria addressed (automated + manual checklist)
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)

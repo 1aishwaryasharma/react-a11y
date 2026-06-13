@@ -17,7 +17,14 @@ import {
   accessibilityStateValid,
   liveRegionValid,
   noHiddenInteractive,
+  accessibilityActionsHandled,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
 } from './rules/state.js';
+import {
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
+} from './rules/focus.js';
 import { colorContrast } from './rules/contrast.js';
 import { noOrientationLock } from './rules/expo-config.js';
 
@@ -35,6 +42,11 @@ export {
   accessibilityStateValid,
   liveRegionValid,
   noHiddenInteractive,
+  accessibilityActionsHandled,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
   colorContrast,
   noOrientationLock,
 };
@@ -54,6 +66,12 @@ export const nativeRules: Rule[] = [
   accessibilityStateValid,
   liveRegionValid,
   noHiddenInteractive,
+  accessibilityActionsHandled,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
+  // focus & reading order
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
   colorContrast,
   noOrientationLock,
 ];
