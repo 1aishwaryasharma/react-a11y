@@ -87,6 +87,26 @@ describe('engine', () => {
   });
 });
 
+describe('color and contrast', () => {
+  it('parses hex, rgb and named colors; rejects translucent and unknown', async () => {
+    const { parseColor, contrastRatio } = await import('@react-a11y/core');
+    expect(parseColor('#fff')).toEqual({ r: 255, g: 255, b: 255 });
+    expect(parseColor('#1a2b3c')).toEqual({ r: 26, g: 43, b: 60 });
+    expect(parseColor('rgb(0, 128, 0)')).toEqual({ r: 0, g: 128, b: 0 });
+    expect(parseColor('rgba(0,0,0,0.5)')).toBeNull();
+    expect(parseColor('#aabbcc80')).toBeNull();
+    expect(parseColor('var(--brand)')).toBeNull();
+    expect(parseColor('rebeccapurple')).toBeNull();
+    const ratio = contrastRatio({ r: 0, g: 0, b: 0 }, { r: 255, g: 255, b: 255 });
+    expect(ratio).toBeCloseTo(21, 0);
+  });
+
+  it('captures static text on elements', () => {
+    const { elements } = model(`const x = <button aria-label="Go">Submit {"now"}</button>;`);
+    expect(elements[0].directText).toBe('Submit now');
+  });
+});
+
 describe('glob matcher', () => {
   it('supports * and **', () => {
     expect(globToRegExp('**/*.stories.tsx').test('src/deep/Button.stories.tsx')).toBe(true);

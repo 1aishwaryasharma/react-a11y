@@ -3,8 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import pc from 'picocolors';
 import {
+  MANUAL_CHECKS,
   SEVERITY_ORDER,
   WCAG,
+  WCAG22_A_AA,
   WCAG22_TOTALS,
   detectPlatform,
   loadConfig,
@@ -124,12 +126,13 @@ function listRules(): void {
 }
 
 function printCoverage(): void {
-  const covered = new Map<string, { web: number; native: number }>();
+  const covered = new Map<string, { web: number; native: number; full: boolean }>();
   const count = (rules: Rule[], platform: 'web' | 'native') => {
     for (const rule of rules) {
       for (const sc of rule.meta.wcag) {
-        const entry = covered.get(sc) ?? { web: 0, native: 0 };
+        const entry = covered.get(sc) ?? { web: 0, native: 0, full: false };
         entry[platform]++;
+        if (!rule.meta.partial) entry.full = true;
         covered.set(sc, entry);
       }
     }
@@ -141,14 +144,23 @@ function printCoverage(): void {
     a.sc.localeCompare(b.sc, undefined, { numeric: true }),
   );
 
-  console.log(pc.bold(`\nWCAG 2.2 success criteria with at least one rule (${webRules.length} web + ${nativeRules.length} native rules)\n`));
+  console.log(pc.bold(`\nAutomated: WCAG 2.2 criteria with at least one rule (${webRules.length} web + ${nativeRules.length} native rules)\n`));
   for (const ref of refs) {
     const entry = covered.get(ref.sc)!;
     const packs = [entry.web ? `${entry.web} web` : null, entry.native ? `${entry.native} native` : null]
       .filter(Boolean)
       .join(', ');
+    const partialBadge = entry.full ? '' : pc.yellow(' ~partial');
     const newBadge = ref.version === '2.2' ? pc.cyan(' [new in 2.2]') : '';
-    console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(40)} ${ref.level.padEnd(4)} ${pc.dim(packs)}${newBadge}`);
+    console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(46)} ${ref.level.padEnd(4)} ${pc.dim(packs)}${partialBadge}${newBadge}`);
+  }
+
+  const manual = WCAG22_A_AA.filter((sc) => !covered.has(sc));
+  console.log(pc.bold('\nManual: A+AA criteria static analysis cannot decide — guided checklist\n'));
+  for (const sc of manual) {
+    const ref = WCAG[sc];
+    console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(46)} ${ref.level}`);
+    console.log(pc.dim(`          ${MANUAL_CHECKS[sc] ?? 'Verify manually.'}`));
   }
 
   const byLevel: Record<WcagLevel, number> = { A: 0, AA: 0, AAA: 0 };
@@ -158,15 +170,15 @@ function printCoverage(): void {
   const aPlusAaTotal = WCAG22_TOTALS.A + WCAG22_TOTALS.AA;
 
   console.log(pc.bold('\nCoverage'));
-  console.log(`  Level A    ${byLevel.A}/${WCAG22_TOTALS.A}  (${pct(byLevel.A, WCAG22_TOTALS.A)})`);
-  console.log(`  Level AA   ${byLevel.AA}/${WCAG22_TOTALS.AA}  (${pct(byLevel.AA, WCAG22_TOTALS.AA)})`);
-  console.log(`  Level AAA  ${byLevel.AAA}/${WCAG22_TOTALS.AAA}  (${pct(byLevel.AAA, WCAG22_TOTALS.AAA)})`);
-  console.log(pc.bold(`  A + AA     ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})  ← typical conformance target`));
-  console.log(`  All        ${refs.length}/${WCAG22_TOTALS.total}  (${pct(refs.length, WCAG22_TOTALS.total)})`);
+  console.log(`  Automated, Level A    ${byLevel.A}/${WCAG22_TOTALS.A}  (${pct(byLevel.A, WCAG22_TOTALS.A)})`);
+  console.log(`  Automated, Level AA   ${byLevel.AA}/${WCAG22_TOTALS.AA}  (${pct(byLevel.AA, WCAG22_TOTALS.AA)})`);
+  console.log(pc.bold(`  Automated, A + AA     ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})`));
+  console.log(pc.bold(`  Addressed, A + AA     ${aPlusAa + manual.length}/${aPlusAaTotal}  (${pct(aPlusAa + manual.length, aPlusAaTotal)})  ← automated + guided manual`));
+  console.log(`  Automated, all levels ${refs.length}/${WCAG22_TOTALS.total}  (${pct(refs.length, WCAG22_TOTALS.total)})`);
   console.log(pc.dim(
-    '\n  Many criteria (contrast, reflow, timing, audio description, …) are not\n' +
-    '  decidable from source code alone and need runtime or manual testing —\n' +
-    '  static analysis complements but does not replace an audit.',
+    '\n  "Addressed" means every Level A/AA criterion is either machine-checked\n' +
+    '  or has an explicit manual verification step above. No static tool can\n' +
+    '  fully automate criteria that depend on rendered output or judgment.',
   ));
 }
 

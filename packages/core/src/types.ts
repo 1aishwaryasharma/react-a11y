@@ -41,6 +41,12 @@ export interface RuleMeta {
   platforms: Platform[];
   /** WCAG success criterion numbers, resolved against the WCAG 2.2 table. */
   wcag: string[];
+  /**
+   * True when the rule checks only a statically-decidable slice of its
+   * criteria (e.g. contrast of inline literal styles). Coverage reporting
+   * marks these criteria as partially automated.
+   */
+  partial?: boolean;
   helpUrl?: string;
 }
 

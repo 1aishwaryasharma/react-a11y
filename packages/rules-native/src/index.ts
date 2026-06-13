@@ -18,6 +18,7 @@ import {
   liveRegionValid,
   noHiddenInteractive,
 } from './rules/state.js';
+import { colorContrast } from './rules/contrast.js';
 
 export {
   touchableHasLabel,
@@ -33,6 +34,7 @@ export {
   accessibilityStateValid,
   liveRegionValid,
   noHiddenInteractive,
+  colorContrast,
 };
 
 /** The recommended React Native / Expo preset. */
@@ -50,4 +52,5 @@ export const nativeRules: Rule[] = [
   accessibilityStateValid,
   liveRegionValid,
   noHiddenInteractive,
+  colorContrast,
 ];

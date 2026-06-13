@@ -110,6 +110,32 @@ export const noAccessKey = defineRule(
   },
 );
 
+/**
+ * WCAG 2.5.2: activating on down-events (mousedown/touchstart) means users
+ * cannot abort by sliding off the control before releasing.
+ */
+export const pointerCancellation = defineRule(
+  {
+    id: 'pointer-cancellation',
+    description: 'Do not trigger actions on mousedown/touchstart — use click/up events.',
+    severity: 'moderate',
+    wcag: ['2.5.2'],
+    partial: true,
+  },
+  (el, ctx) => {
+    if (el.isComponent || el.hasSpread) return;
+    if (el.name !== 'button' && el.name !== 'a') return;
+    const hasDown = hasAttr(el, 'onMouseDown') || hasAttr(el, 'onTouchStart');
+    const hasUp = hasAttr(el, 'onClick') || hasAttr(el, 'onMouseUp') || hasAttr(el, 'onTouchEnd') || hasAttr(el, 'onPointerUp');
+    if (hasDown && !hasUp) {
+      ctx.report({
+        el,
+        message: `<${el.name}> acts on a down-event only — users cannot cancel by sliding off before release. Move the action to onClick.`,
+      });
+    }
+  },
+);
+
 /** Removing the focus outline without a replacement hides keyboard position. */
 export const noOutlineNone = defineRule(
   {

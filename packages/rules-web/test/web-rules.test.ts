@@ -153,6 +153,40 @@ describe('aria values', () => {
   });
 });
 
+describe('contrast, label-in-name, pointer and order', () => {
+  it('color-contrast', () => {
+    expect(run(`<p style={{ color: '#999999', backgroundColor: '#ffffff', fontSize: 14 }}>Low</p>`)).toContain('color-contrast');
+    expect(run(`<p style={{ color: '#777777', backgroundColor: '#888888' }}>Bad</p>`)).toContain('color-contrast');
+    expect(run(`<p style={{ color: '#000000', backgroundColor: '#ffffff' }}>Fine</p>`)).not.toContain('color-contrast');
+    expect(run(`<p style={{ color: '#8a8a8a', backgroundColor: '#ffffff', fontSize: 14 }}>Small text needs 4.5</p>`)).toContain('color-contrast');
+    expect(run(`<p style={{ color: '#8a8a8a', backgroundColor: '#ffffff', fontSize: 28 }}>Large ok at 3:1+</p>`)).not.toContain('color-contrast');
+    expect(run(`<p style={{ color: theme.fg, backgroundColor: '#ffffff' }}>Dynamic</p>`)).not.toContain('color-contrast');
+  });
+  it('target-size', () => {
+    expect(run(`<button style={{ width: 16, height: 16 }} aria-label="Close">x</button>`)).toContain('target-size');
+    expect(run(`<button style={{ width: 48, height: 48 }} aria-label="Close">x</button>`)).not.toContain('target-size');
+  });
+  it('label-in-name', () => {
+    expect(run(`<button aria-label="Submit form">Send</button>`)).toContain('label-in-name');
+    expect(run(`<button aria-label="Send message now">Send</button>`)).not.toContain('label-in-name');
+    expect(run(`<button aria-label="Close">{label}</button>`)).not.toContain('label-in-name');
+  });
+  it('pointer-cancellation', () => {
+    expect(run(`<button onMouseDown={fire}>Fire</button>`)).toContain('pointer-cancellation');
+    expect(run(`<button onMouseDown={prime} onClick={fire}>Fire</button>`)).not.toContain('pointer-cancellation');
+  });
+  it('meaningful-order', () => {
+    expect(run(`<div style={{ order: 2 }}>Second?</div>`)).toContain('meaningful-order');
+    expect(run(`<div style={{ order: 0 }}>Normal</div>`)).not.toContain('meaningful-order');
+  });
+  it('error-identification and no-autocomplete-off', () => {
+    expect(run(`<input id="e" aria-invalid={hasError} />`)).toContain('error-identification');
+    expect(run(`<input id="e" aria-invalid={hasError} aria-describedby="e-err" />`)).not.toContain('error-identification');
+    expect(run(`<input id="e" type="email" autoComplete="off" />`)).toContain('no-autocomplete-off');
+    expect(run(`<input id="q" type="search" name="query" autoComplete="off" />`)).not.toContain('no-autocomplete-off');
+  });
+});
+
 describe('focus and media', () => {
   it('no-outline-none', () => {
     expect(run(`<button style={{ outline: 'none' }}>Save</button>`)).toContain('no-outline-none');

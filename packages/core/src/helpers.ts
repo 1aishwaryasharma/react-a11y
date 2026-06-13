@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import type { AttrValue, ElementNode } from './element.js';
+import { contrastRatio, isLargeText, parseColor } from './color.js';
 
 export function getAttr(el: ElementNode, name: string): AttrValue | undefined {
   return el.attrs.get(name);
@@ -103,6 +104,58 @@ export function inlineStyleValue(el: ElementNode, prop: string): string | number
 export function inlineStyleNumber(el: ElementNode, prop: string): number | undefined {
   const v = inlineStyleValue(el, prop);
   return typeof v === 'number' ? v : undefined;
+}
+
+/**
+ * The full visible text of an element, when it is entirely static. Returns
+ * null as soon as an expression child or component child makes the text
+ * unknowable. aria-hidden subtrees are excluded (they are not "visible
+ * label" for 2.5.3 purposes).
+ */
+export function deepStaticText(el: ElementNode): string | null {
+  if (el.hasExpressionChild) return null;
+  const parts: string[] = el.directText ? [el.directText] : [];
+  for (const child of el.childElements) {
+    if (isAriaHidden(child)) continue;
+    if (child.isComponent || child.hasSpread) return null;
+    const childText = deepStaticText(child);
+    if (childText === null) return null;
+    if (childText) parts.push(childText);
+  }
+  return parts.join(' ').replace(/\s+/g, ' ').trim();
+}
+
+export interface ContrastInfo {
+  ratio: number;
+  required: number;
+  large: boolean;
+  fontSizeKnown: boolean;
+  fg: string;
+  bg: string;
+}
+
+/**
+ * Contrast of statically-known inline color/backgroundColor on the same
+ * element. Null when either color is dynamic, unparseable or translucent.
+ */
+export function inlineStyleContrast(el: ElementNode): ContrastInfo | null {
+  const fgRaw = inlineStyleValue(el, 'color');
+  const bgRaw = inlineStyleValue(el, 'backgroundColor') ?? inlineStyleValue(el, 'background');
+  const fg = parseColor(fgRaw);
+  const bg = parseColor(bgRaw);
+  if (!fg || !bg) return null;
+  const fontSize = inlineStyleNumber(el, 'fontSize');
+  const weight = inlineStyleValue(el, 'fontWeight');
+  const bold = weight === 'bold' || weight === 700 || weight === '700' || weight === 800 || weight === '800' || weight === 900 || weight === '900';
+  const large = isLargeText(fontSize, bold);
+  return {
+    ratio: contrastRatio(fg, bg),
+    required: large ? 3 : 4.5,
+    large,
+    fontSizeKnown: fontSize !== undefined,
+    fg: String(fgRaw),
+    bg: String(bgRaw),
+  };
 }
 
 /** Statically-known keys of an object-literal prop, e.g. accessibilityState={{...}}. */

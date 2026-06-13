@@ -104,6 +104,11 @@ describe('component rules', () => {
     expect(run(`<Pressable accessibilityElementsHidden onPress={f}><Text>Buy</Text></Pressable>`)).toContain('no-hidden-interactive');
     expect(run(`<View accessibilityElementsHidden />`)).not.toContain('no-hidden-interactive');
   });
+  it('color-contrast on RN inline styles', () => {
+    expect(run(`<Text style={{ color: '#9aa0a6', backgroundColor: '#ffffff', fontSize: 13 }}>Hint</Text>`)).toContain('color-contrast');
+    expect(run(`<Text style={{ color: '#111111', backgroundColor: '#ffffff' }}>Body</Text>`)).not.toContain('color-contrast');
+    expect(run(`<Text style={styles.hint}>Dynamic</Text>`)).not.toContain('color-contrast');
+  });
   it('valid-accessibility-props catches typos', () => {
     const diags = analyze({
       code: `${RN_IMPORT}const x = <View accessibilitylabel="oops" />;`,

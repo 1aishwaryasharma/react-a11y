@@ -81,19 +81,23 @@ npx react-a11y --coverage
 
 ## Rules
 
-- **Web** — 36 rules covering alternative text, accessible names, ARIA 1.2
+- **Web** — 43 rules covering alternative text, accessible names, ARIA 1.2
   validity (attributes, values, roles, required context), document structure
   (headings, lists, tables, fieldsets), keyboard access and focus visibility,
-  forms (labels, autofill purpose, accessible authentication), media,
-  viewport zoom and document language. [Full list →](docs/rules/web.md)
-- **React Native** — 13 rules covering touchable labels/roles, nested
-  touchables, WCAG 2.5.8 touch-target size, images, text inputs, switches,
-  modal keyboard traps, live regions, state/value props and silent prop
-  typos. [Full list →](docs/rules/native.md)
+  color contrast and target size, label-in-name, pointer cancellation, forms
+  (labels, autofill purpose, error identification, accessible
+  authentication), media, viewport zoom and document language.
+  [Full list →](docs/rules/web.md)
+- **React Native** — 14 rules covering touchable labels/roles, nested
+  touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
+  inputs, switches, modal keyboard traps, live regions, state/value props and
+  silent prop typos. [Full list →](docs/rules/native.md)
 
-Run `npx react-a11y --coverage` for the current WCAG 2.2 success-criteria
-coverage (24 of 86 criteria have at least one rule; 23 of the 55 Level A+AA
-criteria — many criteria are inherently not decidable from source code).
+`npx react-a11y --coverage` reports WCAG 2.2 conformance posture: **29 of the
+55 Level A+AA criteria are automated (53%)**, and the remaining 26 — things
+like reflow, use of color, and consistent navigation that no static tool can
+decide — ship as a **guided manual checklist**, so all 55 A+AA criteria
+(100%) are addressed by either a rule or an explicit verification step.
 
 ## Architecture
 
@@ -143,11 +147,11 @@ node packages/cli/dist/index.js examples/native-demo
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 49 rules across 24 WCAG 2.2 success criteria
+- ~~Broader rule coverage~~ ✓ 57 rules; all 55 A+AA criteria addressed (53% automated + guided checklist)
+- ~~Color-contrast checks for statically-known styles~~ ✓ web + native
+- ~~Heading-order analysis~~ ✓ (landmark structure still open)
 - Autofixes for mechanical findings (redundant roles, casing typos)
 - Cross-file label resolution (`htmlFor` ↔ `id`)
-- Heading-order and landmark-structure analysis
-- Color-contrast checks for statically-known styles
 - `--changed` mode: scan only files in the current diff
 
 ## License

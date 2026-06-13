@@ -1,5 +1,7 @@
 import {
+  INTERACTIVE_ROLES,
   attrProvidesValue,
+  deepStaticText,
   hasAccessibleName,
   hasAttr,
   isAriaHidden,
@@ -150,6 +152,40 @@ export const htmlHasLang = defineRule(
       el,
       message: `<${el.name}> is missing a lang attribute, so screen readers may use the wrong speech synthesizer.`,
     });
+  },
+);
+
+const normalize = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N} ]/gu, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * WCAG 2.5.3: the visible label must be contained in the accessible name,
+ * or voice-control users saying the visible text cannot activate the control.
+ * Only fires when both the aria-label and the entire visible text are static.
+ */
+export const labelInName = defineRule(
+  {
+    id: 'label-in-name',
+    description: 'aria-label must contain the visible text of the control.',
+    severity: 'moderate',
+    wcag: ['2.5.3'],
+  },
+  (el, ctx) => {
+    const ariaLabel = staticString(el, 'aria-label');
+    if (!ariaLabel?.trim()) return;
+    const interactive =
+      isDomTag(el, 'button', 'a', 'summary') ||
+      INTERACTIVE_ROLES.has(staticString(el, 'role')?.trim() ?? '');
+    if (!interactive) return;
+    const visible = deepStaticText(el);
+    if (!visible) return; // dynamic or empty — can't compare
+    const label = normalize(ariaLabel);
+    const text = normalize(visible);
+    if (text && !label.includes(text)) {
+      ctx.report({
+        el,
+        message: `aria-label="${ariaLabel}" does not contain the visible text "${visible}" — voice-control users saying what they see cannot activate it.`,
+      });
+    }
   },
 );
 

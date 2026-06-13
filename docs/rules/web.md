@@ -41,6 +41,13 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | [autocomplete-valid](#autocomplete-valid) | moderate | 1.3.5 |
 | [input-button-has-name](#input-button-has-name) | serious | 4.1.2, 1.1.1 |
 | [accessible-authentication](#accessible-authentication) | serious | 3.3.8 |
+| [color-contrast](#color-contrast) | serious | 1.4.3 |
+| [target-size](#target-size) | serious | 2.5.8, 2.5.5 |
+| [label-in-name](#label-in-name) | moderate | 2.5.3 |
+| [pointer-cancellation](#pointer-cancellation) | moderate | 2.5.2 |
+| [error-identification](#error-identification) | moderate | 3.3.1 |
+| [no-autocomplete-off](#no-autocomplete-off) | moderate | 3.3.7, 1.3.5 |
+| [meaningful-order](#meaningful-order) | minor | 1.3.2, 2.4.3 |
 
 ## img-alt
 
@@ -236,3 +243,44 @@ input purpose stays unidentifiable to assistive technology (1.3.5).
 New in WCAG 2.2: `autoComplete="off"` on password fields blocks password
 managers, forcing transcription; `onPaste` handlers are flagged for review in
 case they block pasting.
+
+## color-contrast
+
+Computes the WCAG contrast ratio when `color` and `backgroundColor` are both
+inline literals (hex, rgb(), common named colors). Below 3:1 is serious;
+3:1–4.5:1 is flagged only when the font size is known to be small, so
+possibly-large text never false-positives. Dynamic styles, CSS classes and
+translucent colors are out of static reach — *partial* coverage of 1.4.3.
+
+## target-size
+
+Interactive elements with inline sizes below 24×24px violate WCAG 2.5.8
+(AA, new in 2.2); below 44×44px is a minor note (2.5.5 AAA).
+
+## label-in-name
+
+When the `aria-label` and the visible text are both static, the label must
+contain the text — voice-control users activate controls by saying what they
+see (2.5.3).
+
+## pointer-cancellation
+
+`onMouseDown`/`onTouchStart` as the only activation means users cannot abort
+by sliding off before release; actions belong on click/up events (2.5.2).
+
+## error-identification
+
+A control marked `aria-invalid` must reference an error description via
+`aria-describedby`/`aria-errormessage`, or screen readers announce "invalid"
+with no explanation (3.3.1).
+
+## no-autocomplete-off
+
+`autoComplete="off"` on personal-data fields (email, tel, name, address…)
+forces users to re-enter information (3.3.7, new in 2.2) and defeats input
+purpose identification (1.3.5).
+
+## meaningful-order
+
+Inline CSS `order` makes the visual sequence diverge from the DOM order that
+screen readers and Tab follow (1.3.2).

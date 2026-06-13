@@ -6,6 +6,7 @@ import {
   headingHasContent,
   iframeHasTitle,
   htmlHasLang,
+  labelInName,
   mediaHasCaptions,
   mediaNoAutoplay,
 } from './rules/names.js';
@@ -26,6 +27,7 @@ import {
   noAccessKey,
   noDistractingElements,
   noOutlineNone,
+  pointerCancellation,
 } from './rules/interactions.js';
 import {
   formControlHasLabel,
@@ -33,7 +35,10 @@ import {
   autocompleteValid,
   inputButtonHasName,
   accessibleAuthentication,
+  errorIdentification,
+  noAutocompleteOff,
 } from './rules/forms.js';
+import { colorContrast, targetSize } from './rules/contrast.js';
 import {
   langValid,
   metaViewportZoomable,
@@ -46,6 +51,7 @@ import {
   tableHasHeader,
   fieldsetHasLegend,
   ariaRequiredContext,
+  meaningfulOrder,
 } from './rules/structure.js';
 
 export {
@@ -85,6 +91,13 @@ export {
   tableHasHeader,
   fieldsetHasLegend,
   ariaRequiredContext,
+  meaningfulOrder,
+  labelInName,
+  pointerCancellation,
+  errorIdentification,
+  noAutocompleteOff,
+  colorContrast,
+  targetSize,
 };
 
 /** The recommended web preset: every rule, mapped to WCAG 2.2. */
@@ -132,4 +145,12 @@ export const webRules: Rule[] = [
   formControlHasLabel,
   autocompleteValid,
   accessibleAuthentication,
+  errorIdentification,
+  noAutocompleteOff,
+  // pointer, contrast & order
+  labelInName,
+  pointerCancellation,
+  colorContrast,
+  targetSize,
+  meaningfulOrder,
 ];

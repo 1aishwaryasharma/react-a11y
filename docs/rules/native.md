@@ -20,6 +20,7 @@ are assumed to be design-system wrappers and skipped.
 | [accessibility-state-valid](#accessibility-state-valid) | serious | 4.1.2 |
 | [live-region-valid](#live-region-valid) | serious | 4.1.3 |
 | [no-hidden-interactive](#no-hidden-interactive) | serious | 4.1.2, 1.3.1 |
+| [color-contrast](#color-contrast) | serious | 1.4.3 |
 
 ## touchable-has-label
 
@@ -101,3 +102,9 @@ announced (WCAG 4.1.3).
 A touchable or `TextInput` hidden from assistive technology
 (`accessibilityElementsHidden`, `importantForAccessibility="no"`, …) is still
 tappable — a control screen reader users cannot even discover.
+
+## color-contrast
+
+Computes the WCAG 1.4.3 contrast ratio when `color` and `backgroundColor` are
+inline literals on the same element. `StyleSheet.create` references and
+dynamic styles are skipped — *partial* coverage by design.

@@ -28,6 +28,8 @@ export interface ElementNode {
   childElements: ElementNode[];
   /** Direct non-whitespace JSX text child. */
   hasTextChild: boolean;
+  /** Concatenated direct JSX text, whitespace-collapsed. */
+  directText: string;
   /** Direct `{expression}` child. */
   hasExpressionChild: boolean;
   selfClosing: boolean;
@@ -122,6 +124,7 @@ export function buildFileModel(sf: ts.SourceFile): FileModel {
       parent,
       childElements: [],
       hasTextChild: false,
+      directText: '',
       hasExpressionChild: false,
       selfClosing,
       loc: {
@@ -137,13 +140,28 @@ export function buildFileModel(sf: ts.SourceFile): FileModel {
   }
 
   function markDirectChildren(children: ts.NodeArray<ts.JsxChild>, el: ElementNode): void {
+    const textParts: string[] = [];
     for (const child of children) {
       if (ts.isJsxText(child)) {
-        if (child.text.trim().length > 0) el.hasTextChild = true;
+        const text = child.text.replace(/\s+/g, ' ').trim();
+        if (text.length > 0) {
+          el.hasTextChild = true;
+          textParts.push(text);
+        }
       } else if (ts.isJsxExpression(child) && child.expression !== undefined) {
-        el.hasExpressionChild = true;
+        if (ts.isStringLiteralLike(child.expression)) {
+          // {"literal"} children are still static text
+          const text = child.expression.text.replace(/\s+/g, ' ').trim();
+          if (text.length > 0) {
+            el.hasTextChild = true;
+            textParts.push(text);
+          }
+        } else {
+          el.hasExpressionChild = true;
+        }
       }
     }
+    el.directText = textParts.join(' ');
   }
 
   function visit(node: ts.Node, parentEl: ElementNode | null): void {

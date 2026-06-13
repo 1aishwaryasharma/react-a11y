@@ -1,4 +1,5 @@
 import {
+  inlineStyleNumber,
   isAriaHidden,
   isPresentational,
   staticString,
@@ -124,6 +125,30 @@ export const fieldsetHasLegend = defineRule(
     const hasLegend = el.childElements.some((c) => c.name === 'legend' || c.isComponent);
     if (hasLegend) return;
     ctx.report({ el, message: '<fieldset> has no <legend> — screen readers announce the controls without their group name.' });
+  },
+);
+
+/**
+ * WCAG 1.3.2: CSS `order` makes visual order diverge from DOM order, which
+ * is what screen readers and the tab sequence follow.
+ */
+export const meaningfulOrder = defineRule(
+  {
+    id: 'meaningful-order',
+    description: 'Avoid CSS order — it desynchronizes visual order from reading/tab order.',
+    severity: 'minor',
+    wcag: ['1.3.2', '2.4.3'],
+    partial: true,
+  },
+  (el, ctx) => {
+    if (el.isComponent) return;
+    const order = inlineStyleNumber(el, 'order');
+    if (order !== undefined && order !== 0) {
+      ctx.report({
+        el,
+        message: `Inline style order: ${order} reorders content visually while screen readers and Tab follow DOM order — verify the reading sequence still makes sense.`,
+      });
+    }
   },
 );
 
