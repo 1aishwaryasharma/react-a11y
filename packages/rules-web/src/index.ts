@@ -1,63 +1,13 @@
 import type { Rule } from '@react-a11y/core';
+import { buttonHasName, labelInName, mediaNoAutoplay } from './rules/names.js';
+import { pointerCancellation, noOutlineNone } from './rules/interactions.js';
 import {
-  imgAlt,
-  anchorHasContent,
-  anchorAmbiguousText,
-  buttonHasName,
-  headingHasContent,
-  iframeHasTitle,
-  htmlHasLang,
-  labelInName,
-  mediaHasCaptions,
-  mediaNoAutoplay,
-} from './rules/names.js';
-import {
-  ariaAttrsValid,
-  ariaAttrValueValid,
-  roleValid,
-  ariaRequiredAttrs,
-  ariaHiddenFocusable,
-  roleSupportsAriaProps,
-  ariaUnsupportedElements,
-  ariaActivedescendantHasTabindex,
-  noRedundantRoles,
-  scopeOnTh,
-} from './rules/aria.js';
-import {
-  noStaticElementInteractions,
-  clickEventsHaveKeyEvents,
-  mouseEventsHaveKeyEvents,
-  noPositiveTabindex,
-  noAutofocus,
-  noAccessKey,
-  noDistractingElements,
-  noOutlineNone,
-  pointerCancellation,
-} from './rules/interactions.js';
-import {
-  interactiveSupportsFocus,
-  noNoninteractiveElementInteractions,
-  noInteractiveElementToNoninteractiveRole,
-  noNoninteractiveElementToInteractiveRole,
-  noNoninteractiveTabindex,
-  preferTagOverRole,
-} from './rules/roles.js';
-import {
-  formControlHasLabel,
-  anchorIsValid,
-  autocompleteValid,
   inputButtonHasName,
   accessibleAuthentication,
   errorIdentification,
   noAutocompleteOff,
 } from './rules/forms.js';
-import { colorContrast, targetSize } from './rules/contrast.js';
-import {
-  langValid,
-  metaViewportZoomable,
-  noMetaRefresh,
-  titleHasContent,
-} from './rules/document.js';
+import { metaViewportZoomable, noMetaRefresh, titleHasContent } from './rules/document.js';
 import {
   headingOrder,
   listStructure,
@@ -67,49 +17,20 @@ import {
   meaningfulOrder,
   noDuplicateMain,
 } from './rules/structure.js';
+import { colorContrast, targetSize } from './rules/contrast.js';
 
 export { createLabelForPass } from './project/labels.js';
 
 export {
-  imgAlt,
-  anchorHasContent,
-  anchorAmbiguousText,
   buttonHasName,
-  headingHasContent,
-  iframeHasTitle,
-  htmlHasLang,
-  mediaHasCaptions,
+  labelInName,
   mediaNoAutoplay,
-  ariaAttrsValid,
-  ariaAttrValueValid,
-  roleValid,
-  ariaRequiredAttrs,
-  ariaHiddenFocusable,
-  roleSupportsAriaProps,
-  ariaUnsupportedElements,
-  ariaActivedescendantHasTabindex,
-  noRedundantRoles,
-  scopeOnTh,
-  noStaticElementInteractions,
-  clickEventsHaveKeyEvents,
-  mouseEventsHaveKeyEvents,
-  noPositiveTabindex,
-  noAutofocus,
-  noAccessKey,
-  noDistractingElements,
+  pointerCancellation,
   noOutlineNone,
-  interactiveSupportsFocus,
-  noNoninteractiveElementInteractions,
-  noInteractiveElementToNoninteractiveRole,
-  noNoninteractiveElementToInteractiveRole,
-  noNoninteractiveTabindex,
-  preferTagOverRole,
-  formControlHasLabel,
-  anchorIsValid,
-  autocompleteValid,
   inputButtonHasName,
   accessibleAuthentication,
-  langValid,
+  errorIdentification,
+  noAutocompleteOff,
   metaViewportZoomable,
   noMetaRefresh,
   titleHasContent,
@@ -120,19 +41,15 @@ export {
   ariaRequiredContext,
   meaningfulOrder,
   noDuplicateMain,
-  labelInName,
-  pointerCancellation,
-  errorIdentification,
-  noAutocompleteOff,
   colorContrast,
   targetSize,
 };
 
 /**
- * The default web preset — the WCAG 2.2 criteria, document structure, focus
+ * The web rule pack — the WCAG 2.2 criteria, document structure, focus
  * visibility and project-aware checks that eslint-plugin-jsx-a11y does NOT
- * cover. Pair this with eslint-plugin-jsx-a11y, which owns the rest (see
- * `webRulesJsxA11yOverlap`).
+ * cover. Pair this with eslint-plugin-jsx-a11y, which owns the standard web
+ * a11y rules (alt text, ARIA validity, role/element semantics, …).
  */
 export const webRules: Rule[] = [
   // names jsx-a11y lacks
@@ -167,56 +84,11 @@ export const webRules: Rule[] = [
 ];
 
 /**
- * Rules that duplicate eslint-plugin-jsx-a11y, the canonical implementation.
- * OFF by default — enable (via `webRulesAll` / CLI `--full`) only if you are
- * not already running jsx-a11y, to avoid double-reporting.
+ * WCAG 2.2 A/AA success criteria that eslint-plugin-jsx-a11y covers. react-a11y
+ * defers these to jsx-a11y (run it in your ESLint config), so the conformance
+ * report can attribute them rather than counting them as gaps.
  */
-export const webRulesJsxA11yOverlap: Rule[] = [
-  // names & alternatives
-  imgAlt,
-  anchorHasContent,
-  anchorAmbiguousText,
-  anchorIsValid,
-  headingHasContent,
-  iframeHasTitle,
-  // document
-  htmlHasLang,
-  langValid,
-  // media
-  mediaHasCaptions,
-  // aria
-  ariaAttrsValid,
-  ariaAttrValueValid,
-  roleValid,
-  ariaRequiredAttrs,
-  ariaHiddenFocusable,
-  roleSupportsAriaProps,
-  ariaUnsupportedElements,
-  ariaActivedescendantHasTabindex,
-  noRedundantRoles,
-  scopeOnTh,
-  // roles & semantics
-  interactiveSupportsFocus,
-  noNoninteractiveElementInteractions,
-  noInteractiveElementToNoninteractiveRole,
-  noNoninteractiveElementToInteractiveRole,
-  noNoninteractiveTabindex,
-  preferTagOverRole,
-  // interactions & focus
-  noStaticElementInteractions,
-  clickEventsHaveKeyEvents,
-  mouseEventsHaveKeyEvents,
-  noPositiveTabindex,
-  noAutofocus,
-  noAccessKey,
-  noDistractingElements,
-  // forms
-  formControlHasLabel,
-  autocompleteValid,
+export const JSX_A11Y_COVERED_WCAG: string[] = [
+  '1.1.1', '1.2.2', '1.3.1', '1.3.5', '2.1.1', '2.2.2', '2.4.3', '2.4.4',
+  '2.4.6', '3.1.1', '3.1.2', '3.2.1', '3.3.2', '4.1.2',
 ];
-
-/**
- * Every web rule, including the jsx-a11y overlap. Use this for a standalone
- * scan when jsx-a11y is not part of the project.
- */
-export const webRulesAll: Rule[] = [...webRules, ...webRulesJsxA11yOverlap];

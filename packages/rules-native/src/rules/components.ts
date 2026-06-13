@@ -91,9 +91,13 @@ export const modalHasRequestClose = defineRule(
   },
 );
 
-/** Valid values for accessibilityRole, per the React Native docs. */
-const RN_ROLES = new Set([
-  'none', 'button', 'togglebutton', 'link', 'search', 'image', 'keyboardkey',
+/**
+ * Valid values for accessibilityRole, per the React Native docs. A superset of
+ * eslint-plugin-react-native-a11y's role list (we add RN's Android-only roles),
+ * kept in sync by the parity test in test/upstream-parity.test.ts.
+ */
+export const RN_ROLES = new Set([
+  'none', 'button', 'togglebutton', 'link', 'search', 'image', 'img', 'keyboardkey',
   'text', 'adjustable', 'imagebutton', 'header', 'summary', 'alert',
   'checkbox', 'combobox', 'menu', 'menubar', 'menuitem', 'progressbar',
   'radio', 'radiogroup', 'scrollbar', 'spinbutton', 'switch', 'tab',

@@ -1,26 +1,6 @@
 import { staticString } from '@react-a11y/core';
 import { defineRule, isDomTag } from '../util.js';
 
-const BCP47ISH = /^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/;
-
-/** lang values must be well-formed BCP 47 tags or screen readers ignore them. */
-export const langValid = defineRule(
-  {
-    id: 'lang-valid',
-    description: 'lang attributes must be well-formed language tags.',
-    severity: 'serious',
-    wcag: ['3.1.1', '3.1.2'],
-  },
-  (el, ctx) => {
-    if (el.isComponent) return;
-    const lang = staticString(el, 'lang');
-    if (lang === undefined) return;
-    if (lang.trim() === '' || !BCP47ISH.test(lang.trim())) {
-      ctx.report({ el, message: `lang="${lang}" is not a valid language tag (e.g. "en", "en-US", "hi").` });
-    }
-  },
-);
-
 /** Blocking pinch-zoom prevents low-vision users from reading the page. */
 export const metaViewportZoomable = defineRule(
   {

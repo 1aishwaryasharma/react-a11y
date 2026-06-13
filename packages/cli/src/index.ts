@@ -23,7 +23,7 @@ import {
   type Severity,
   type WcagLevel,
 } from '@react-a11y/core';
-import { createLabelForPass, webRules, webRulesAll, webRulesJsxA11yOverlap } from '@react-a11y/rules-web';
+import { createLabelForPass, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 import { printPretty } from './pretty.js';
 
@@ -43,16 +43,16 @@ ${pc.bold('Options')}
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
   --fix                          Apply safe mechanical fixes, then report what remains
   --changed                      Scan only files changed in git (vs HEAD, incl. untracked)
-  --full                         (web) Also run the rules that overlap eslint-plugin-jsx-a11y
   --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
   --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
   --help                         Show this help
 
 ${pc.bold('Web a11y')}
-  By default the web pack runs only what eslint-plugin-jsx-a11y does NOT cover
-  (WCAG 2.2 criteria, structure, focus visibility, project-wide checks). Run
-  jsx-a11y in your ESLint config for the rest, or pass --full to include it here.
+  The web pack runs only what eslint-plugin-jsx-a11y does NOT cover (WCAG 2.2
+  criteria, structure, focus visibility, project-wide checks). Run jsx-a11y in
+  your ESLint config for standard web a11y; react-a11y covers the gaps and the
+  React Native + conformance story.
 
 ${pc.bold('Config')}
   react-a11y.config.json / .react-a11yrc.json / package.json "react-a11y" key:
@@ -69,7 +69,6 @@ interface CliArgs {
   coverage: boolean;
   fix: boolean;
   changed: boolean;
-  full: boolean;
 }
 
 function fail(msg: string): never {
@@ -80,7 +79,7 @@ function fail(msg: string): never {
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious',
-    listRules: false, coverage: false, fix: false, changed: false, full: false,
+    listRules: false, coverage: false, fix: false, changed: false,
   };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -127,9 +126,6 @@ function parseArgs(argv: string[]): CliArgs {
       case '--changed':
         args.changed = true;
         break;
-      case '--full':
-        args.full = true;
-        break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
         paths.push(arg);
@@ -149,8 +145,7 @@ function listRules(): void {
       );
     }
   };
-  print(`Web rules — default, complement eslint-plugin-jsx-a11y (${webRules.length})`, webRules);
-  print(`Web rules — overlap eslint-plugin-jsx-a11y, off unless --full (${webRulesJsxA11yOverlap.length})`, webRulesJsxA11yOverlap);
+  print(`Web rules — complement eslint-plugin-jsx-a11y (${webRules.length})`, webRules);
   print(`React Native rules (${nativeRules.length})`, nativeRules);
 }
 
@@ -209,15 +204,14 @@ function printCoverage(): void {
       }
     }
   };
-  count(webRulesAll, 'web');
+  count(webRules, 'web');
   count(nativeRules, 'native');
 
   const refs = [...covered.keys()].map((sc) => WCAG[sc]).sort((a, b) =>
     a.sc.localeCompare(b.sc, undefined, { numeric: true }),
   );
 
-  console.log(pc.bold(`\nAutomated: WCAG 2.2 criteria with at least one rule (${webRulesAll.length} web + ${nativeRules.length} native rules)\n`));
-  console.log(pc.dim(`(Web counts include the ${webRulesJsxA11yOverlap.length} rules that overlap eslint-plugin-jsx-a11y; the default scan defers those to jsx-a11y — use --full to run them here.)\n`));
+  console.log(pc.bold(`\nAutomated by react-a11y: WCAG 2.2 criteria with at least one rule (${webRules.length} web + ${nativeRules.length} native rules)\n`));
   for (const ref of refs) {
     const entry = covered.get(ref.sc)!;
     const packs = [entry.web ? `${entry.web} web` : null, entry.native ? `${entry.native} native` : null]
@@ -228,7 +222,16 @@ function printCoverage(): void {
     console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(46)} ${ref.level.padEnd(4)} ${pc.dim(packs)}${partialBadge}${newBadge}`);
   }
 
-  const manual = WCAG22_A_AA.filter((sc) => !covered.has(sc));
+  // Criteria deferred to eslint-plugin-jsx-a11y (run it alongside react-a11y).
+  const deferred = JSX_A11Y_COVERED_WCAG.filter((sc) => !covered.has(sc) && WCAG22_A_AA.includes(sc));
+  console.log(pc.bold('\nCovered by eslint-plugin-jsx-a11y: run it in your ESLint config\n'));
+  for (const sc of deferred.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))) {
+    const ref = WCAG[sc];
+    console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(46)} ${ref.level}`);
+  }
+
+  const handled = new Set([...covered.keys(), ...deferred]);
+  const manual = WCAG22_A_AA.filter((sc) => !handled.has(sc));
   console.log(pc.bold('\nManual: A+AA criteria static analysis cannot decide — guided checklist\n'));
   for (const sc of manual) {
     const ref = WCAG[sc];
@@ -241,17 +244,16 @@ function printCoverage(): void {
   const pct = (n: number, total: number) => `${Math.round((n / total) * 100)}%`;
   const aPlusAa = byLevel.A + byLevel.AA;
   const aPlusAaTotal = WCAG22_TOTALS.A + WCAG22_TOTALS.AA;
+  const withJsx = WCAG22_A_AA.filter((sc) => handled.has(sc)).length;
 
-  console.log(pc.bold('\nCoverage'));
-  console.log(`  Automated, Level A    ${byLevel.A}/${WCAG22_TOTALS.A}  (${pct(byLevel.A, WCAG22_TOTALS.A)})`);
-  console.log(`  Automated, Level AA   ${byLevel.AA}/${WCAG22_TOTALS.AA}  (${pct(byLevel.AA, WCAG22_TOTALS.AA)})`);
-  console.log(pc.bold(`  Automated, A + AA     ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})`));
-  console.log(pc.bold(`  Addressed, A + AA     ${aPlusAa + manual.length}/${aPlusAaTotal}  (${pct(aPlusAa + manual.length, aPlusAaTotal)})  ← automated + guided manual`));
-  console.log(`  Automated, all levels ${refs.length}/${WCAG22_TOTALS.total}  (${pct(refs.length, WCAG22_TOTALS.total)})`);
+  console.log(pc.bold('\nCoverage (Level A + AA)'));
+  console.log(`  Automated by react-a11y   ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})`);
+  console.log(`  + eslint-plugin-jsx-a11y  ${withJsx}/${aPlusAaTotal}  (${pct(withJsx, aPlusAaTotal)})  ← when run alongside`);
+  console.log(pc.bold(`  Addressed                 ${withJsx + manual.length}/${aPlusAaTotal}  (${pct(withJsx + manual.length, aPlusAaTotal)})  ← automated + jsx-a11y + guided manual`));
   console.log(pc.dim(
-    '\n  "Addressed" means every Level A/AA criterion is either machine-checked\n' +
-    '  or has an explicit manual verification step above. No static tool can\n' +
-    '  fully automate criteria that depend on rendered output or judgment.',
+    '\n  react-a11y covers the WCAG 2.2 / structure / RN / project-wide criteria;\n' +
+    '  eslint-plugin-jsx-a11y covers standard web a11y; the rest need the manual\n' +
+    '  checklist. Run both linters for full Level A+AA coverage.',
   ));
 }
 
@@ -270,7 +272,7 @@ function main(): void {
   const config = loadConfig(args.root);
   const platform: Platform =
     args.platform !== 'auto' ? args.platform : config.platform ?? detectPlatform(args.root);
-  const rules = platform === 'native' ? nativeRules : args.full ? webRulesAll : webRules;
+  const rules = platform === 'native' ? nativeRules : webRules;
   const files = args.changed ? changedFiles(args.root) : undefined;
   // Cross-file passes need the whole project; skip them on partial scans.
   // Passes are stateful, so each scan gets fresh instances.

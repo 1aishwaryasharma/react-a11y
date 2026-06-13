@@ -34,9 +34,9 @@ src/screens/Profile.tsx
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — each
   mapped to a success criterion with a link to the W3C Understanding page.
-- **Complements eslint-plugin-jsx-a11y, doesn't fight it.** The default web pack
-  excludes everything jsx-a11y already does, so the two run together cleanly.
-  (`--full` runs the overlap too, if you're not using jsx-a11y.)
+- **Complements eslint-plugin-jsx-a11y, doesn't fight it.** The web pack
+  contains none of the rules jsx-a11y already does, so the two run together with
+  no double-reporting — run both for full Level A+AA web coverage.
 - **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
   cross-file checks (label resolution, duplicate landmarks) that per-file ESLint
   rules structurally can't do.
@@ -60,14 +60,11 @@ npx @react-a11y/cli . --format sarif --output a11y.sarif   # GitHub code scannin
 # gate CI: exit 1 when serious or critical issues exist (default)
 npx @react-a11y/cli . --fail-on serious
 
-# apply safe mechanical fixes (ARIA casing, redundant roles, RN prop typos, …)
+# apply safe mechanical fixes (e.g. miscapitalized React Native accessibility props)
 npx @react-a11y/cli . --fix
 
 # scan only files changed in git — fast PR checks
 npx @react-a11y/cli . --changed
-
-# include the web rules that overlap jsx-a11y (if you don't run jsx-a11y)
-npx @react-a11y/cli . --full
 
 # see every rule with severity + WCAG mapping
 npx @react-a11y/cli --list-rules
@@ -79,11 +76,11 @@ npx @react-a11y/cli --coverage
 ### How it fits with eslint-plugin-jsx-a11y
 
 For **web**, keep running `eslint-plugin-jsx-a11y` in your ESLint config — it's
-the canonical implementation of the standard web a11y rules. react-a11y's
-default web pack deliberately runs only what jsx-a11y doesn't (the WCAG 2.2
-criteria, document structure, focus visibility, and project-wide checks), so the
-two don't double-report. If you're *not* using jsx-a11y, pass `--full` to run
-the overlapping rules here too.
+the canonical implementation of the standard web a11y rules. react-a11y's web
+pack deliberately contains only what jsx-a11y doesn't (the WCAG 2.2 criteria,
+document structure, focus visibility, and project-wide checks), so the two don't
+double-report. Run **both** for full Level A+AA web coverage — see the
+[CI example](#ci-github-actions) below.
 
 For **React Native**, there's no equivalent — react-a11y is the whole story.
 
@@ -160,11 +157,30 @@ project:
 
 ### CI (GitHub Actions)
 
+Run react-a11y next to your existing `eslint-plugin-jsx-a11y` setup — together
+they cover Level A+AA web a11y, and react-a11y adds React Native:
+
 ```yaml
-- run: npx @react-a11y/cli . --format sarif --output a11y.sarif --fail-on none
+- name: ESLint (incl. eslint-plugin-jsx-a11y) — standard web a11y
+  run: npx eslint .
+
+- name: react-a11y — WCAG 2.2, React Native, project-wide
+  run: npx @react-a11y/cli . --format sarif --output a11y.sarif --fail-on none
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: a11y.sarif
+```
+
+The matching ESLint config (`eslint-plugin-jsx-a11y` owns the web rules
+react-a11y intentionally omits):
+
+```js
+// eslint.config.js
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+
+export default [
+  jsxA11y.flatConfigs.recommended, // alt-text, aria-*, role semantics, …
+];
 ```
 
 ### Configuration
@@ -184,14 +200,13 @@ project:
 
 ## Rules
 
-- **Web** — 55 rules total, split into two presets. The **default** 21 are the
-  ones jsx-a11y doesn't cover: color contrast, target size, label-in-name,
-  pointer cancellation, viewport zoom, meta-refresh, reading order, document
-  structure (heading order, lists, tables, fieldsets, duplicate landmarks),
-  focus visibility, required-context, and the WCAG 2.2 form criteria (error
-  identification, accessible authentication, autocomplete-off). The other 34
-  **overlap eslint-plugin-jsx-a11y** and are off unless you pass `--full`.
-  [Full list →](docs/rules/web.md)
+- **Web** — 21 rules, none of which overlap eslint-plugin-jsx-a11y: color
+  contrast, target size, label-in-name, pointer cancellation, viewport zoom,
+  meta-refresh, reading order, document structure (heading order, lists, tables,
+  fieldsets, duplicate landmarks), focus visibility, ARIA required-context, the
+  WCAG 2.2 form criteria (error identification, accessible authentication,
+  autocomplete-off), and a project-wide cross-file label check ESLint can't do.
+  Run jsx-a11y for the standard web rules. [Full list →](docs/rules/web.md)
 - **React Native** — 20 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
   inputs, switches, modal keyboard traps, live regions, state/value props,
@@ -201,22 +216,22 @@ project:
   project config (app.json, AndroidManifest, Info.plist).
   [Full list →](docs/rules/native.md)
 
-`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **31 of the 55
-Level A+AA criteria are checked automatically (56%)**, counting both the default
-pack and the jsx-a11y-overlap rules the tool ships (the default scan defers the
-overlap to jsx-a11y). The remaining 24 — things like reflow, use of color, and
-consistent navigation that a static tool cannot decide — are listed as a manual
-checklist, so all 55 A+AA criteria are addressed by either a rule or an explicit
-verification step.
+`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: react-a11y
+automates **25 of the 55 Level A+AA criteria (45%)** on its own, and **31/55
+(56%)** when run alongside eslint-plugin-jsx-a11y. The remaining 24 — things
+like reflow, use of color, and consistent navigation that a static tool cannot
+decide — are listed as a manual checklist, so all 55 A+AA criteria are addressed
+by a rule (here or in jsx-a11y) or an explicit verification step.
 
 ## Architecture
 
 ```
 packages/
   core/           @react-a11y/core — parsing (TS compiler API), normalized JSX
-                  element model, rule engine, WCAG 2.2 + ARIA 1.2 metadata,
-                  JSON/SARIF reporters. Platform-agnostic.
-  rules-web/      @react-a11y/rules-web — WCAG-mapped rules for React DOM
+                  element model, rule engine, WCAG 2.2 metadata, JSON/SARIF
+                  reporters. Platform-agnostic.
+  rules-web/      @react-a11y/rules-web — the WCAG 2.2 / structure / focus rules
+                  jsx-a11y doesn't cover (complement, not replacement)
   rules-native/   @react-a11y/rules-native — rules for React Native/Expo
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
   vscode/         react-a11y-vscode — VS Code extension: live diagnostics,
@@ -274,9 +289,20 @@ npm run release                                           # build + test + publi
 flag is needed. The VS Code extension (`packages/vscode`) is `private` and
 ships as a `.vsix`, not to npm.
 
+### Staying current with upstream a11y vocabulary
+
+Deferring standard web rules to `eslint-plugin-jsx-a11y` removed almost all of
+the vocabulary this project has to keep in sync — jsx-a11y and `aria-query` now
+own that surface. The one curated list that still mirrors an upstream is the
+React Native `accessibilityRole` set (`RN_ROLES`). A parity test
+(`packages/rules-native/test/upstream-parity.test.ts`) reads the role list out
+of `eslint-plugin-react-native-a11y` (a devDependency) and fails if it accepts a
+role we don't — so when React Native adds one, the test names it. Keep the
+devDependency current (e.g. with Renovate) and that test is the drift signal.
+
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 75 rules (55 web + 20 native); all 55 A+AA criteria addressed (automated + manual checklist)
+- ~~Broader rule coverage~~ ✓ 41 rules (21 web + 20 native), zero overlap with jsx-a11y; all 55 A+AA criteria addressed (react-a11y + jsx-a11y + manual checklist)
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)

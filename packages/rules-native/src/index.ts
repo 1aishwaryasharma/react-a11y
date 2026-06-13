@@ -13,6 +13,8 @@ import {
   validAccessibilityRole,
   validAccessibilityProps,
 } from './rules/components.js';
+
+export { RN_ROLES } from './rules/components.js';
 import {
   accessibilityStateValid,
   liveRegionValid,
