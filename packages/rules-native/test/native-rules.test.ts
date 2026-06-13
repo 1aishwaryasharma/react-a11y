@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyze } from '@react-a11y/core';
+import { analyze, applyFixes } from '@react-a11y/core';
 import { nativeRules } from '@react-a11y/rules-native';
 
 const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, TouchableOpacity } from 'react-native';\n`;
@@ -115,5 +115,13 @@ describe('component rules', () => {
       filename: 'App.tsx', platform: 'native', rules: nativeRules,
     });
     expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
+  });
+  it('autofixes miscapitalized accessibility props', () => {
+    const code = `${RN_IMPORT}const x = <View accessibilitylabel="profile" />;`;
+    const diags = analyze({ code, filename: 'App.tsx', platform: 'native', rules: nativeRules });
+    const fixes = diags.filter((d) => d.fix).map((d) => d.fix!);
+    expect(fixes).toHaveLength(1);
+    const { output } = applyFixes(code, fixes);
+    expect(output).toContain(`accessibilityLabel="profile"`);
   });
 });

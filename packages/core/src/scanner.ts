@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { analyze } from './engine.js';
+import { analyzeModel } from './engine.js';
+import { buildFileModel } from './element.js';
+import { parseSource } from './parse.js';
 import { globToRegExp } from './config.js';
-import type { A11yConfig, Diagnostic, Platform, Rule, ScanResult } from './types.js';
+import type { A11yConfig, Diagnostic, Platform, ProjectPass, Rule, ScanResult } from './types.js';
 
 const SCAN_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
 
@@ -18,6 +20,10 @@ export interface ScanOptions {
   rules: Rule[];
   platform: Platform;
   config?: A11yConfig;
+  /** Cross-file analyses run alongside the per-file rules. */
+  projectPasses?: ProjectPass[];
+  /** Restrict the scan to these files (e.g. --changed); still extension-filtered. */
+  files?: string[];
 }
 
 /** Detect web vs native from package.json dependencies. */
@@ -66,9 +72,14 @@ export function collectFiles(root: string, ignore: string[] = []): string[] {
 }
 
 export function scanProject(options: ScanOptions): ScanResult {
-  const { root, rules, platform, config = {} } = options;
+  const { root, rules, platform, config = {}, projectPasses = [] } = options;
   const started = performance.now();
-  const files = collectFiles(root, config.ignore ?? []);
+  const files = options.files
+    ? options.files
+        .map((f) => (path.isAbsolute(f) ? f : path.resolve(root, f)))
+        .filter((f) => SCAN_EXTENSIONS.has(path.extname(f)) && !f.endsWith('.d.ts') && fs.existsSync(f))
+        .sort()
+    : collectFiles(root, config.ignore ?? []);
   const diagnostics: Diagnostic[] = [];
 
   for (const file of files) {
@@ -81,16 +92,14 @@ export function scanProject(options: ScanOptions): ScanResult {
     }
     // Fast pre-filter: skip files with no JSX-ish content.
     if (!code.includes('<')) continue;
-    diagnostics.push(
-      ...analyze({
-        code,
-        filename: path.relative(root, file).split(path.sep).join('/') || path.basename(file),
-        platform,
-        rules,
-        ruleSettings: config.rules,
-      }),
-    );
+    const filename = path.relative(root, file).split(path.sep).join('/') || path.basename(file);
+    const model = buildFileModel(parseSource(code, filename));
+    diagnostics.push(...analyzeModel(model, { filename, platform, rules, ruleSettings: config.rules }));
+    for (const pass of projectPasses) pass.collect(model, filename);
   }
+
+  for (const pass of projectPasses) diagnostics.push(...pass.finalize());
+  diagnostics.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column);
 
   return {
     diagnostics,

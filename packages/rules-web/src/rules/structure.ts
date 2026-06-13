@@ -129,6 +129,34 @@ export const fieldsetHasLegend = defineRule(
 );
 
 /**
+ * <main> must be unique: it is the screen reader's "skip to content" target,
+ * and duplicates make landmark navigation ambiguous.
+ */
+export const noDuplicateMain: Rule = {
+  meta: {
+    id: 'no-duplicate-main',
+    description: 'A page must have only one <main> landmark.',
+    severity: 'moderate',
+    platforms: ['web'],
+    wcag: ['1.3.1', '2.4.1'],
+    partial: true,
+  },
+  create(ctx: RuleContext) {
+    let seen = false;
+    return {
+      element(el: ElementNode) {
+        const isMain = (!el.isComponent && el.name === 'main') || staticString(el, 'role')?.trim() === 'main';
+        if (!isMain) return;
+        if (seen) {
+          ctx.report({ el, message: 'Multiple <main> landmarks — screen reader users cannot tell which one is the page content.' });
+        }
+        seen = true;
+      },
+    };
+  },
+};
+
+/**
  * WCAG 1.3.2: CSS `order` makes visual order diverge from DOM order, which
  * is what screen readers and the tab sequence follow.
  */

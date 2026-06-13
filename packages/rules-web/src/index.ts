@@ -52,7 +52,10 @@ import {
   fieldsetHasLegend,
   ariaRequiredContext,
   meaningfulOrder,
+  noDuplicateMain,
 } from './rules/structure.js';
+
+export { createLabelForPass } from './project/labels.js';
 
 export {
   imgAlt,
@@ -92,6 +95,7 @@ export {
   fieldsetHasLegend,
   ariaRequiredContext,
   meaningfulOrder,
+  noDuplicateMain,
   labelInName,
   pointerCancellation,
   errorIdentification,
@@ -133,6 +137,7 @@ export const webRules: Rule[] = [
   listStructure,
   tableHasHeader,
   fieldsetHasLegend,
+  noDuplicateMain,
   // interactions & focus
   noStaticElementInteractions,
   mouseEventsHaveKeyEvents,

@@ -1,8 +1,8 @@
 import ts from 'typescript';
 
 export type AttrValue =
-  | { kind: 'static'; value: string | number | boolean | null | undefined }
-  | { kind: 'expression'; text: string; node?: ts.Expression };
+  | { kind: 'static'; value: string | number | boolean | null | undefined; attrNode?: ts.JsxAttribute }
+  | { kind: 'expression'; text: string; node?: ts.Expression; attrNode?: ts.JsxAttribute };
 
 export interface SourceLocation {
   line: number;
@@ -110,7 +110,9 @@ export function buildFileModel(sf: ts.SourceFile): FileModel {
       if (ts.isJsxSpreadAttribute(prop)) {
         hasSpread = true;
       } else if (ts.isJsxAttribute(prop)) {
-        attrs.set(prop.name.getText(sf), attrValue(prop.initializer));
+        const value = attrValue(prop.initializer);
+        value.attrNode = prop;
+        attrs.set(prop.name.getText(sf), value);
       }
     }
     const start = sf.getLineAndCharacterOfPosition(opening.getStart(sf));

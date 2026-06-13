@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analyze } from '@react-a11y/core';
-import { webRules } from '@react-a11y/rules-web';
+import { analyze, applyFixes, buildFileModel, parseSource } from '@react-a11y/core';
+import { createLabelForPass, webRules } from '@react-a11y/rules-web';
 
 function run(code: string): string[] {
   return analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules }).map((d) => d.ruleId);
@@ -89,6 +89,63 @@ describe('interactions', () => {
     expect(run(`<input autoFocus id="a" />`)).toContain('no-autofocus');
     expect(run(`<button accessKey="s">Save</button>`)).toContain('no-access-key');
     expect(run(`<marquee>hi</marquee>`)).toContain('no-distracting-elements');
+  });
+});
+
+describe('autofixes', () => {
+  it('fixes aria casing and redundant roles', () => {
+    const code = `const x = <nav role="navigation" aria-Label="Main" />;`;
+    const diags = analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules });
+    const fixes = diags.filter((d) => d.fix).map((d) => d.fix!);
+    expect(fixes.length).toBe(2);
+    const { output } = applyFixes(code, fixes);
+    expect(output).toBe(`const x = <nav aria-label="Main" />;`);
+  });
+});
+
+describe('cross-file label resolution', () => {
+  const collectInto = (pass: ReturnType<typeof createLabelForPass>, code: string, filename: string) =>
+    pass.collect(buildFileModel(parseSource(code, filename)), filename);
+
+  it('flags ids never referenced by a label anywhere in the project', () => {
+    const pass = createLabelForPass();
+    collectInto(pass, `const a = <input type="email" id="email" />;`, 'SignUp.tsx');
+    collectInto(pass, `const b = <label htmlFor="username">Username</label>;`, 'Labels.tsx');
+    const diags = pass.finalize();
+    expect(diags).toHaveLength(1);
+    expect(diags[0]).toMatchObject({ ruleId: 'form-control-has-label', file: 'SignUp.tsx' });
+  });
+
+  it('resolves labels across files and stays quiet on dynamic htmlFor', () => {
+    const resolved = createLabelForPass();
+    collectInto(resolved, `const a = <input type="email" id="email" />;`, 'SignUp.tsx');
+    collectInto(resolved, `const b = <label htmlFor="email">Email</label>;`, 'Labels.tsx');
+    expect(resolved.finalize()).toHaveLength(0);
+
+    const dynamic = createLabelForPass();
+    collectInto(dynamic, `const a = <input type="email" id="email" />;`, 'SignUp.tsx');
+    collectInto(dynamic, `const b = <label htmlFor={fieldId}>Email</label>;`, 'Field.tsx');
+    expect(dynamic.finalize()).toHaveLength(0);
+  });
+
+  it('credits htmlFor on design-system Label components', () => {
+    const pass = createLabelForPass();
+    collectInto(pass, `const a = <input type="email" id="email" />;`, 'SignUp.tsx');
+    collectInto(pass, `const b = <Label htmlFor="email">Email</Label>;`, 'Field.tsx');
+    expect(pass.finalize()).toHaveLength(0);
+  });
+
+  it('respects the rule being turned off', () => {
+    const pass = createLabelForPass({ 'form-control-has-label': 'off' });
+    collectInto(pass, `const a = <input type="email" id="email" />;`, 'SignUp.tsx');
+    expect(pass.finalize()).toHaveLength(0);
+  });
+});
+
+describe('landmarks', () => {
+  it('no-duplicate-main', () => {
+    expect(run(`<div><main>a</main><main>b</main></div>`)).toContain('no-duplicate-main');
+    expect(run(`<div><main>a</main></div>`)).not.toContain('no-duplicate-main');
   });
 });
 

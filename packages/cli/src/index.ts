@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from 'picocolors';
@@ -8,18 +9,21 @@ import {
   WCAG,
   WCAG22_A_AA,
   WCAG22_TOTALS,
+  applyFixes,
   detectPlatform,
   loadConfig,
   readPackageMeta,
   scanProject,
   toJson,
   toSarif,
+  type Fix,
   type Platform,
   type Rule,
+  type ScanResult,
   type Severity,
   type WcagLevel,
 } from '@react-a11y/core';
-import { webRules } from '@react-a11y/rules-web';
+import { createLabelForPass, webRules } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 import { printPretty } from './pretty.js';
 
@@ -37,7 +41,9 @@ ${pc.bold('Options')}
   --format <pretty|json|sarif>   Output format (default: pretty)
   --output <file>                Write report to a file instead of stdout
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
-  --list-rules                   Print every rule with severity and WCAG mapping
+  --fix                          Apply safe mechanical fixes, then report what remains
+  --changed                      Scan only files changed in git (vs HEAD, incl. untracked)
+  --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
   --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
   --help                         Show this help
@@ -55,6 +61,8 @@ interface CliArgs {
   failOn: Severity | 'none';
   listRules: boolean;
   coverage: boolean;
+  fix: boolean;
+  changed: boolean;
 }
 
 function fail(msg: string): never {
@@ -63,7 +71,10 @@ function fail(msg: string): never {
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious', listRules: false, coverage: false };
+  const args: CliArgs = {
+    root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious',
+    listRules: false, coverage: false, fix: false, changed: false,
+  };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -103,6 +114,12 @@ function parseArgs(argv: string[]): CliArgs {
       case '--coverage':
         args.coverage = true;
         break;
+      case '--fix':
+        args.fix = true;
+        break;
+      case '--changed':
+        args.changed = true;
+        break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
         paths.push(arg);
@@ -116,13 +133,57 @@ function listRules(): void {
   const print = (title: string, rules: Rule[]) => {
     console.log(pc.bold(`\n${title}`));
     for (const r of rules) {
+      const fixable = r.meta.fixable ? '🔧' : '  ';
       console.log(
-        `  ${pc.cyan(r.meta.id.padEnd(34))} ${r.meta.severity.padEnd(9)} WCAG ${r.meta.wcag.join(', ').padEnd(16)} ${pc.dim(r.meta.description)}`,
+        `  ${fixable} ${pc.cyan(r.meta.id.padEnd(34))} ${r.meta.severity.padEnd(9)} WCAG ${r.meta.wcag.join(', ').padEnd(16)} ${pc.dim(r.meta.description)}`,
       );
     }
   };
   print(`Web rules (${webRules.length})`, webRules);
   print(`React Native rules (${nativeRules.length})`, nativeRules);
+}
+
+/** Files changed vs HEAD (staged, unstaged and untracked), for --changed. */
+function changedFiles(root: string): string[] {
+  let out: string;
+  try {
+    out = execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' });
+  } catch {
+    fail('--changed requires a git repository (git status failed)');
+  }
+  const files: string[] = [];
+  for (const line of out.split('\n')) {
+    if (!line.trim()) continue;
+    const status = line.slice(0, 2);
+    if (status.includes('D')) continue; // deleted files have nothing to scan
+    let file = line.slice(3);
+    const renameArrow = file.indexOf(' -> ');
+    if (renameArrow !== -1) file = file.slice(renameArrow + 4);
+    files.push(file.replace(/^"|"$/g, ''));
+  }
+  return files;
+}
+
+/** Apply autofixes to disk; returns counts. Fixes come back from a scan. */
+function applyFixesToDisk(result: ScanResult): { fixed: number; files: number } {
+  const byFile = new Map<string, Fix[]>();
+  for (const d of result.diagnostics) {
+    if (!d.fix) continue;
+    const list = byFile.get(d.file) ?? [];
+    list.push(d.fix);
+    byFile.set(d.file, list);
+  }
+  let fixed = 0;
+  for (const [file, fixes] of byFile) {
+    const full = path.join(result.root, file);
+    const source = fs.readFileSync(full, 'utf8');
+    const { output, applied } = applyFixes(source, fixes);
+    if (applied > 0) {
+      fs.writeFileSync(full, output);
+      fixed += applied;
+    }
+  }
+  return { fixed, files: byFile.size };
 }
 
 function printCoverage(): void {
@@ -198,8 +259,24 @@ function main(): void {
   const platform: Platform =
     args.platform !== 'auto' ? args.platform : config.platform ?? detectPlatform(args.root);
   const rules = platform === 'native' ? nativeRules : webRules;
+  const files = args.changed ? changedFiles(args.root) : undefined;
+  // Cross-file passes need the whole project; skip them on partial scans.
+  // Passes are stateful, so each scan gets fresh instances.
+  const makePasses = () =>
+    platform === 'web' && !args.changed ? [createLabelForPass(config.rules)] : [];
 
-  const result = scanProject({ root: args.root, rules, platform, config });
+  const scan = () => scanProject({ root: args.root, rules, platform, config, projectPasses: makePasses(), files });
+  let result = scan();
+
+  if (args.fix) {
+    const { fixed, files: fixedFiles } = applyFixesToDisk(result);
+    if (fixed > 0) {
+      console.error(pc.green(`✔ fixed ${fixed} issue${fixed === 1 ? '' : 's'} in ${fixedFiles} file${fixedFiles === 1 ? '' : 's'}`));
+      result = scan(); // report what remains after the rewrite
+    } else {
+      console.error(pc.dim('no autofixable issues found'));
+    }
+  }
 
   let report: string | null = null;
   if (args.format === 'json') report = toJson(result);

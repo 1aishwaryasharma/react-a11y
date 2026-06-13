@@ -1,4 +1,4 @@
-import { buildFileModel } from './element.js';
+import { buildFileModel, type FileModel } from './element.js';
 import { parseSource } from './parse.js';
 import { resolveWcag } from './wcag.js';
 import type { Diagnostic, Platform, Rule, RuleSetting } from './types.js';
@@ -11,14 +11,11 @@ export interface AnalyzeOptions {
   ruleSettings?: Record<string, RuleSetting>;
 }
 
-/**
- * Analyze a single file. Pure and synchronous — this is the unit both the CLI
- * and any editor/CI integration build on.
- */
-export function analyze(options: AnalyzeOptions): Diagnostic[] {
-  const { code, filename, platform, rules, ruleSettings = {} } = options;
-  const sourceFile = parseSource(code, filename);
-  const model = buildFileModel(sourceFile);
+export type AnalyzeModelOptions = Omit<AnalyzeOptions, 'code'>;
+
+/** Run rules over an already-built file model (lets callers reuse the parse). */
+export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Diagnostic[] {
+  const { filename, platform, rules, ruleSettings = {} } = options;
   if (model.elements.length === 0) return [];
 
   const diagnostics: Diagnostic[] = [];
@@ -32,8 +29,8 @@ export function analyze(options: AnalyzeOptions): Diagnostic[] {
     const visitor = rule.create({
       filename,
       platform,
-      sourceFile,
-      report({ el, message, severity }) {
+      sourceFile: model.sourceFile,
+      report({ el, message, severity, fix }) {
         diagnostics.push({
           ruleId: rule.meta.id,
           message,
@@ -45,6 +42,7 @@ export function analyze(options: AnalyzeOptions): Diagnostic[] {
           endColumn: el.loc.endColumn,
           wcag,
           helpUrl: rule.meta.helpUrl,
+          ...(fix ? { fix } : {}),
         });
       },
     });
@@ -56,4 +54,13 @@ export function analyze(options: AnalyzeOptions): Diagnostic[] {
 
   diagnostics.sort((a, b) => a.line - b.line || a.column - b.column || a.ruleId.localeCompare(b.ruleId));
   return diagnostics;
+}
+
+/**
+ * Analyze a single file. Pure and synchronous — this is the unit both the CLI
+ * and any editor/CI integration build on.
+ */
+export function analyze(options: AnalyzeOptions): Diagnostic[] {
+  const model = buildFileModel(parseSource(options.code, options.filename));
+  return analyzeModel(model, options);
 }

@@ -48,6 +48,12 @@ npx react-a11y . --format sarif --output a11y.sarif   # GitHub code scanning
 # gate CI: exit 1 when serious or critical issues exist (default)
 npx react-a11y . --fail-on serious
 
+# apply safe mechanical fixes (ARIA casing, redundant roles, RN prop typos, …)
+npx react-a11y . --fix
+
+# scan only files changed in git — fast PR checks
+npx react-a11y . --changed
+
 # see every rule with severity + WCAG mapping
 npx react-a11y --list-rules
 
@@ -81,7 +87,7 @@ npx react-a11y --coverage
 
 ## Rules
 
-- **Web** — 43 rules covering alternative text, accessible names, ARIA 1.2
+- **Web** — 44 rules covering alternative text, accessible names, ARIA 1.2
   validity (attributes, values, roles, required context), document structure
   (headings, lists, tables, fieldsets), keyboard access and focus visibility,
   color contrast and target size, label-in-name, pointer cancellation, forms
@@ -147,12 +153,14 @@ node packages/cli/dist/index.js examples/native-demo
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 57 rules; all 55 A+AA criteria addressed (53% automated + guided checklist)
+- ~~Broader rule coverage~~ ✓ 58 rules; all 55 A+AA criteria addressed (55% automated + guided checklist)
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
-- ~~Heading-order analysis~~ ✓ (landmark structure still open)
-- Autofixes for mechanical findings (redundant roles, casing typos)
-- Cross-file label resolution (`htmlFor` ↔ `id`)
-- `--changed` mode: scan only files in the current diff
+- ~~Heading-order and landmark analysis~~ ✓
+- ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)
+- ~~Cross-file label resolution (`htmlFor` ↔ `id`)~~ ✓ project-wide pass
+- ~~`--changed` mode~~ ✓ scan only files changed in git
+- Editor integration (LSP / VS Code extension) on top of `analyze()`
+- Expo config checks (orientation lock in app.json)
 
 ## License
 

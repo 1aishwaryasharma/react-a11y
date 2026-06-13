@@ -21,6 +21,13 @@ export interface WcagRef {
   url: string;
 }
 
+/** A source replacement: [start, end) character offsets in the file. */
+export interface Fix {
+  start: number;
+  end: number;
+  replacement: string;
+}
+
 export interface Diagnostic {
   ruleId: string;
   message: string;
@@ -32,6 +39,8 @@ export interface Diagnostic {
   endColumn: number;
   wcag: WcagRef[];
   helpUrl?: string;
+  /** Mechanical fix, applied by `--fix`. Only set when unambiguously correct. */
+  fix?: Fix;
 }
 
 export interface RuleMeta {
@@ -47,6 +56,8 @@ export interface RuleMeta {
    * marks these criteria as partially automated.
    */
   partial?: boolean;
+  /** True when at least some reports from this rule carry an autofix. */
+  fixable?: boolean;
   helpUrl?: string;
 }
 
@@ -55,6 +66,17 @@ export interface ReportDescriptor {
   message: string;
   /** Per-report severity override (e.g. tiered touch-target sizes). */
   severity?: Severity;
+  fix?: Fix;
+}
+
+/**
+ * Cross-file analysis: `collect` sees every file's model during the scan,
+ * `finalize` reports once the whole project has been seen. Used for checks
+ * a single file cannot decide, like <label htmlFor> ↔ id resolution.
+ */
+export interface ProjectPass {
+  collect(model: import('./element.js').FileModel, filename: string): void;
+  finalize(): Diagnostic[];
 }
 
 export interface RuleContext {

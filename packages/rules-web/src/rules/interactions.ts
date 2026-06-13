@@ -1,6 +1,7 @@
 import {
   INTERACTIVE_ROLES,
   INTERACTIVE_TAGS,
+  fixRemoveAttr,
   hasAttr,
   inlineStyleValue,
   isAriaHidden,
@@ -102,10 +103,15 @@ export const noAccessKey = defineRule(
     description: 'Avoid accessKey — it conflicts with assistive technology shortcuts.',
     severity: 'moderate',
     wcag: ['2.1.1'],
+    fixable: true,
   },
   (el, ctx) => {
     if (hasAttr(el, 'accessKey')) {
-      ctx.report({ el, message: 'accessKey conflicts with screen reader and OS keyboard shortcuts. Remove it.' });
+      ctx.report({
+        el,
+        message: 'accessKey conflicts with screen reader and OS keyboard shortcuts. Remove it.',
+        fix: fixRemoveAttr(el, 'accessKey'),
+      });
     }
   },
 );

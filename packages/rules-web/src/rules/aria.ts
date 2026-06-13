@@ -3,6 +3,8 @@ import {
   ARIA_ATTRS,
   ROLES,
   ROLE_REQUIRED_ATTRS,
+  fixRemoveAttr,
+  fixRenameAttr,
   hasAttr,
   isAriaHidden,
   staticString,
@@ -20,6 +22,7 @@ export const ariaAttrsValid = defineRule(
     description: 'aria-* attributes must be valid ARIA 1.2 attributes.',
     severity: 'serious',
     wcag: ['4.1.2'],
+    fixable: true,
   },
   (el, ctx) => {
     for (const name of el.attrs.keys()) {
@@ -28,9 +31,18 @@ export const ariaAttrsValid = defineRule(
       if (!ARIA_ATTRS.has(lower)) {
         ctx.report({ el, message: `"${name}" is not a valid ARIA attribute. Check the spelling against ARIA 1.2.` });
       } else if (name !== lower) {
-        ctx.report({ el, message: `ARIA attributes are lowercase: use "${lower}" instead of "${name}".` });
+        ctx.report({
+          el,
+          message: `ARIA attributes are lowercase: use "${lower}" instead of "${name}".`,
+          fix: fixRenameAttr(el, name, lower),
+        });
       } else if (DEPRECATED_ARIA.has(lower)) {
-        ctx.report({ el, message: `"${lower}" is deprecated in ARIA 1.2 and should be removed.`, severity: 'minor' });
+        ctx.report({
+          el,
+          message: `"${lower}" is deprecated in ARIA 1.2 and should be removed.`,
+          severity: 'minor',
+          fix: fixRemoveAttr(el, lower),
+        });
       }
     }
   },
@@ -139,6 +151,7 @@ export const noRedundantRoles = defineRule(
     description: 'Elements should not declare a role identical to their implicit role.',
     severity: 'minor',
     wcag: ['4.1.2'],
+    fixable: true,
   },
   (el, ctx) => {
     if (el.isComponent) return;
@@ -146,7 +159,11 @@ export const noRedundantRoles = defineRule(
     if (!role) return;
     const implicit = el.name === 'a' && hasAttr(el, 'href') ? 'link' : IMPLICIT_ROLES[el.name];
     if (implicit === role) {
-      ctx.report({ el, message: `role="${role}" is redundant — <${el.name}> already has that implicit role.` });
+      ctx.report({
+        el,
+        message: `role="${role}" is redundant — <${el.name}> already has that implicit role.`,
+        fix: fixRemoveAttr(el, 'role'),
+      });
     }
   },
 );
@@ -219,9 +236,14 @@ export const scopeOnTh = defineRule(
     description: 'The scope attribute is only valid on <th> elements.',
     severity: 'minor',
     wcag: ['1.3.1'],
+    fixable: true,
   },
   (el, ctx) => {
     if (el.isComponent || !hasAttr(el, 'scope') || el.name === 'th') return;
-    ctx.report({ el, message: `scope has no effect on <${el.name}> — it is only valid on <th>.` });
+    ctx.report({
+      el,
+      message: `scope has no effect on <${el.name}> — it is only valid on <th>.`,
+      fix: fixRemoveAttr(el, 'scope'),
+    });
   },
 );

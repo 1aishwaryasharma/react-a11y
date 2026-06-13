@@ -48,6 +48,7 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | [error-identification](#error-identification) | moderate | 3.3.1 |
 | [no-autocomplete-off](#no-autocomplete-off) | moderate | 3.3.7, 1.3.5 |
 | [meaningful-order](#meaningful-order) | minor | 1.3.2, 2.4.3 |
+| [no-duplicate-main](#no-duplicate-main) | moderate | 1.3.1, 2.4.1 |
 
 ## img-alt
 
@@ -284,3 +285,24 @@ purpose identification (1.3.5).
 
 Inline CSS `order` makes the visual sequence diverge from the DOM order that
 screen readers and Tab follow (1.3.2).
+
+## no-duplicate-main
+
+`<main>` is the screen reader's "skip to content" target; duplicates make
+landmark navigation ambiguous.
+
+## Cross-file label resolution
+
+`form-control-has-label` gives an `id` the benefit of the doubt per file. On
+full project scans, a second pass resolves every `<label htmlFor>` (including
+design-system `<Label htmlFor>` components) against every control id — ids no
+label ever references are reported. Any dynamic `htmlFor` in the project
+disables the pass to stay false-positive-free. Skipped under `--changed`,
+which sees only part of the project.
+
+## Autofixes
+
+`--fix` applies fixes that are mechanically safe: ARIA attribute casing,
+deprecated ARIA attributes, redundant roles, misplaced `scope`, `accessKey`
+(web) and miscapitalized `accessibility*` props (native). Rules marked 🔧 in
+`--list-rules` are fixable.

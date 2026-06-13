@@ -1,4 +1,4 @@
-import { attrProvidesValue, hasAttr, staticString, staticValue } from '@react-a11y/core';
+import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@react-a11y/core';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent } from '../util.js';
 
 const IMAGE = new Set(['Image']);
@@ -137,6 +137,7 @@ export const validAccessibilityProps = defineRule(
     description: 'accessibility* props must be ones React Native actually supports.',
     severity: 'serious',
     wcag: ['4.1.2'],
+    fixable: true,
   },
   (el, ctx) => {
     for (const name of el.attrs.keys()) {
@@ -149,6 +150,7 @@ export const validAccessibilityProps = defineRule(
         message: match
           ? `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
           : `"${name}" is not a React Native accessibility prop and is silently ignored.`,
+        ...(match ? { fix: fixRenameAttr(el, name, match) } : {}),
       });
     }
   },

@@ -107,6 +107,36 @@ describe('color and contrast', () => {
   });
 });
 
+describe('fixes', () => {
+  it('applies non-overlapping fixes from the end', async () => {
+    const { applyFixes } = await import('@react-a11y/core');
+    const { output, applied } = applyFixes('abcdef', [
+      { start: 0, end: 1, replacement: 'X' },
+      { start: 3, end: 5, replacement: '' },
+    ]);
+    expect(output).toBe('Xbcf');
+    expect(applied).toBe(2);
+  });
+  it('skips overlapping fixes', async () => {
+    const { applyFixes } = await import('@react-a11y/core');
+    const { output, applied } = applyFixes('abcdef', [
+      { start: 1, end: 4, replacement: 'Z' },
+      { start: 2, end: 5, replacement: 'Y' },
+    ]);
+    expect(applied).toBe(1);
+    expect(output).toBe('abYf'); // later-starting fix applies; the overlap is skipped
+  });
+  it('fixRenameAttr and fixRemoveAttr produce working edits', async () => {
+    const { fixRenameAttr, fixRemoveAttr, applyFixes } = await import('@react-a11y/core');
+    const code = `const x = <div aria-Label="hi" role="generic" />;`;
+    const { elements } = model(code);
+    const rename = fixRenameAttr(elements[0], 'aria-Label', 'aria-label')!;
+    const remove = fixRemoveAttr(elements[0], 'role')!;
+    const { output } = applyFixes(code, [rename, remove]);
+    expect(output).toBe(`const x = <div aria-label="hi" />;`);
+  });
+});
+
 describe('glob matcher', () => {
   it('supports * and **', () => {
     expect(globToRegExp('**/*.stories.tsx').test('src/deep/Button.stories.tsx')).toBe(true);
