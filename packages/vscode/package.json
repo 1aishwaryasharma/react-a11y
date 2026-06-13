@@ -57,6 +57,10 @@
       {
         "command": "react-a11y.fixAll",
         "title": "react-a11y: Fix all auto-fixable issues in this file"
+      },
+      {
+        "command": "react-a11y.scanWorkspace",
+        "title": "react-a11y: Scan workspace (project-wide checks)"
       }
     ]
   },

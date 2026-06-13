@@ -1,5 +1,6 @@
 import ts from 'typescript';
 import type { AttrValue, ElementNode } from './element.js';
+import type { Severity } from './types.js';
 import { contrastRatio, isLargeText, parseColor } from './color.js';
 
 export function getAttr(el: ElementNode, name: string): AttrValue | undefined {
@@ -156,6 +157,39 @@ export function inlineStyleContrast(el: ElementNode): ContrastInfo | null {
     fg: String(fgRaw),
     bg: String(bgRaw),
   };
+}
+
+/**
+ * WCAG 1.4.3 contrast check for an element's inline literal color/background.
+ * Returns the finding (message + severity) to report, or null when it passes,
+ * the colors aren't static, or the size makes it indeterminate. Shared by the
+ * web and native `color-contrast` rules so the thresholds live in one place.
+ */
+export function colorContrastFinding(el: ElementNode): { message: string; severity: Severity } | null {
+  const info = inlineStyleContrast(el);
+  if (!info) return null;
+  if (info.ratio >= 4.5) return null;
+  if (info.ratio >= 3 && (info.large || !info.fontSizeKnown)) return null;
+  if (info.ratio >= info.required && info.fontSizeKnown) return null;
+  const fmt = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
+  const requirement = info.large ? '3:1 (large text)' : '4.5:1';
+  return {
+    message: `Contrast between ${info.fg} and ${info.bg} is ${fmt(info.ratio)}:1 — below the ${requirement} required by WCAG 1.4.3.`,
+    severity: info.ratio < 3 ? 'serious' : 'moderate',
+  };
+}
+
+/**
+ * The WCAG target-size tier for a pointer target, by its smaller dimension.
+ * `below-min` < 24px (WCAG 2.5.8 AA), `below-recommended` < 44px (2.5.5 AAA /
+ * Apple HIG / Material). Keeps the 24/44 thresholds in one place; each rule
+ * maps the tier to its own severity and platform wording.
+ */
+export function targetSizeTier(width: number, height: number): 'below-min' | 'below-recommended' | null {
+  const min = Math.min(width, height);
+  if (min < 24) return 'below-min';
+  if (min < 44) return 'below-recommended';
+  return null;
 }
 
 /** Statically-known keys of an object-literal prop, e.g. accessibilityState={{...}}. */

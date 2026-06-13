@@ -103,9 +103,14 @@ describe('component rules', () => {
     expect(run(`<View accessibilityLiveRegion="polite" />`)).not.toContain('live-region-valid');
     expect(run(`<View aria-live="polite" />`)).not.toContain('live-region-valid');
   });
-  it('no-hidden-interactive', () => {
+  it('no-hidden-interactive (touchables, TextInput, and native controls via isNativeInteractive)', () => {
     expect(run(`<Pressable accessibilityElementsHidden onPress={f}><Text>Buy</Text></Pressable>`)).toContain('no-hidden-interactive');
+    expect(run(`<TextInput accessibilityElementsHidden accessibilityLabel="x" />`)).toContain('no-hidden-interactive');
     expect(run(`<View accessibilityElementsHidden />`)).not.toContain('no-hidden-interactive');
+    const RN2 = `import { Switch } from 'react-native';\n`;
+    const runSwitch = (jsx: string) =>
+      analyze({ code: `${RN2}const x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules }).map((d) => d.ruleId);
+    expect(runSwitch(`<Switch accessibilityLabel="Dark" importantForAccessibility="no-hide-descendants" value={on} />`)).toContain('no-hidden-interactive');
   });
   it('color-contrast on RN inline styles', () => {
     expect(run(`<Text style={{ color: '#9aa0a6', backgroundColor: '#ffffff', fontSize: 13 }}>Hint</Text>`)).toContain('color-contrast');

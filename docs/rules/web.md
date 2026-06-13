@@ -24,6 +24,7 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | [table-has-header](#table-has-header) | moderate | 1.3.1 |
 | [fieldset-has-legend](#fieldset-has-legend) | moderate | 1.3.1, 3.3.2 |
 | [no-duplicate-main](#no-duplicate-main) | moderate | 1.3.1, 2.4.1 |
+| [form-control-has-label](#cross-file-label-resolution) | serious | 1.3.1, 3.3.2, 4.1.2 |
 | [no-outline-none](#no-outline-none) | moderate | 2.4.7 |
 | [accessible-authentication](#accessible-authentication) | serious | 3.3.8 |
 | [error-identification](#error-identification) | moderate | 3.3.1 |

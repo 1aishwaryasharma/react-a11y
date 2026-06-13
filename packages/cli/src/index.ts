@@ -247,13 +247,14 @@ function printCoverage(): void {
   const withJsx = WCAG22_A_AA.filter((sc) => handled.has(sc)).length;
 
   console.log(pc.bold('\nCoverage (Level A + AA)'));
-  console.log(`  Automated by react-a11y   ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})`);
-  console.log(`  + eslint-plugin-jsx-a11y  ${withJsx}/${aPlusAaTotal}  (${pct(withJsx, aPlusAaTotal)})  ← when run alongside`);
-  console.log(pc.bold(`  Addressed                 ${withJsx + manual.length}/${aPlusAaTotal}  (${pct(withJsx + manual.length, aPlusAaTotal)})  ← automated + jsx-a11y + guided manual`));
+  console.log(`  Automated by react-a11y     ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})`);
+  console.log(`  + eslint-plugin-jsx-a11y    ${withJsx}/${aPlusAaTotal}  (${pct(withJsx, aPlusAaTotal)})  ← when run alongside`);
+  console.log(pc.yellow(`  Manual review needed        ${manual.length}/${aPlusAaTotal}         ← no static tool can decide these`));
   console.log(pc.dim(
     '\n  react-a11y covers the WCAG 2.2 / structure / RN / project-wide criteria;\n' +
-    '  eslint-plugin-jsx-a11y covers standard web a11y; the rest need the manual\n' +
-    '  checklist. Run both linters for full Level A+AA coverage.',
+    '  eslint-plugin-jsx-a11y covers standard web a11y. The remaining criteria\n' +
+    '  are not automatable — each has a guided manual check listed above, but a\n' +
+    `  human must verify it. Run both linters and work the ${manual.length} manual items.`,
   ));
 }
 

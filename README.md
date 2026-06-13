@@ -121,6 +121,13 @@ issues** from the command palette. To fix on every save:
 "editor.codeActionsOnSave": { "source.fixAll.reactA11y": "explicit" }
 ```
 
+**Live linting is per file.** The squiggles you see as you type come from
+per-file analysis, so they do **not** include the project-wide checks —
+cross-file label resolution (`form-control-has-label`) and Expo config
+(`no-orientation-lock`). Run **react-a11y: Scan workspace (project-wide checks)**
+from the command palette to run those across the whole project and populate the
+Problems panel; the CLI runs them automatically on a full scan.
+
 | Setting | Default | Description |
 | --- | --- | --- |
 | `react-a11y.enable` | `true` | Toggle diagnostics. |
@@ -200,7 +207,7 @@ export default [
 
 ## Rules
 
-- **Web** — 21 rules, none of which overlap eslint-plugin-jsx-a11y: color
+- **Web** — 22 rules, none of which overlap eslint-plugin-jsx-a11y: color
   contrast, target size, label-in-name, pointer cancellation, viewport zoom,
   meta-refresh, reading order, document structure (heading order, lists, tables,
   fieldsets, duplicate landmarks), focus visibility, ARIA required-context, the
@@ -302,7 +309,7 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 41 rules (21 web + 20 native), zero overlap with jsx-a11y; all 55 A+AA criteria addressed (react-a11y + jsx-a11y + manual checklist)
+- ~~Broader rule coverage~~ ✓ 42 rules (22 web + 20 native), zero overlap with jsx-a11y; all 55 A+AA criteria addressed (react-a11y + jsx-a11y + manual checklist)
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (ARIA casing, redundant roles, scope, accessKey, RN prop typos)

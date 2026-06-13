@@ -159,3 +159,29 @@ export const validAccessibilityProps = defineRule(
     }
   },
 );
+
+/**
+ * accessibilityActions declares custom actions; onAccessibilityAction handles
+ * them. One without the other is a silent no-op (actions never reachable, or a
+ * handler that receives nothing).
+ */
+export const accessibilityActionsHandled = defineRule(
+  {
+    id: 'accessibility-actions-handled',
+    description: 'accessibilityActions and onAccessibilityAction must be used together.',
+    severity: 'serious',
+    wcag: ['4.1.2'],
+  },
+  (el, ctx) => {
+    if (el.hasSpread) return;
+    const hasActions = hasAttr(el, 'accessibilityActions');
+    const hasHandler = hasAttr(el, 'onAccessibilityAction');
+    if (hasActions === hasHandler) return; // both or neither
+    ctx.report({
+      el,
+      message: hasActions
+        ? 'accessibilityActions is set but onAccessibilityAction is missing — the declared actions are never handled.'
+        : 'onAccessibilityAction is set but accessibilityActions is missing — there are no actions for the handler to receive.',
+    });
+  },
+);

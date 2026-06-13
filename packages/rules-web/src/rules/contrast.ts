@@ -1,8 +1,13 @@
-import { inlineStyleContrast, inlineStyleNumber, INTERACTIVE_TAGS, hasAttr, staticString } from '@react-a11y/core';
-import { INTERACTIVE_ROLES } from '@react-a11y/core';
+import {
+  colorContrastFinding,
+  inlineStyleNumber,
+  targetSizeTier,
+  INTERACTIVE_TAGS,
+  INTERACTIVE_ROLES,
+  hasAttr,
+  staticString,
+} from '@react-a11y/core';
 import { defineRule } from '../util.js';
-
-const fmt = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 
 /**
  * WCAG 1.4.3 contrast for inline styles where both colors are literal.
@@ -20,17 +25,8 @@ export const colorContrast = defineRule(
   },
   (el, ctx) => {
     if (el.isComponent || !el.hasTextChild) return;
-    const info = inlineStyleContrast(el);
-    if (!info) return;
-    if (info.ratio >= 4.5) return;
-    if (info.ratio >= 3 && (info.large || !info.fontSizeKnown)) return;
-    if (info.ratio >= info.required && info.fontSizeKnown) return;
-    const requirement = info.large ? '3:1 (large text)' : '4.5:1';
-    ctx.report({
-      el,
-      message: `Contrast between ${info.fg} and ${info.bg} is ${fmt(info.ratio)}:1 — below the ${requirement} required by WCAG 1.4.3.`,
-      severity: info.ratio < 3 ? 'serious' : 'moderate',
-    });
+    const finding = colorContrastFinding(el);
+    if (finding) ctx.report({ el, ...finding });
   },
 );
 
@@ -58,13 +54,13 @@ export const targetSize = defineRule(
     const width = inlineStyleNumber(el, 'width');
     const height = inlineStyleNumber(el, 'height');
     if (width === undefined || height === undefined) return;
-    const min = Math.min(width, height);
-    if (min < 24) {
+    const tier = targetSizeTier(width, height);
+    if (tier === 'below-min') {
       ctx.report({
         el,
         message: `${width}×${height}px target is below the 24×24px WCAG 2.5.8 (AA) minimum — hard to hit for users with motor impairments.`,
       });
-    } else if (min < 44) {
+    } else if (tier === 'below-recommended') {
       ctx.report({
         el,
         message: `${width}×${height}px target is below the recommended 44×44px (WCAG 2.5.5 AAA).`,

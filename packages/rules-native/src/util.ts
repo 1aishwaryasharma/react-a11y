@@ -45,9 +45,27 @@ export function isTouchable(el: ElementNode): boolean {
   return isRNComponent(el, TOUCHABLES);
 }
 
-/** Element is explicitly hidden from assistive technology. */
+/** Stock React Native controls that are interactive on their own. */
+const NATIVE_CONTROLS = new Set(['TextInput', 'Switch', 'Button']);
+
+/** A touchable or a native control — the canonical "interactive element" test. */
+export function isNativeInteractive(el: ElementNode): boolean {
+  return isTouchable(el) || isRNComponent(el, NATIVE_CONTROLS);
+}
+
+/** iOS: accessibilityElementsHidden hides the element and its a11y subtree from VoiceOver. */
+export function iosHidesSubtree(el: ElementNode): boolean {
+  return isStaticTrue(el, 'accessibilityElementsHidden');
+}
+
+/** Android: importantForAccessibility="no-hide-descendants" hides the subtree from TalkBack. */
+export function androidHidesSubtree(el: ElementNode): boolean {
+  return staticString(el, 'importantForAccessibility') === 'no-hide-descendants';
+}
+
+/** Element is hidden from assistive technology by any platform's mechanism. */
 export function isHiddenFromAT(el: ElementNode): boolean {
-  if (isStaticTrue(el, 'aria-hidden') || isStaticTrue(el, 'accessibilityElementsHidden')) return true;
+  if (isStaticTrue(el, 'aria-hidden') || iosHidesSubtree(el)) return true;
   const important = staticString(el, 'importantForAccessibility');
   if (important === 'no' || important === 'no-hide-descendants') return true;
   const role = staticString(el, 'accessibilityRole') ?? staticString(el, 'role');

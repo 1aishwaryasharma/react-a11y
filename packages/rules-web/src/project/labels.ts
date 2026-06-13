@@ -11,8 +11,27 @@ import {
   type Severity,
   type SourceLocation,
 } from '@react-a11y/core';
+import { defineRule } from '../util.js';
 
 const RULE_ID = 'form-control-has-label';
+
+/**
+ * Registration entry for the cross-file label check. The actual work is the
+ * project pass below (`createLabelForPass`); this exists so the rule appears in
+ * `--list-rules` / `--coverage` and so `"form-control-has-label": "off"` is a
+ * visible, documented config key. The per-element visitor is intentionally
+ * empty — the analysis is project-wide, not per-file.
+ */
+export const formControlHasLabel = defineRule(
+  {
+    id: RULE_ID,
+    description: 'Form controls must have a programmatically associated label (resolved across files).',
+    severity: 'serious',
+    wcag: ['1.3.1', '3.3.2', '4.1.2'],
+    partial: true,
+  },
+  () => {},
+);
 const UNLABELED_INPUT_TYPES = new Set(['hidden', 'submit', 'reset', 'button', 'image']);
 
 interface Candidate {

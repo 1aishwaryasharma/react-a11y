@@ -1,21 +1,19 @@
 import { attrProvidesValue, hasAttr, isStaticTrue, staticValue, walkDescendants } from '@react-a11y/core';
 import type { ElementNode } from '@react-a11y/core';
-import { defineRule, isHiddenFromAT, isRNComponent, isTouchable } from '../util.js';
+import { defineRule, isHiddenFromAT, isNativeInteractive, isRNComponent } from '../util.js';
 
 /** Containers whose `accessible` prop groups (or fails to group) their subtree. */
 const GROUPING_CONTAINERS = new Set(['View', 'SafeAreaView']);
 
-const NATIVE_INTERACTIVE = new Set(['TextInput', 'Switch', 'Button']);
 const TAPPABLE = new Set(['Text', 'View', 'Image', 'Pressable']);
 
 /**
- * A descendant the screen reader would otherwise focus on its own: a touchable,
- * a native control, an element explicitly marked accessible, or a tappable RN
- * element with onPress.
+ * A descendant the screen reader would otherwise focus on its own: a native
+ * interactive control, an element explicitly marked accessible, or a tappable
+ * RN element with onPress.
  */
 function isInteractiveDescendant(el: ElementNode): boolean {
-  if (isTouchable(el)) return true;
-  if (isRNComponent(el, NATIVE_INTERACTIVE)) return true;
+  if (isNativeInteractive(el)) return true;
   if (isStaticTrue(el, 'accessible')) return true;
   if (isRNComponent(el, TAPPABLE) && hasAttr(el, 'onPress')) return true;
   return false;

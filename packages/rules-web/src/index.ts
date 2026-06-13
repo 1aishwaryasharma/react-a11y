@@ -18,8 +18,9 @@ import {
   noDuplicateMain,
 } from './rules/structure.js';
 import { colorContrast, targetSize } from './rules/contrast.js';
+import { formControlHasLabel } from './project/labels.js';
 
-export { createLabelForPass } from './project/labels.js';
+export { createLabelForPass, formControlHasLabel } from './project/labels.js';
 
 export {
   buttonHasName,
@@ -69,6 +70,8 @@ export const webRules: Rule[] = [
   tableHasHeader,
   fieldsetHasLegend,
   noDuplicateMain,
+  // cross-file label resolution (project-wide; implemented as a pass)
+  formControlHasLabel,
   // focus visibility
   noOutlineNone,
   // forms (WCAG 2.2)

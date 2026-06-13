@@ -12,17 +12,16 @@ import {
   modalHasRequestClose,
   validAccessibilityRole,
   validAccessibilityProps,
+  accessibilityActionsHandled,
 } from './rules/components.js';
 
 export { RN_ROLES } from './rules/components.js';
+import { accessibilityStateValid, liveRegionValid } from './rules/state.js';
 import {
-  accessibilityStateValid,
-  liveRegionValid,
   noHiddenInteractive,
-  accessibilityActionsHandled,
   validImportantForAccessibility,
   hiddenCrossPlatform,
-} from './rules/state.js';
+} from './rules/platform.js';
 import {
   accessibleGroupingHidesInteractive,
   labelNeedsAccessible,

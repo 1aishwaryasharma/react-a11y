@@ -1,4 +1,4 @@
-import { findAncestor, hasAttr, inlineStyleNumber } from '@react-a11y/core';
+import { findAncestor, hasAttr, inlineStyleNumber, targetSizeTier } from '@react-a11y/core';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isTouchable } from '../util.js';
 
 /**
@@ -82,14 +82,14 @@ export const touchTargetSize = defineRule(
     const width = inlineStyleNumber(el, 'width');
     const height = inlineStyleNumber(el, 'height');
     if (width === undefined || height === undefined) return;
-    const min = Math.min(width, height);
-    if (min < 24) {
+    const tier = targetSizeTier(width, height);
+    if (tier === 'below-min') {
       ctx.report({
         el,
         message: `${width}×${height} target is below the WCAG 2.5.8 (AA) minimum of 24px. Aim for 44×44pt, or add hitSlop.`,
         severity: 'serious',
       });
-    } else if (min < 44) {
+    } else if (tier === 'below-recommended') {
       ctx.report({
         el,
         message: `${width}×${height} target is below the recommended 44×44pt (WCAG 2.5.5, Apple HIG, Material). Consider enlarging or adding hitSlop.`,

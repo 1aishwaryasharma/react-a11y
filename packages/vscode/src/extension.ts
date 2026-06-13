@@ -6,13 +6,14 @@ import {
   detectPlatform,
   globToRegExp,
   loadConfig,
+  scanProject,
   type A11yConfig,
   type Diagnostic as A11yDiagnostic,
   type Fix,
   type Platform,
   type Severity,
 } from '@react-a11y/core';
-import { webRules } from '@react-a11y/rules-web';
+import { webRules, createLabelForPass } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 
 const LANGUAGES = ['javascript', 'javascriptreact', 'typescript', 'typescriptreact'];
@@ -40,13 +41,7 @@ const folderCache = new Map<string, FolderInfo>();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 let collection: vscode.DiagnosticCollection;
 
-function folderInfo(doc: vscode.TextDocument): FolderInfo | null {
-  const folder = vscode.workspace.getWorkspaceFolder(doc.uri);
-  if (!folder) {
-    // Standalone file: lint as web with defaults.
-    return { platform: 'web', config: {}, ignore: [] };
-  }
-  const root = folder.uri.fsPath;
+function folderInfoForRoot(root: string): FolderInfo {
   let info = folderCache.get(root);
   if (!info) {
     const config = loadConfig(root);
@@ -59,6 +54,15 @@ function folderInfo(doc: vscode.TextDocument): FolderInfo | null {
     folderCache.set(root, info);
   }
   return info;
+}
+
+function folderInfo(doc: vscode.TextDocument): FolderInfo | null {
+  const folder = vscode.workspace.getWorkspaceFolder(doc.uri);
+  if (!folder) {
+    // Standalone file: lint as web with defaults.
+    return { platform: 'web', config: {}, ignore: [] };
+  }
+  return folderInfoForRoot(folder.uri.fsPath);
 }
 
 function toVsDiagnostic(d: A11yDiagnostic): A11yVsDiagnostic {
@@ -150,6 +154,45 @@ class A11yCodeActionProvider implements vscode.CodeActionProvider {
   }
 }
 
+/**
+ * Live linting is per-file, so it can't run project-wide checks (cross-file
+ * label resolution, Expo config). This command scans each workspace folder with
+ * scanProject — including project passes and projectCheck rules — and publishes
+ * the results across all files.
+ */
+async function scanWorkspace(): Promise<void> {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  if (folders.length === 0) {
+    vscode.window.showInformationMessage('react-a11y: open a folder to run a workspace scan.');
+    return;
+  }
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Window, title: 'react-a11y: scanning workspace…' },
+    async () => {
+      collection.clear();
+      let total = 0;
+      for (const folder of folders) {
+        const root = folder.uri.fsPath;
+        const info = folderInfoForRoot(root);
+        const rules = info.platform === 'native' ? nativeRules : webRules;
+        const projectPasses = info.platform === 'web' ? [createLabelForPass(info.config.rules)] : [];
+        const result = scanProject({ root, rules, platform: info.platform, config: info.config, projectPasses });
+        const byFile = new Map<string, A11yVsDiagnostic[]>();
+        for (const d of result.diagnostics) {
+          const list = byFile.get(d.file) ?? [];
+          list.push(toVsDiagnostic(d));
+          byFile.set(d.file, list);
+        }
+        for (const [file, diags] of byFile) {
+          collection.set(vscode.Uri.file(path.join(root, file)), diags);
+          total += diags.length;
+        }
+      }
+      vscode.window.setStatusBarMessage(`react-a11y: workspace scan found ${total} issue${total === 1 ? '' : 's'}`, 4000);
+    },
+  );
+}
+
 async function fixAllInActiveEditor(): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
@@ -184,6 +227,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.commands.registerCommand('react-a11y.fixAll', fixAllInActiveEditor),
+    vscode.commands.registerCommand('react-a11y.scanWorkspace', scanWorkspace),
     vscode.languages.registerCodeActionsProvider(
       LANGUAGES.map((language) => ({ language })),
       new A11yCodeActionProvider(),
