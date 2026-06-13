@@ -2,6 +2,7 @@ import {
   INTERACTIVE_ROLES,
   INTERACTIVE_TAGS,
   hasAttr,
+  inlineStyleValue,
   isAriaHidden,
   staticString,
   staticValue,
@@ -105,6 +106,35 @@ export const noAccessKey = defineRule(
   (el, ctx) => {
     if (hasAttr(el, 'accessKey')) {
       ctx.report({ el, message: 'accessKey conflicts with screen reader and OS keyboard shortcuts. Remove it.' });
+    }
+  },
+);
+
+/** Removing the focus outline without a replacement hides keyboard position. */
+export const noOutlineNone = defineRule(
+  {
+    id: 'no-outline-none',
+    description: 'Do not remove the focus outline via inline styles without a visible replacement.',
+    severity: 'moderate',
+    wcag: ['2.4.7'],
+  },
+  (el, ctx) => {
+    if (el.isComponent) return;
+    const interactive =
+      INTERACTIVE_TAGS.has(el.name) ||
+      hasAttr(el, 'tabIndex') ||
+      hasAttr(el, 'onClick') ||
+      INTERACTIVE_ROLES.has(staticString(el, 'role')?.trim() ?? '');
+    if (!interactive) return;
+    for (const prop of ['outline', 'outlineStyle', 'outlineWidth']) {
+      const v = inlineStyleValue(el, prop);
+      if (v === 'none' || v === 'hidden' || v === 0 || v === '0') {
+        ctx.report({
+          el,
+          message: `Inline style removes the focus outline (${prop}: ${JSON.stringify(v)}) — keyboard users lose track of where they are unless a visible :focus style replaces it.`,
+        });
+        return;
+      }
     }
   },
 );

@@ -1,6 +1,4 @@
-import ts from 'typescript';
-import { findAncestor, getAttr, hasAttr } from '@react-a11y/core';
-import type { ElementNode } from '@react-a11y/core';
+import { findAncestor, hasAttr, inlineStyleNumber } from '@react-a11y/core';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isTouchable } from '../util.js';
 
 /**
@@ -66,22 +64,6 @@ export const noNestedTouchables = defineRule(
   },
 );
 
-function styleDimension(el: ElementNode, prop: string): number | undefined {
-  const style = getAttr(el, 'style');
-  if (style?.kind !== 'expression' || !style.node || !ts.isObjectLiteralExpression(style.node)) return undefined;
-  for (const p of style.node.properties) {
-    if (
-      ts.isPropertyAssignment(p) &&
-      ts.isIdentifier(p.name) &&
-      p.name.text === prop &&
-      ts.isNumericLiteral(p.initializer)
-    ) {
-      return Number(p.initializer.text);
-    }
-  }
-  return undefined;
-}
-
 /**
  * WCAG 2.5.8 (AA, new in 2.2) requires 24px minimum targets; Apple/Google
  * guidelines and WCAG 2.5.5 (AAA) recommend 44pt. Only statically-sized
@@ -97,8 +79,8 @@ export const touchTargetSize = defineRule(
   (el, ctx) => {
     if (!isTouchable(el)) return;
     if (hasAttr(el, 'hitSlop')) return;
-    const width = styleDimension(el, 'width');
-    const height = styleDimension(el, 'height');
+    const width = inlineStyleNumber(el, 'width');
+    const height = inlineStyleNumber(el, 'height');
     if (width === undefined || height === undefined) return;
     const min = Math.min(width, height);
     if (min < 24) {

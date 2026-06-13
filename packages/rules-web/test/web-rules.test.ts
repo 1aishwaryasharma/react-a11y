@@ -92,6 +92,79 @@ describe('interactions', () => {
   });
 });
 
+describe('document', () => {
+  it('lang-valid', () => {
+    expect(run(`<html lang="english"><body /></html>`)).toContain('lang-valid');
+    expect(run(`<span lang="x!">hi</span>`)).toContain('lang-valid');
+    expect(run(`<html lang="en-US"><body /></html>`)).not.toContain('lang-valid');
+    expect(run(`<span lang="hi">नमस्ते</span>`)).not.toContain('lang-valid');
+  });
+  it('meta-viewport-zoomable', () => {
+    expect(run(`<meta name="viewport" content="width=device-width, user-scalable=no" />`)).toContain('meta-viewport-zoomable');
+    expect(run(`<meta name="viewport" content="width=device-width, maximum-scale=1" />`)).toContain('meta-viewport-zoomable');
+    expect(run(`<meta name="viewport" content="width=device-width, initial-scale=1" />`)).not.toContain('meta-viewport-zoomable');
+  });
+  it('no-meta-refresh and title-has-content', () => {
+    expect(run(`<meta httpEquiv="refresh" content="5;url=/next" />`)).toContain('no-meta-refresh');
+    expect(run(`<title></title>`)).toContain('title-has-content');
+    expect(run(`<title>Dashboard</title>`)).not.toContain('title-has-content');
+    expect(run(`<title>{pageTitle}</title>`)).not.toContain('title-has-content');
+  });
+});
+
+describe('structure', () => {
+  it('heading-order flags skips but allows non-h1 starts', () => {
+    expect(run(`<div><h2>A</h2><h4>B</h4></div>`)).toContain('heading-order');
+    expect(run(`<div><h3>A</h3><h4>B</h4><h2>C</h2></div>`)).not.toContain('heading-order');
+  });
+  it('list-structure', () => {
+    expect(run(`<ul><div>item</div></ul>`)).toContain('list-structure');
+    expect(run(`<div><li>loose</li></div>`)).toContain('list-structure');
+    expect(run(`<ul><li>a</li>{items.map(i => <li key={i}>{i}</li>)}</ul>`)).not.toContain('list-structure');
+    expect(run(`<ul><Item /></ul>`)).not.toContain('list-structure');
+  });
+  it('table-has-header', () => {
+    expect(run(`<table><tbody><tr><td>1</td></tr></tbody></table>`)).toContain('table-has-header');
+    expect(run(`<table><thead><tr><th>Name</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>`)).not.toContain('table-has-header');
+    expect(run(`<table role="presentation"><tbody><tr><td>1</td></tr></tbody></table>`)).not.toContain('table-has-header');
+    expect(run(`<table><tbody>{rows}</tbody></table>`)).not.toContain('table-has-header');
+  });
+  it('fieldset-has-legend', () => {
+    expect(run(`<fieldset><input id="a" /></fieldset>`)).toContain('fieldset-has-legend');
+    expect(run(`<fieldset><legend>Shipping</legend><input id="a" /></fieldset>`)).not.toContain('fieldset-has-legend');
+  });
+  it('aria-required-context', () => {
+    expect(run(`<div><div role="tab">Tab</div></div>`)).toContain('aria-required-context');
+    expect(run(`<div role="tablist"><div role="tab" aria-checked={false}>Tab</div></div>`)).not.toContain('aria-required-context');
+    expect(run(`<div role="tab">Tab</div>`)).not.toContain('aria-required-context'); // file root
+    expect(run(`<Tabs><div role="tab">Tab</div></Tabs>`)).not.toContain('aria-required-context'); // component ancestor
+    expect(run(`<ul><div role="listitem">x</div></ul>`)).not.toContain('aria-required-context'); // implicit list
+  });
+});
+
+describe('aria values', () => {
+  it('aria-attr-value-valid', () => {
+    expect(run(`<div aria-live="rude" />`)).toContain('aria-attr-value-valid');
+    expect(run(`<div role="checkbox" aria-checked="yes" tabIndex={0} onClick={f} onKeyDown={f} />`)).toContain('aria-attr-value-valid');
+    expect(run(`<div aria-level="first" role="heading">x</div>`)).toContain('aria-attr-value-valid');
+    expect(run(`<div aria-live="polite" />`)).not.toContain('aria-attr-value-valid');
+    expect(run(`<div aria-hidden="true" />`)).not.toContain('aria-attr-value-valid');
+    expect(run(`<div aria-checked={isChecked} role="checkbox" tabIndex={0} onClick={f} onKeyDown={f} />`)).not.toContain('aria-attr-value-valid');
+  });
+});
+
+describe('focus and media', () => {
+  it('no-outline-none', () => {
+    expect(run(`<button style={{ outline: 'none' }}>Save</button>`)).toContain('no-outline-none');
+    expect(run(`<div style={{ outline: 'none' }}>text</div>`)).not.toContain('no-outline-none');
+    expect(run(`<button style={{ color: 'red' }}>Save</button>`)).not.toContain('no-outline-none');
+  });
+  it('media-no-autoplay', () => {
+    expect(run(`<video src="/v.mp4" autoPlay><track kind="captions" src="/c.vtt" /></video>`)).toContain('media-no-autoplay');
+    expect(run(`<video src="/bg.mp4" autoPlay muted />`)).not.toContain('media-no-autoplay');
+  });
+});
+
 describe('forms', () => {
   it('form-control-has-label', () => {
     expect(run(`<input type="email" placeholder="Email" />`)).toContain('form-control-has-label');
@@ -99,6 +172,22 @@ describe('forms', () => {
     expect(run(`<input type="email" aria-label="Email" />`)).not.toContain('form-control-has-label');
     expect(run(`<label>Email<input type="email" /></label>`)).not.toContain('form-control-has-label');
     expect(run(`<input type="hidden" name="csrf" />`)).not.toContain('form-control-has-label');
+  });
+  it('autocomplete-valid', () => {
+    expect(run(`<input id="e" autoComplete="emial" />`)).toContain('autocomplete-valid');
+    expect(run(`<input id="e" autoComplete="email" />`)).not.toContain('autocomplete-valid');
+    expect(run(`<input id="e" autoComplete="section-blue shipping street-address" />`)).not.toContain('autocomplete-valid');
+  });
+  it('input-button-has-name', () => {
+    expect(run(`<input type="button" onClick={f} />`)).toContain('input-button-has-name');
+    expect(run(`<input type="image" src="/go.png" />`)).toContain('input-button-has-name');
+    expect(run(`<input type="button" value="Save" />`)).not.toContain('input-button-has-name');
+    expect(run(`<input type="submit" />`)).not.toContain('input-button-has-name');
+  });
+  it('accessible-authentication', () => {
+    expect(run(`<input type="password" id="pw" autoComplete="off" />`)).toContain('accessible-authentication');
+    expect(run(`<input type="password" id="pw" onPaste={block} autoComplete="current-password" />`)).toContain('accessible-authentication');
+    expect(run(`<input type="password" id="pw" autoComplete="current-password" />`)).not.toContain('accessible-authentication');
   });
   it('anchor-is-valid', () => {
     expect(run(`<a onClick={f}>Do thing</a>`)).toContain('anchor-is-valid');

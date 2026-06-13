@@ -3,6 +3,8 @@ import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent } from '../ut
 
 const IMAGE = new Set(['Image']);
 const TEXT_INPUT = new Set(['TextInput']);
+const SWITCH = new Set(['Switch']);
+const MODAL = new Set(['Modal']);
 
 /**
  * RN Images are skipped by screen readers unless made accessible, so this is
@@ -46,6 +48,46 @@ export const textInputHasLabel = defineRule(
       ? ' A placeholder is not a label — it disappears once the user types.'
       : '';
     ctx.report({ el, message: `<TextInput> has no accessibilityLabel.${hint}` });
+  },
+);
+
+/** A Switch with no label is announced as just "switch, off". */
+export const switchHasLabel = defineRule(
+  {
+    id: 'switch-has-label',
+    description: 'Switch must have an accessibility label.',
+    severity: 'serious',
+    wcag: ['4.1.2', '3.3.2'],
+  },
+  (el, ctx) => {
+    if (!isRNComponent(el, SWITCH)) return;
+    if (el.hasSpread || isHiddenFromAT(el)) return;
+    if (hasNativeLabel(el)) return;
+    ctx.report({
+      el,
+      message: '<Switch> has no accessibilityLabel — screen readers announce only "switch, off/on" with no indication of what it controls.',
+    });
+  },
+);
+
+/**
+ * Without onRequestClose, the Android back button (and TV remote back) does
+ * nothing — the modal becomes a trap for hardware-navigation users.
+ */
+export const modalHasRequestClose = defineRule(
+  {
+    id: 'modal-has-request-close',
+    description: 'Modal must handle onRequestClose so hardware back can dismiss it.',
+    severity: 'serious',
+    wcag: ['2.1.2'],
+  },
+  (el, ctx) => {
+    if (!isRNComponent(el, MODAL)) return;
+    if (el.hasSpread || hasAttr(el, 'onRequestClose')) return;
+    ctx.report({
+      el,
+      message: '<Modal> has no onRequestClose — Android back button users are trapped inside it.',
+    });
   },
 );
 

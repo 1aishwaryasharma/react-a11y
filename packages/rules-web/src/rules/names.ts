@@ -177,3 +177,33 @@ export const mediaHasCaptions = defineRule(
     });
   },
 );
+
+/**
+ * Auto-playing audio talks over screen readers. Muted media is fine;
+ * media with controls is downgraded since users can stop it.
+ */
+export const mediaNoAutoplay = defineRule(
+  {
+    id: 'media-no-autoplay',
+    description: 'Media must not autoplay with sound.',
+    severity: 'serious',
+    wcag: ['1.4.2'],
+  },
+  (el, ctx) => {
+    if (!isDomTag(el, 'video', 'audio')) return;
+    if (!hasAttr(el, 'autoPlay') || staticValue(el, 'autoPlay') === false) return;
+    if (staticValue(el, 'muted') === true) return;
+    if (hasAttr(el, 'controls')) {
+      ctx.report({
+        el,
+        message: `<${el.name}> autoplays with sound. Users can stop it via controls, but prefer starting paused.`,
+        severity: 'moderate',
+      });
+      return;
+    }
+    ctx.report({
+      el,
+      message: `<${el.name}> autoplays with sound and has no controls — it talks over screen readers with no way to stop it. Add muted, or remove autoPlay.`,
+    });
+  },
+);

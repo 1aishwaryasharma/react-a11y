@@ -2,7 +2,7 @@ export * from './types.js';
 export * from './element.js';
 export * from './helpers.js';
 export * from './aria.js';
-export { WCAG, resolveWcag } from './wcag.js';
+export { WCAG, WCAG22_TOTALS, resolveWcag } from './wcag.js';
 export { parseSource } from './parse.js';
 export { analyze, type AnalyzeOptions } from './engine.js';
 export { scanProject, collectFiles, detectPlatform, type ScanOptions } from './scanner.js';

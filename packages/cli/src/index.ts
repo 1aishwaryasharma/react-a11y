@@ -4,6 +4,8 @@ import path from 'node:path';
 import pc from 'picocolors';
 import {
   SEVERITY_ORDER,
+  WCAG,
+  WCAG22_TOTALS,
   detectPlatform,
   loadConfig,
   readPackageMeta,
@@ -13,6 +15,7 @@ import {
   type Platform,
   type Rule,
   type Severity,
+  type WcagLevel,
 } from '@react-a11y/core';
 import { webRules } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
@@ -33,6 +36,7 @@ ${pc.bold('Options')}
   --output <file>                Write report to a file instead of stdout
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
   --list-rules                   Print every rule with severity and WCAG mapping
+  --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
   --help                         Show this help
 
@@ -48,6 +52,7 @@ interface CliArgs {
   output?: string;
   failOn: Severity | 'none';
   listRules: boolean;
+  coverage: boolean;
 }
 
 function fail(msg: string): never {
@@ -56,7 +61,7 @@ function fail(msg: string): never {
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious', listRules: false };
+  const args: CliArgs = { root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious', listRules: false, coverage: false };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -93,6 +98,9 @@ function parseArgs(argv: string[]): CliArgs {
       case '--list-rules':
         args.listRules = true;
         break;
+      case '--coverage':
+        args.coverage = true;
+        break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
         paths.push(arg);
@@ -115,10 +123,61 @@ function listRules(): void {
   print(`React Native rules (${nativeRules.length})`, nativeRules);
 }
 
+function printCoverage(): void {
+  const covered = new Map<string, { web: number; native: number }>();
+  const count = (rules: Rule[], platform: 'web' | 'native') => {
+    for (const rule of rules) {
+      for (const sc of rule.meta.wcag) {
+        const entry = covered.get(sc) ?? { web: 0, native: 0 };
+        entry[platform]++;
+        covered.set(sc, entry);
+      }
+    }
+  };
+  count(webRules, 'web');
+  count(nativeRules, 'native');
+
+  const refs = [...covered.keys()].map((sc) => WCAG[sc]).sort((a, b) =>
+    a.sc.localeCompare(b.sc, undefined, { numeric: true }),
+  );
+
+  console.log(pc.bold(`\nWCAG 2.2 success criteria with at least one rule (${webRules.length} web + ${nativeRules.length} native rules)\n`));
+  for (const ref of refs) {
+    const entry = covered.get(ref.sc)!;
+    const packs = [entry.web ? `${entry.web} web` : null, entry.native ? `${entry.native} native` : null]
+      .filter(Boolean)
+      .join(', ');
+    const newBadge = ref.version === '2.2' ? pc.cyan(' [new in 2.2]') : '';
+    console.log(`  ${ref.sc.padEnd(7)} ${ref.name.padEnd(40)} ${ref.level.padEnd(4)} ${pc.dim(packs)}${newBadge}`);
+  }
+
+  const byLevel: Record<WcagLevel, number> = { A: 0, AA: 0, AAA: 0 };
+  for (const ref of refs) byLevel[ref.level]++;
+  const pct = (n: number, total: number) => `${Math.round((n / total) * 100)}%`;
+  const aPlusAa = byLevel.A + byLevel.AA;
+  const aPlusAaTotal = WCAG22_TOTALS.A + WCAG22_TOTALS.AA;
+
+  console.log(pc.bold('\nCoverage'));
+  console.log(`  Level A    ${byLevel.A}/${WCAG22_TOTALS.A}  (${pct(byLevel.A, WCAG22_TOTALS.A)})`);
+  console.log(`  Level AA   ${byLevel.AA}/${WCAG22_TOTALS.AA}  (${pct(byLevel.AA, WCAG22_TOTALS.AA)})`);
+  console.log(`  Level AAA  ${byLevel.AAA}/${WCAG22_TOTALS.AAA}  (${pct(byLevel.AAA, WCAG22_TOTALS.AAA)})`);
+  console.log(pc.bold(`  A + AA     ${aPlusAa}/${aPlusAaTotal}  (${pct(aPlusAa, aPlusAaTotal)})  ← typical conformance target`));
+  console.log(`  All        ${refs.length}/${WCAG22_TOTALS.total}  (${pct(refs.length, WCAG22_TOTALS.total)})`);
+  console.log(pc.dim(
+    '\n  Many criteria (contrast, reflow, timing, audio description, …) are not\n' +
+    '  decidable from source code alone and need runtime or manual testing —\n' +
+    '  static analysis complements but does not replace an audit.',
+  ));
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   if (args.listRules) {
     listRules();
+    return;
+  }
+  if (args.coverage) {
+    printCoverage();
     return;
   }
   if (!fs.existsSync(args.root)) fail(`path does not exist: ${args.root}`);

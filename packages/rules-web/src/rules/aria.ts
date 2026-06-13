@@ -151,6 +151,67 @@ export const noRedundantRoles = defineRule(
   },
 );
 
+/** Enumerated ARIA attributes and their allowed tokens (ARIA 1.2). */
+const ARIA_ENUM_VALUES: Record<string, Set<string>> = {
+  'aria-atomic': new Set(['true', 'false']),
+  'aria-autocomplete': new Set(['inline', 'list', 'both', 'none']),
+  'aria-busy': new Set(['true', 'false']),
+  'aria-checked': new Set(['true', 'false', 'mixed']),
+  'aria-current': new Set(['page', 'step', 'location', 'date', 'time', 'true', 'false']),
+  'aria-disabled': new Set(['true', 'false']),
+  'aria-expanded': new Set(['true', 'false']),
+  'aria-haspopup': new Set(['false', 'true', 'menu', 'listbox', 'tree', 'grid', 'dialog']),
+  'aria-hidden': new Set(['true', 'false']),
+  'aria-invalid': new Set(['true', 'false', 'grammar', 'spelling']),
+  'aria-live': new Set(['off', 'polite', 'assertive']),
+  'aria-modal': new Set(['true', 'false']),
+  'aria-multiline': new Set(['true', 'false']),
+  'aria-multiselectable': new Set(['true', 'false']),
+  'aria-orientation': new Set(['horizontal', 'vertical', 'undefined']),
+  'aria-pressed': new Set(['true', 'false', 'mixed']),
+  'aria-readonly': new Set(['true', 'false']),
+  'aria-required': new Set(['true', 'false']),
+  'aria-selected': new Set(['true', 'false']),
+  'aria-sort': new Set(['ascending', 'descending', 'none', 'other']),
+};
+
+const ARIA_NUMERIC = new Set([
+  'aria-level', 'aria-valuemax', 'aria-valuemin', 'aria-valuenow',
+  'aria-colcount', 'aria-colindex', 'aria-colspan', 'aria-rowcount',
+  'aria-rowindex', 'aria-rowspan', 'aria-posinset', 'aria-setsize',
+]);
+
+/** ARIA attributes with invalid values are ignored or misread by screen readers. */
+export const ariaAttrValueValid = defineRule(
+  {
+    id: 'aria-attr-value-valid',
+    description: 'ARIA attribute values must be valid for the attribute type.',
+    severity: 'serious',
+    wcag: ['4.1.2'],
+  },
+  (el, ctx) => {
+    for (const [name, attr] of el.attrs) {
+      if (attr.kind !== 'static') continue;
+      const enums = ARIA_ENUM_VALUES[name];
+      if (enums) {
+        const v = typeof attr.value === 'boolean' ? String(attr.value) : attr.value;
+        if (typeof v !== 'string' || !enums.has(v.trim().toLowerCase())) {
+          ctx.report({
+            el,
+            message: `${name}=${JSON.stringify(attr.value)} is not valid — allowed: ${[...enums].join(', ')}.`,
+          });
+        }
+      } else if (ARIA_NUMERIC.has(name)) {
+        const v = attr.value;
+        const ok = typeof v === 'number' || (typeof v === 'string' && v.trim() !== '' && !Number.isNaN(Number(v)));
+        if (!ok) {
+          ctx.report({ el, message: `${name}=${JSON.stringify(v)} must be a number.` });
+        }
+      }
+    }
+  },
+);
+
 /** scope is only valid on <th>. */
 export const scopeOnTh = defineRule(
   {

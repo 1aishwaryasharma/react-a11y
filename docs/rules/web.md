@@ -26,6 +26,21 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | [no-access-key](#no-access-key) | moderate | 2.1.1 |
 | [no-distracting-elements](#no-distracting-elements) | serious | 2.2.2 |
 | [form-control-has-label](#form-control-has-label) | serious | 1.3.1, 3.3.2, 4.1.2 |
+| [lang-valid](#lang-valid) | serious | 3.1.1, 3.1.2 |
+| [title-has-content](#title-has-content) | serious | 2.4.2 |
+| [meta-viewport-zoomable](#meta-viewport-zoomable) | serious | 1.4.4 |
+| [no-meta-refresh](#no-meta-refresh) | serious | 2.2.1 |
+| [media-no-autoplay](#media-no-autoplay) | serious | 1.4.2 |
+| [aria-attr-value-valid](#aria-attr-value-valid) | serious | 4.1.2 |
+| [aria-required-context](#aria-required-context) | moderate | 1.3.1, 4.1.2 |
+| [heading-order](#heading-order) | moderate | 1.3.1, 2.4.6 |
+| [list-structure](#list-structure) | moderate | 1.3.1 |
+| [table-has-header](#table-has-header) | moderate | 1.3.1 |
+| [fieldset-has-legend](#fieldset-has-legend) | moderate | 1.3.1, 3.3.2 |
+| [no-outline-none](#no-outline-none) | moderate | 2.4.7 |
+| [autocomplete-valid](#autocomplete-valid) | moderate | 1.3.5 |
+| [input-button-has-name](#input-button-has-name) | serious | 4.1.2, 1.1.1 |
+| [accessible-authentication](#accessible-authentication) | serious | 3.3.8 |
 
 ## img-alt
 
@@ -140,3 +155,84 @@ Inputs, selects and textareas need a programmatic label: `<label htmlFor>`, a
 wrapping `<label>`, or `aria-label`. Placeholders are not labels. An `id` is
 given the benefit of the doubt since the matching `<label htmlFor>` may live in
 another file.
+
+## lang-valid
+
+`lang` values must be well-formed BCP 47 tags (`en`, `en-US`, `hi`) on `<html>`
+(3.1.1) and on elements marking foreign-language passages (3.1.2).
+
+## title-has-content
+
+An empty `<title>` leaves the page unnamed in tabs, bookmarks, history and
+screen reader announcements.
+
+## meta-viewport-zoomable
+
+`user-scalable=no` or `maximum-scale` below 2 prevents low-vision users from
+zooming; WCAG requires text resizable to 200%.
+
+## no-meta-refresh
+
+`<meta http-equiv="refresh">` reloads or redirects on a timer users cannot
+adjust or disable.
+
+## media-no-autoplay
+
+Auto-playing audio talks over screen readers. Muted autoplay is fine; with
+controls present, the finding is downgraded to moderate.
+
+## aria-attr-value-valid
+
+Enumerated ARIA attributes (`aria-live`, `aria-checked`, `aria-current`, …)
+must use their allowed tokens, and numeric ones (`aria-level`,
+`aria-valuenow`, …) must be numbers — invalid values are silently ignored.
+
+## aria-required-context
+
+Roles like `tab`, `option`, `menuitem` and `listitem` only work inside their
+required parent role. Only flagged when the entire ancestor chain in the file
+is plain DOM, so composition through components never false-positives.
+
+## heading-order
+
+Skipped levels (`h2` → `h4`) break heading navigation. Because files are
+fragments, only relative skips within a file are flagged — a component that
+starts at `h3` is fine.
+
+## list-structure
+
+`<ul>`/`<ol>` may only contain `<li>` (plus script/template); a stray `<div>`
+wrapper makes screen readers misreport list size. `<li>` outside a list loses
+its semantics entirely.
+
+## table-has-header
+
+A table with `<td>` data but no `<th>` (or `columnheader`/`rowheader` roles)
+gives screen reader users no row/column context. Layout tables
+(`role="presentation"`) and dynamically built tables are skipped.
+
+## fieldset-has-legend
+
+A `<fieldset>` without `<legend>` announces its controls without the group
+name — critical for radio groups.
+
+## no-outline-none
+
+Inline `outline: 'none'` on an interactive element hides keyboard focus
+position unless a visible `:focus` replacement exists.
+
+## autocomplete-valid
+
+`autoComplete` must use real WHATWG autofill tokens; invalid tokens mean the
+input purpose stays unidentifiable to assistive technology (1.3.5).
+
+## input-button-has-name
+
+`<input type="button">` has no default label and needs `value` or
+`aria-label`; `<input type="image">` needs `alt`.
+
+## accessible-authentication
+
+New in WCAG 2.2: `autoComplete="off"` on password fields blocks password
+managers, forcing transcription; `onPaste` handlers are flagged for review in
+case they block pasting.

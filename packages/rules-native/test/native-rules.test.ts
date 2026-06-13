@@ -80,6 +80,30 @@ describe('component rules', () => {
     expect(run(`<View accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
     expect(run(`<View accessibilityRole="button" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
   });
+  it('switch-has-label and modal-has-request-close', () => {
+    const RN2 = `import { Switch, Modal, Text } from 'react-native';\n`;
+    const runX = (jsx: string) =>
+      analyze({ code: `${RN2}const x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules }).map((d) => d.ruleId);
+    expect(runX(`<Switch value={on} onValueChange={set} />`)).toContain('switch-has-label');
+    expect(runX(`<Switch value={on} onValueChange={set} accessibilityLabel="Dark mode" />`)).not.toContain('switch-has-label');
+    expect(runX(`<Modal visible={open}><Text>Hi</Text></Modal>`)).toContain('modal-has-request-close');
+    expect(runX(`<Modal visible={open} onRequestClose={close}><Text>Hi</Text></Modal>`)).not.toContain('modal-has-request-close');
+  });
+  it('accessibility-state-valid', () => {
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" accessibilityState={{ pressed: true }} onPress={f} />`)).toContain('accessibility-state-valid');
+    expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" accessibilityState={{ disabled: true }} onPress={f} />`)).not.toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityValue={{ current: 3 }} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityValue={{ now: 3, min: 0, max: 10 }} />`)).not.toContain('accessibility-state-valid');
+  });
+  it('live-region-valid', () => {
+    expect(run(`<View accessibilityLiveRegion="loud" />`)).toContain('live-region-valid');
+    expect(run(`<View accessibilityLiveRegion="polite" />`)).not.toContain('live-region-valid');
+    expect(run(`<View aria-live="polite" />`)).not.toContain('live-region-valid');
+  });
+  it('no-hidden-interactive', () => {
+    expect(run(`<Pressable accessibilityElementsHidden onPress={f}><Text>Buy</Text></Pressable>`)).toContain('no-hidden-interactive');
+    expect(run(`<View accessibilityElementsHidden />`)).not.toContain('no-hidden-interactive');
+  });
   it('valid-accessibility-props catches typos', () => {
     const diags = analyze({
       code: `${RN_IMPORT}const x = <View accessibilitylabel="oops" />;`,

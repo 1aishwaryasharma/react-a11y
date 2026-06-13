@@ -50,6 +50,9 @@ npx react-a11y . --fail-on serious
 
 # see every rule with severity + WCAG mapping
 npx react-a11y --list-rules
+
+# WCAG 2.2 success-criteria coverage report
+npx react-a11y --coverage
 ```
 
 ### CI (GitHub Actions)
@@ -78,12 +81,19 @@ npx react-a11y --list-rules
 
 ## Rules
 
-- **Web** — 21 rules covering alternative text, accessible names, ARIA 1.2
-  validity, keyboard access, forms, media and document language.
-  [Full list →](docs/rules/web.md)
-- **React Native** — 8 rules covering touchable labels/roles, nested
-  touchables, WCAG 2.5.8 touch-target size, images, text inputs and silent
-  prop typos. [Full list →](docs/rules/native.md)
+- **Web** — 36 rules covering alternative text, accessible names, ARIA 1.2
+  validity (attributes, values, roles, required context), document structure
+  (headings, lists, tables, fieldsets), keyboard access and focus visibility,
+  forms (labels, autofill purpose, accessible authentication), media,
+  viewport zoom and document language. [Full list →](docs/rules/web.md)
+- **React Native** — 13 rules covering touchable labels/roles, nested
+  touchables, WCAG 2.5.8 touch-target size, images, text inputs, switches,
+  modal keyboard traps, live regions, state/value props and silent prop
+  typos. [Full list →](docs/rules/native.md)
+
+Run `npx react-a11y --coverage` for the current WCAG 2.2 success-criteria
+coverage (24 of 86 criteria have at least one rule; 23 of the 55 Level A+AA
+criteria — many criteria are inherently not decidable from source code).
 
 ## Architecture
 
@@ -133,6 +143,7 @@ node packages/cli/dist/index.js examples/native-demo
 
 ## Roadmap
 
+- ~~Broader rule coverage~~ ✓ 49 rules across 24 WCAG 2.2 success criteria
 - Autofixes for mechanical findings (redundant roles, casing typos)
 - Cross-file label resolution (`htmlFor` ↔ `id`)
 - Heading-order and landmark-structure analysis

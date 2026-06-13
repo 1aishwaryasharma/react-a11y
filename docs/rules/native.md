@@ -13,8 +13,13 @@ are assumed to be design-system wrappers and skipped.
 | [touch-target-size](#touch-target-size) | serious/moderate | 2.5.8, 2.5.5 |
 | [image-has-label](#image-has-label) | moderate | 1.1.1 |
 | [textinput-has-label](#textinput-has-label) | serious | 3.3.2, 4.1.2 |
+| [switch-has-label](#switch-has-label) | serious | 4.1.2, 3.3.2 |
+| [modal-has-request-close](#modal-has-request-close) | serious | 2.1.2 |
 | [valid-accessibility-role](#valid-accessibility-role) | serious | 4.1.2 |
 | [valid-accessibility-props](#valid-accessibility-props) | serious | 4.1.2 |
+| [accessibility-state-valid](#accessibility-state-valid) | serious | 4.1.2 |
+| [live-region-valid](#live-region-valid) | serious | 4.1.3 |
+| [no-hidden-interactive](#no-hidden-interactive) | serious | 4.1.2, 1.3.1 |
 
 ## touchable-has-label
 
@@ -68,3 +73,31 @@ ignored on device.
 Misspelled props (`accessibilitylabel`, `accessibiltyLabel`, …) fail silently
 at runtime. Catches casing mistakes and unknown `accessibility*` props, with a
 suggestion when one is close.
+
+## switch-has-label
+
+An unlabeled `<Switch>` is announced as just "switch, off" with no indication
+of what it controls.
+
+## modal-has-request-close
+
+Without `onRequestClose`, the Android hardware back button does nothing — the
+modal becomes a keyboard trap for hardware-navigation users (WCAG 2.1.2).
+
+## accessibility-state-valid
+
+`accessibilityState` only supports `disabled`, `selected`, `checked`, `busy`,
+`expanded`; `accessibilityValue` only `min`, `max`, `now`, `text`. Unknown
+keys are silently dropped on device.
+
+## live-region-valid
+
+`accessibilityLiveRegion` (none/polite/assertive) and `aria-live`
+(off/polite/assertive) with invalid values mean status changes are never
+announced (WCAG 4.1.3).
+
+## no-hidden-interactive
+
+A touchable or `TextInput` hidden from assistive technology
+(`accessibilityElementsHidden`, `importantForAccessibility="no"`, …) is still
+tappable — a control screen reader users cannot even discover.

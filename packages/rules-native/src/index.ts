@@ -8,9 +8,16 @@ import {
 import {
   imageHasLabel,
   textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
   validAccessibilityRole,
   validAccessibilityProps,
 } from './rules/components.js';
+import {
+  accessibilityStateValid,
+  liveRegionValid,
+  noHiddenInteractive,
+} from './rules/state.js';
 
 export {
   touchableHasLabel,
@@ -19,8 +26,13 @@ export {
   touchTargetSize,
   imageHasLabel,
   textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
   validAccessibilityRole,
   validAccessibilityProps,
+  accessibilityStateValid,
+  liveRegionValid,
+  noHiddenInteractive,
 };
 
 /** The recommended React Native / Expo preset. */
@@ -31,6 +43,11 @@ export const nativeRules: Rule[] = [
   touchTargetSize,
   imageHasLabel,
   textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
   validAccessibilityRole,
   validAccessibilityProps,
+  accessibilityStateValid,
+  liveRegionValid,
+  noHiddenInteractive,
 ];
