@@ -28,8 +28,11 @@ describe('the web pack is the jsx-a11y complement', () => {
 
   it('registers form-control-has-label (project pass) but does not fire it per-file', () => {
     // Listed so --list-rules / --coverage / config see it...
-    expect(webRules.map((r) => r.meta.id)).toContain('form-control-has-label');
-    // ...but the per-file visitor is empty; the cross-file pass does the work.
+    const rule = webRules.find((r) => r.meta.id === 'form-control-has-label');
+    expect(rule).toBeDefined();
+    // ...flagged project-level so editors route it to the project-scan surface...
+    expect(rule!.meta.project).toBe(true);
+    // ...and the per-file visitor is empty; the cross-file pass does the work.
     expect(run(`<input type="email" id="email" />`)).not.toContain('form-control-has-label');
   });
 

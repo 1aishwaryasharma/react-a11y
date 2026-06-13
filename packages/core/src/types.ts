@@ -58,6 +58,13 @@ export interface RuleMeta {
   partial?: boolean;
   /** True when at least some reports from this rule carry an autofix. */
   fixable?: boolean;
+  /**
+   * True when the rule's findings come only from project-wide analysis (a
+   * project pass or `projectCheck`), never from per-file scanning — e.g.
+   * cross-file label resolution or config-file checks. Lets editors route
+   * these to a project-scan surface instead of live per-file linting.
+   */
+  project?: boolean;
   helpUrl?: string;
 }
 

@@ -10,6 +10,7 @@ const RULE_META = {
   platforms: ['native'],
   wcag: ['1.3.4'],
   partial: true,
+  project: true,
   helpUrl: helpUrlFor('no-orientation-lock'),
 } satisfies Rule['meta'];
 

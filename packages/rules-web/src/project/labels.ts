@@ -29,6 +29,7 @@ export const formControlHasLabel = defineRule(
     severity: 'serious',
     wcag: ['1.3.1', '3.3.2', '4.1.2'],
     partial: true,
+    project: true,
   },
   () => {},
 );

@@ -181,8 +181,12 @@ async function scanWorkspace(): Promise<void> {
         const rules = info.platform === 'native' ? nativeRules : webRules;
         const projectPasses = info.platform === 'web' ? webProjectPasses(info.config) : [];
         const result = scanProject({ root, rules, platform: info.platform, config: info.config, projectPasses });
+        // Publish only project-scoped findings; per-file rules are already
+        // covered by live linting, so including them would double-report.
+        const projectIds = new Set(rules.filter((r) => r.meta.project).map((r) => r.meta.id));
         const byFile = new Map<string, A11yVsDiagnostic[]>();
         for (const d of result.diagnostics) {
+          if (!projectIds.has(d.ruleId)) continue;
           const list = byFile.get(d.file) ?? [];
           list.push(toVsDiagnostic(d));
           byFile.set(d.file, list);
@@ -228,6 +232,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('react-a11y')) {
         folderCache.clear();
+        projectCollection.clear(); // stale once platform/rules change; re-scan to refresh
         lintAllOpen();
       }
     }),
@@ -246,6 +251,7 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   const invalidate = () => {
     folderCache.clear();
+    projectCollection.clear(); // config/deps changed — project scan is stale
     lintAllOpen();
   };
   watcher.onDidChange(invalidate);

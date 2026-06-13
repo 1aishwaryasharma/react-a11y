@@ -135,6 +135,9 @@ describe('component rules', () => {
       return root;
     };
 
+    // Flagged project-level so editors route it to the project-scan surface.
+    expect(noOrientationLock.meta.project).toBe(true);
+
     const locked = noOrientationLock.projectCheck!(
       project({ 'app.json': JSON.stringify({ expo: { name: 'x', orientation: 'portrait' } }, null, 2) }),
     );
