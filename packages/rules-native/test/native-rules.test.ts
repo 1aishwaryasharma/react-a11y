@@ -1,6 +1,9 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { analyze, applyFixes } from '@react-a11y/core';
-import { nativeRules } from '@react-a11y/rules-native';
+import { analyze, applyFixes, scanProject } from '@react-a11y/core';
+import { nativeRules, noOrientationLock } from '@react-a11y/rules-native';
 
 const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, TouchableOpacity } from 'react-native';\n`;
 
@@ -116,6 +119,62 @@ describe('component rules', () => {
     });
     expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
   });
+  it('no-orientation-lock across config formats', () => {
+    const project = (files: Record<string, string>) => {
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ra11y-'));
+      for (const [rel, content] of Object.entries(files)) {
+        const full = path.join(root, rel);
+        fs.mkdirSync(path.dirname(full), { recursive: true });
+        fs.writeFileSync(full, content);
+      }
+      return root;
+    };
+
+    const locked = noOrientationLock.projectCheck!(
+      project({ 'app.json': JSON.stringify({ expo: { name: 'x', orientation: 'portrait' } }, null, 2) }),
+    );
+    expect(locked).toHaveLength(1);
+    expect(locked[0]).toMatchObject({ ruleId: 'no-orientation-lock', file: 'app.json' });
+    expect(locked[0].line).toBeGreaterThan(1); // points at the "orientation" key, not the file start
+
+    expect(noOrientationLock.projectCheck!(
+      project({ 'app.json': JSON.stringify({ expo: { name: 'x', orientation: 'default' } }) }),
+    )).toHaveLength(0);
+
+    expect(noOrientationLock.projectCheck!(
+      project({ 'app.config.ts': `export default { name: 'x', orientation: 'landscape' };` }),
+    )).toHaveLength(1);
+
+    expect(noOrientationLock.projectCheck!(
+      project({ 'android/app/src/main/AndroidManifest.xml': `<activity android:screenOrientation="portrait" />` }),
+    )).toHaveLength(1);
+
+    expect(noOrientationLock.projectCheck!(
+      project({
+        'ios/MyApp/Info.plist': `<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string></array>`,
+      }),
+    )).toHaveLength(1);
+
+    expect(noOrientationLock.projectCheck!(
+      project({
+        'ios/MyApp/Info.plist': `<key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string></array>`,
+      }),
+    )).toHaveLength(0);
+
+    // scanProject runs projectCheck automatically and honors "off"
+    const root = project({
+      'app.json': JSON.stringify({ expo: { orientation: 'portrait' } }),
+      'App.tsx': `export default () => null;`,
+    });
+    const viaScan = scanProject({ root, rules: nativeRules, platform: 'native' });
+    expect(viaScan.diagnostics.some((d) => d.ruleId === 'no-orientation-lock')).toBe(true);
+    const off = scanProject({
+      root, rules: nativeRules, platform: 'native',
+      config: { rules: { 'no-orientation-lock': 'off' } },
+    });
+    expect(off.diagnostics.some((d) => d.ruleId === 'no-orientation-lock')).toBe(false);
+  });
+
   it('autofixes miscapitalized accessibility props', () => {
     const code = `${RN_IMPORT}const x = <View accessibilitylabel="profile" />;`;
     const diags = analyze({ code, filename: 'App.tsx', platform: 'native', rules: nativeRules });

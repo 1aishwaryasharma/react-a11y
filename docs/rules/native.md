@@ -21,6 +21,7 @@ are assumed to be design-system wrappers and skipped.
 | [live-region-valid](#live-region-valid) | serious | 4.1.3 |
 | [no-hidden-interactive](#no-hidden-interactive) | serious | 4.1.2, 1.3.1 |
 | [color-contrast](#color-contrast) | serious | 1.4.3 |
+| [no-orientation-lock](#no-orientation-lock) | moderate | 1.3.4 |
 
 ## touchable-has-label
 
@@ -108,3 +109,14 @@ tappable — a control screen reader users cannot even discover.
 Computes the WCAG 1.4.3 contrast ratio when `color` and `backgroundColor` are
 inline literals on the same element. `StyleSheet.create` references and
 dynamic styles are skipped — *partial* coverage by design.
+
+## no-orientation-lock
+
+A project-level check (not a JSX rule): flags orientation locks wherever they
+are declared — Expo `app.json` / `app.config.{js,ts}` (`orientation:
+"portrait"`/`"landscape"`), `AndroidManifest.xml`
+(`android:screenOrientation`), and iOS `Info.plist`
+(`UISupportedInterfaceOrientations` listing a single orientation family).
+WCAG 1.3.4 (AA) requires both orientations unless one is essential — users
+with wheelchair-mounted devices cannot rotate. Runtime locks via
+`expo-screen-orientation` are out of static reach, hence *partial*.

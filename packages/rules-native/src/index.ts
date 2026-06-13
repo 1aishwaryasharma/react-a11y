@@ -19,6 +19,7 @@ import {
   noHiddenInteractive,
 } from './rules/state.js';
 import { colorContrast } from './rules/contrast.js';
+import { noOrientationLock } from './rules/expo-config.js';
 
 export {
   touchableHasLabel,
@@ -35,6 +36,7 @@ export {
   liveRegionValid,
   noHiddenInteractive,
   colorContrast,
+  noOrientationLock,
 };
 
 /** The recommended React Native / Expo preset. */
@@ -53,4 +55,5 @@ export const nativeRules: Rule[] = [
   liveRegionValid,
   noHiddenInteractive,
   colorContrast,
+  noOrientationLock,
 ];

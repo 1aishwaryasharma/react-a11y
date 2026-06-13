@@ -4,6 +4,10 @@ import { attrProvidesValue, isStaticTrue, readOwnPackageMeta, staticString } fro
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
 const HELP_BASE = homepage ? `${homepage}/blob/main/docs/rules/native.md#` : undefined;
 
+export function helpUrlFor(ruleId: string): string | undefined {
+  return HELP_BASE ? `${HELP_BASE}${ruleId}` : undefined;
+}
+
 export function defineRule(
   meta: Omit<RuleMeta, 'platforms' | 'helpUrl'>,
   element: (el: ElementNode, ctx: RuleContext) => void,

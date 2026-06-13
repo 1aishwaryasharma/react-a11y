@@ -93,6 +93,12 @@ export interface RuleVisitor {
 export interface Rule {
   meta: RuleMeta;
   create(ctx: RuleContext): RuleVisitor;
+  /**
+   * Optional project-level check for configuration files outside the JSX
+   * scan (app.json, AndroidManifest.xml, …). Runs once per scan; returned
+   * diagnostics use paths relative to the project root.
+   */
+  projectCheck?(root: string): Diagnostic[];
 }
 
 export type RuleSetting = 'off' | Severity;

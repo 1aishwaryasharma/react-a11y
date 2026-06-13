@@ -99,6 +99,16 @@ export function scanProject(options: ScanOptions): ScanResult {
   }
 
   for (const pass of projectPasses) diagnostics.push(...pass.finalize());
+
+  for (const rule of rules) {
+    if (!rule.projectCheck || !rule.meta.platforms.includes(platform)) continue;
+    const setting = config.rules?.[rule.meta.id];
+    if (setting === 'off') continue;
+    for (const diag of rule.projectCheck(root)) {
+      diagnostics.push(setting ? { ...diag, severity: setting } : diag);
+    }
+  }
+
   diagnostics.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.column - b.column);
 
   return {

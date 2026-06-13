@@ -103,10 +103,11 @@ Build with `npm run build -w react-a11y-vscode`, press F5 to develop, or
   (labels, autofill purpose, error identification, accessible
   authentication), media, viewport zoom and document language.
   [Full list →](docs/rules/web.md)
-- **React Native** — 14 rules covering touchable labels/roles, nested
+- **React Native** — 15 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
-  inputs, switches, modal keyboard traps, live regions, state/value props and
-  silent prop typos. [Full list →](docs/rules/native.md)
+  inputs, switches, modal keyboard traps, live regions, state/value props,
+  silent prop typos, and orientation locks in project config (app.json,
+  AndroidManifest, Info.plist). [Full list →](docs/rules/native.md)
 
 `npx react-a11y --coverage` reports WCAG 2.2 conformance posture: **29 of the
 55 Level A+AA criteria are automated (53%)**, and the remaining 26 — things
@@ -171,9 +172,12 @@ node packages/cli/dist/index.js examples/native-demo
 - ~~Cross-file label resolution (`htmlFor` ↔ `id`)~~ ✓ project-wide pass
 - ~~`--changed` mode~~ ✓ scan only files changed in git
 - ~~Editor integration~~ ✓ VS Code extension with quick fixes and fix-on-save
+- ~~Expo/native config checks~~ ✓ orientation locks in app.json, app.config.*, AndroidManifest, Info.plist
+
+Noted for later (not started):
+
 - Marketplace publishing for the VS Code extension (icon, publisher account)
 - LSP server for other editors (Neovim, JetBrains) on top of `analyze()`
-- Expo config checks (orientation lock in app.json)
 
 ## License
 
