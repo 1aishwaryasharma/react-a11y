@@ -48,29 +48,29 @@ src/screens/Profile.tsx
 
 ```sh
 # audit the current project (platform auto-detected from package.json)
-npx @react-a11y/cli .
+npx @aish/react-a11y .
 
 # explicit platform
-npx @react-a11y/cli apps/mobile --platform native
+npx @aish/react-a11y apps/mobile --platform native
 
 # machine-readable output
-npx @react-a11y/cli . --format json
-npx @react-a11y/cli . --format sarif --output a11y.sarif   # GitHub code scanning
+npx @aish/react-a11y . --format json
+npx @aish/react-a11y . --format sarif --output a11y.sarif   # GitHub code scanning
 
 # gate CI: exit 1 when serious or critical issues exist (default)
-npx @react-a11y/cli . --fail-on serious
+npx @aish/react-a11y . --fail-on serious
 
 # apply safe mechanical fixes (e.g. miscapitalized React Native accessibility props)
-npx @react-a11y/cli . --fix
+npx @aish/react-a11y . --fix
 
 # scan only files changed in git — fast PR checks
-npx @react-a11y/cli . --changed
+npx @aish/react-a11y . --changed
 
 # see every rule with severity + WCAG mapping
-npx @react-a11y/cli --list-rules
+npx @aish/react-a11y --list-rules
 
 # WCAG 2.2 success-criteria coverage report
-npx @react-a11y/cli --coverage
+npx @aish/react-a11y --coverage
 ```
 
 ### How it fits with eslint-plugin-jsx-a11y
@@ -88,7 +88,7 @@ Install it globally (or as a dev dependency) to get the bare `react-a11y`
 command:
 
 ```sh
-npm install -g @react-a11y/cli   # then: react-a11y .
+npm install -g @aish/react-a11y   # then: react-a11y .
 ```
 
 ### VS Code extension
@@ -135,13 +135,13 @@ Problems panel; the CLI runs them automatically on a full scan.
 
 ### Expo / React Native projects
 
-No setup needed — `npx @react-a11y/cli .` detects `react-native`/`expo` in
+No setup needed — `npx @aish/react-a11y .` detects `react-native`/`expo` in
 package.json and runs the native rule pack, including project-config checks
 that go beyond JSX. Orientation locks (WCAG 1.3.4) are flagged wherever they
 live:
 
 ```
-$ npx @react-a11y/cli .
+$ npx @aish/react-a11y .
 
 app.json
   6:5   moderate  no-orientation-lock
@@ -172,7 +172,7 @@ they cover Level A+AA web a11y, and react-a11y adds React Native:
   run: npx eslint .
 
 - name: react-a11y — WCAG 2.2, React Native, project-wide
-  run: npx @react-a11y/cli . --format sarif --output a11y.sarif --fail-on none
+  run: npx @aish/react-a11y . --format sarif --output a11y.sarif --fail-on none
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: a11y.sarif
@@ -223,7 +223,7 @@ export default [
   project config (app.json, AndroidManifest, Info.plist).
   [Full list →](docs/rules/native.md)
 
-`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: react-a11y
+`npx @aish/react-a11y --coverage` reports WCAG 2.2 coverage: react-a11y
 automates **25 of the 55 Level A+AA criteria (45%)** on its own, and **31/55
 (56%)** when run alongside eslint-plugin-jsx-a11y. The remaining 24 — things
 like reflow, use of color, and consistent navigation that a static tool cannot
@@ -234,12 +234,12 @@ by a rule (here or in jsx-a11y) or an explicit verification step.
 
 ```
 packages/
-  core/           @react-a11y/core — parsing (TS compiler API), normalized JSX
+  core/           @aish/react-a11y-core — parsing (TS compiler API), normalized JSX
                   element model, rule engine, WCAG 2.2 metadata, JSON/SARIF
                   reporters. Platform-agnostic.
-  rules-web/      @react-a11y/rules-web — the WCAG 2.2 / structure / focus rules
+  rules-web/      @aish/react-a11y-rules-web — the WCAG 2.2 / structure / focus rules
                   jsx-a11y doesn't cover (complement, not replacement)
-  rules-native/   @react-a11y/rules-native — rules for React Native/Expo
+  rules-native/   @aish/react-a11y-rules-native — rules for React Native/Expo
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
   vscode/         react-a11y-vscode — VS Code extension: live diagnostics,
                   quick fixes, fix-on-save (esbuild-bundled, ships as .vsix)
@@ -263,8 +263,8 @@ export const iframeHasTitle = defineRule(
 Embedding the engine (editor extensions, custom CI, agents):
 
 ```ts
-import { analyze } from '@react-a11y/core';
-import { webRules } from '@react-a11y/rules-web';
+import { analyze } from '@aish/react-a11y-core';
+import { webRules } from '@aish/react-a11y-rules-web';
 
 const diagnostics = analyze({ code, filename: 'App.tsx', platform: 'web', rules: webRules });
 ```
@@ -282,7 +282,7 @@ node packages/cli/dist/index.js examples/native-demo
 ### Publishing (maintainers)
 
 Four packages publish to npm under the `@react-a11y` scope — the engine
-(`@react-a11y/core`), both rule packs, and the CLI (`@react-a11y/cli`). They
+(`@aish/react-a11y-core`), both rule packs, and the CLI (`@aish/react-a11y`). They
 must go out in dependency order; `npm run release` builds, tests, and publishes
 all four in that order. One-time setup: create a free npm org named
 `react-a11y` (Settings → organizations) so the scope is yours, then `npm login`.

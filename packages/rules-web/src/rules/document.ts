@@ -1,4 +1,4 @@
-import { staticString } from '@react-a11y/core';
+import { staticString } from '@aish/react-a11y-core';
 import { defineRule, isDomTag } from '../util.js';
 
 /** Blocking pinch-zoom prevents low-vision users from reading the page. */

@@ -1,5 +1,5 @@
-import { attrProvidesValue, hasAttr, isStaticTrue, staticValue, walkDescendants } from '@react-a11y/core';
-import type { ElementNode } from '@react-a11y/core';
+import { attrProvidesValue, hasAttr, isStaticTrue, staticValue, walkDescendants } from '@aish/react-a11y-core';
+import type { ElementNode } from '@aish/react-a11y-core';
 import { defineRule, isHiddenFromAT, isNativeInteractive, isRNComponent } from '../util.js';
 
 /** Containers whose `accessible` prop groups (or fails to group) their subtree. */

@@ -1,4 +1,4 @@
-import type { A11yConfig, ProjectPass, Rule } from '@react-a11y/core';
+import type { A11yConfig, ProjectPass, Rule } from '@aish/react-a11y-core';
 import { buttonHasName, labelInName, mediaNoAutoplay } from './rules/names.js';
 import { pointerCancellation, noOutlineNone } from './rules/interactions.js';
 import {

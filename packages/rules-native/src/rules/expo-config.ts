@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { resolveWcag, type Diagnostic, type Rule } from '@react-a11y/core';
+import { resolveWcag, type Diagnostic, type Rule } from '@aish/react-a11y-core';
 import { helpUrlFor } from '../util.js';
 
 const RULE_META = {

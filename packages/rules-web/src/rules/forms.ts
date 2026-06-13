@@ -1,4 +1,4 @@
-import { attrProvidesValue, hasAttr, staticString } from '@react-a11y/core';
+import { attrProvidesValue, hasAttr, staticString } from '@aish/react-a11y-core';
 import { defineRule, isDomTag } from '../util.js';
 
 /** input type="button"/"image" have no default label. */

@@ -1,5 +1,5 @@
-import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@react-a11y/core';
-import { readOwnPackageMeta } from '@react-a11y/core';
+import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@aish/react-a11y-core';
+import { readOwnPackageMeta } from '@aish/react-a11y-core';
 
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
 const HELP_BASE = homepage ? `${homepage}/blob/main/docs/rules/web.md#` : undefined;

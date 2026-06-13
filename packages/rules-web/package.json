@@ -1,5 +1,5 @@
 {
-  "name": "@react-a11y/rules-web",
+  "name": "@aish/react-a11y-rules-web",
   "version": "0.1.0",
   "description": "WCAG 2.2 accessibility rules for React DOM and other React web frameworks.",
   "type": "module",
@@ -22,7 +22,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@react-a11y/core": "^0.1.0"
+    "@aish/react-a11y-core": "^0.1.0"
   },
   "license": "MIT",
   "homepage": "https://github.com/1aishwaryasharma/react-a11y",

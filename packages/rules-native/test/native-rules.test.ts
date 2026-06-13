@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { analyze, applyFixes, scanProject } from '@react-a11y/core';
-import { nativeRules, noOrientationLock } from '@react-a11y/rules-native';
+import { analyze, applyFixes, scanProject } from '@aish/react-a11y-core';
+import { nativeRules, noOrientationLock } from '@aish/react-a11y-rules-native';
 
 const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, TouchableOpacity } from 'react-native';\n`;
 

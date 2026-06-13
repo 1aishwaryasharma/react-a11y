@@ -1,5 +1,5 @@
 {
-  "name": "@react-a11y/core",
+  "name": "@aish/react-a11y-core",
   "version": "0.1.0",
   "description": "Platform-agnostic static analysis engine for React accessibility auditing (web and native).",
   "type": "module",

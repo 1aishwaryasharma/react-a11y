@@ -6,7 +6,7 @@ import {
   isAriaHidden,
   staticString,
   staticValue,
-} from '@react-a11y/core';
+} from '@aish/react-a11y-core';
 import { defineRule, isDomTag } from '../util.js';
 
 /** Buttons (and role="button" elements) must have an accessible name. */

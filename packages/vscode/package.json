@@ -70,9 +70,9 @@
     "package": "vsce package --no-dependencies"
   },
   "dependencies": {
-    "@react-a11y/core": "0.1.0",
-    "@react-a11y/rules-native": "0.1.0",
-    "@react-a11y/rules-web": "0.1.0"
+    "@aish/react-a11y-core": "0.1.0",
+    "@aish/react-a11y-rules-native": "0.1.0",
+    "@aish/react-a11y-rules-web": "0.1.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",

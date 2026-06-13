@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, buildFileModel, parseSource, WCAG22_A_AA } from '@react-a11y/core';
-import { createLabelForPass, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
+import { analyze, buildFileModel, parseSource, WCAG22_A_AA } from '@aish/react-a11y-core';
+import { createLabelForPass, webRules, JSX_A11Y_COVERED_WCAG } from '@aish/react-a11y-rules-web';
 
 function run(code: string): string[] {
   return analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules }).map((d) => d.ruleId);

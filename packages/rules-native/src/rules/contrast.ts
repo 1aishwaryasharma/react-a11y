@@ -1,4 +1,4 @@
-import { colorContrastFinding } from '@react-a11y/core';
+import { colorContrastFinding } from '@aish/react-a11y-core';
 import { defineRule } from '../util.js';
 
 /**

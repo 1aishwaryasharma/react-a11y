@@ -1,4 +1,4 @@
-import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@react-a11y/core';
+import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@aish/react-a11y-core';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent } from '../util.js';
 
 const IMAGE = new Set(['Image']);

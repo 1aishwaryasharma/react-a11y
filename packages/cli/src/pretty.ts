@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import pc from 'picocolors';
-import type { Diagnostic, ScanResult, Severity } from '@react-a11y/core';
-import { SEVERITY_ORDER } from '@react-a11y/core';
+import type { Diagnostic, ScanResult, Severity } from '@aish/react-a11y-core';
+import { SEVERITY_ORDER } from '@aish/react-a11y-core';
 
 const SEVERITY_COLOR: Record<Severity, (s: string) => string> = {
   critical: (s) => pc.bold(pc.red(s)),

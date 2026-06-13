@@ -6,7 +6,7 @@ import {
   parseSource,
   staticValue,
   type Rule,
-} from '@react-a11y/core';
+} from '@aish/react-a11y-core';
 
 function model(code: string) {
   return buildFileModel(parseSource(code, 'test.tsx'));
@@ -89,7 +89,7 @@ describe('engine', () => {
 
 describe('color and contrast', () => {
   it('parses hex, rgb and named colors; rejects translucent and unknown', async () => {
-    const { parseColor, contrastRatio } = await import('@react-a11y/core');
+    const { parseColor, contrastRatio } = await import('@aish/react-a11y-core');
     expect(parseColor('#fff')).toEqual({ r: 255, g: 255, b: 255 });
     expect(parseColor('#1a2b3c')).toEqual({ r: 26, g: 43, b: 60 });
     expect(parseColor('rgb(0, 128, 0)')).toEqual({ r: 0, g: 128, b: 0 });
@@ -109,7 +109,7 @@ describe('color and contrast', () => {
 
 describe('fixes', () => {
   it('applies non-overlapping fixes from the end', async () => {
-    const { applyFixes } = await import('@react-a11y/core');
+    const { applyFixes } = await import('@aish/react-a11y-core');
     const { output, applied } = applyFixes('abcdef', [
       { start: 0, end: 1, replacement: 'X' },
       { start: 3, end: 5, replacement: '' },
@@ -118,7 +118,7 @@ describe('fixes', () => {
     expect(applied).toBe(2);
   });
   it('skips overlapping fixes', async () => {
-    const { applyFixes } = await import('@react-a11y/core');
+    const { applyFixes } = await import('@aish/react-a11y-core');
     const { output, applied } = applyFixes('abcdef', [
       { start: 1, end: 4, replacement: 'Z' },
       { start: 2, end: 5, replacement: 'Y' },
@@ -127,7 +127,7 @@ describe('fixes', () => {
     expect(output).toBe('abYf'); // later-starting fix applies; the overlap is skipped
   });
   it('fixRenameAttr and fixRemoveAttr produce working edits', async () => {
-    const { fixRenameAttr, fixRemoveAttr, applyFixes } = await import('@react-a11y/core');
+    const { fixRenameAttr, fixRemoveAttr, applyFixes } = await import('@aish/react-a11y-core');
     const code = `const x = <div aria-Label="hi" role="generic" />;`;
     const { elements } = model(code);
     const rename = fixRenameAttr(elements[0], 'aria-Label', 'aria-label')!;

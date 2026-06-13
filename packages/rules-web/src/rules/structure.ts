@@ -6,9 +6,9 @@ import {
   staticValue,
   walkDescendants,
   type ElementNode,
-} from '@react-a11y/core';
+} from '@aish/react-a11y-core';
 import { defineRule, isDomTag } from '../util.js';
-import type { Rule, RuleContext } from '@react-a11y/core';
+import type { Rule, RuleContext } from '@aish/react-a11y-core';
 
 function headingLevel(el: ElementNode): number | undefined {
   const m = /^h([1-6])$/.exec(el.name);

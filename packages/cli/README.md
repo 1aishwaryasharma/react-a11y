@@ -1,4 +1,4 @@
-# @react-a11y/cli
+# @aish/react-a11y
 
 A **static accessibility scanner** for React and React Native. It analyzes your
 TSX/JSX with the TypeScript compiler and reports WCAG 2.2 issues with
@@ -8,33 +8,33 @@ The installed command is **`react-a11y`**.
 
 ```sh
 # audit the current project (platform auto-detected from package.json)
-npx @react-a11y/cli .
+npx @aish/react-a11y .
 
 # explicit platform
-npx @react-a11y/cli apps/mobile --platform native
+npx @aish/react-a11y apps/mobile --platform native
 
 # machine-readable output
-npx @react-a11y/cli . --format json
-npx @react-a11y/cli . --format sarif --output a11y.sarif   # GitHub code scanning
+npx @aish/react-a11y . --format json
+npx @aish/react-a11y . --format sarif --output a11y.sarif   # GitHub code scanning
 
 # gate CI: exit 1 when serious or critical issues exist (default)
-npx @react-a11y/cli . --fail-on serious
+npx @aish/react-a11y . --fail-on serious
 
 # apply safe mechanical fixes (ARIA casing, redundant roles, RN prop typos, …)
-npx @react-a11y/cli . --fix
+npx @aish/react-a11y . --fix
 
 # scan only files changed in git — fast PR checks
-npx @react-a11y/cli . --changed
+npx @aish/react-a11y . --changed
 
 # every rule with severity + WCAG mapping, or the coverage report
-npx @react-a11y/cli --list-rules
-npx @react-a11y/cli --coverage
+npx @aish/react-a11y --list-rules
+npx @aish/react-a11y --coverage
 ```
 
 Install globally to get the bare `react-a11y` command:
 
 ```sh
-npm install -g @react-a11y/cli
+npm install -g @aish/react-a11y
 react-a11y .
 ```
 

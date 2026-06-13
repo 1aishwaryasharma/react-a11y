@@ -4,7 +4,7 @@ import {
   hasAttr,
   inlineStyleValue,
   staticString,
-} from '@react-a11y/core';
+} from '@aish/react-a11y-core';
 import { defineRule } from '../util.js';
 
 /**

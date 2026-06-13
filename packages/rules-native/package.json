@@ -1,7 +1,7 @@
 {
-  "name": "@react-a11y/rules-native",
+  "name": "@aish/react-a11y-rules-native",
   "version": "0.1.0",
-  "description": "Accessibility rules for React Native and Expo, built on the shared @react-a11y/core engine.",
+  "description": "Accessibility rules for React Native and Expo, built on the shared @aish/react-a11y-core engine.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@react-a11y/core": "^0.1.0",
+    "@aish/react-a11y-core": "^0.1.0",
     "typescript": "^5.6.0"
   },
   "license": "MIT",

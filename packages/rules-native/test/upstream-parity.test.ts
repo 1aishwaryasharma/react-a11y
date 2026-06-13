@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import { RN_ROLES } from '@react-a11y/rules-native';
+import { RN_ROLES } from '@aish/react-a11y-rules-native';
 
 const require = createRequire(import.meta.url);
 

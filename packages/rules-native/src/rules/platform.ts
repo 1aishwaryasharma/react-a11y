@@ -1,4 +1,4 @@
-import { isStaticTrue, staticString } from '@react-a11y/core';
+import { isStaticTrue, staticString } from '@aish/react-a11y-core';
 import {
   androidHidesSubtree,
   defineRule,

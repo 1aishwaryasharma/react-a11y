@@ -22,9 +22,9 @@ import {
   type ScanResult,
   type Severity,
   type WcagLevel,
-} from '@react-a11y/core';
-import { webProjectPasses, webRules, JSX_A11Y_COVERED_WCAG } from '@react-a11y/rules-web';
-import { nativeRules } from '@react-a11y/rules-native';
+} from '@aish/react-a11y-core';
+import { webProjectPasses, webRules, JSX_A11Y_COVERED_WCAG } from '@aish/react-a11y-rules-web';
+import { nativeRules } from '@aish/react-a11y-rules-native';
 import { printPretty } from './pretty.js';
 
 const PKG = readOwnPackageMeta(import.meta.url);

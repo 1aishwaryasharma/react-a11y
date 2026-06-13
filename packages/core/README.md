@@ -1,7 +1,7 @@
-# @react-a11y/core
+# @aish/react-a11y-core
 
 Platform-agnostic static-analysis engine behind
-[`@react-a11y/cli`](https://www.npmjs.com/package/@react-a11y/cli). Parses
+[`@aish/react-a11y`](https://www.npmjs.com/package/@aish/react-a11y). Parses
 TSX/JSX with the TypeScript compiler API into a normalized `ElementNode` model,
 runs a rule engine over it, and emits diagnostics mapped to WCAG 2.2 / ARIA 1.2.
 Web and React Native rule packs are built on this same engine.
@@ -9,8 +9,8 @@ Web and React Native rule packs are built on this same engine.
 Use it to embed accessibility checks in editor extensions, custom CI, or agents:
 
 ```ts
-import { analyze } from '@react-a11y/core';
-import { webRules } from '@react-a11y/rules-web';
+import { analyze } from '@aish/react-a11y-core';
+import { webRules } from '@aish/react-a11y-rules-web';
 
 const diagnostics = analyze({
   code,

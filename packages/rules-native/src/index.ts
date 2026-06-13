@@ -1,4 +1,4 @@
-import type { Rule } from '@react-a11y/core';
+import type { Rule } from '@aish/react-a11y-core';
 import {
   touchableHasLabel,
   touchableHasRole,

@@ -1,4 +1,4 @@
-import { findAncestor, hasAttr, inlineStyleNumber, targetSizeTier } from '@react-a11y/core';
+import { findAncestor, hasAttr, inlineStyleNumber, targetSizeTier } from '@aish/react-a11y-core';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isTouchable } from '../util.js';
 
 /**

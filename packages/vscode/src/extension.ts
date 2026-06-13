@@ -12,9 +12,9 @@ import {
   type Fix,
   type Platform,
   type Severity,
-} from '@react-a11y/core';
-import { webRules, webProjectPasses } from '@react-a11y/rules-web';
-import { nativeRules } from '@react-a11y/rules-native';
+} from '@aish/react-a11y-core';
+import { webRules, webProjectPasses } from '@aish/react-a11y-rules-web';
+import { nativeRules } from '@aish/react-a11y-rules-native';
 
 const LANGUAGES = ['javascript', 'javascriptreact', 'typescript', 'typescriptreact'];
 const DEBOUNCE_MS = 300;

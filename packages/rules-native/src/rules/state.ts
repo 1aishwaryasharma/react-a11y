@@ -1,4 +1,4 @@
-import { objectLiteralKeys, staticString } from '@react-a11y/core';
+import { objectLiteralKeys, staticString } from '@aish/react-a11y-core';
 import { defineRule } from '../util.js';
 
 const STATE_KEYS = new Set(['disabled', 'selected', 'checked', 'busy', 'expanded']);

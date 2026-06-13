@@ -10,7 +10,7 @@ import {
   type RuleSetting,
   type Severity,
   type SourceLocation,
-} from '@react-a11y/core';
+} from '@aish/react-a11y-core';
 import { defineRule } from '../util.js';
 
 const RULE_ID = 'form-control-has-label';

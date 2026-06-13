@@ -1,5 +1,5 @@
-import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@react-a11y/core';
-import { attrProvidesValue, isStaticTrue, readOwnPackageMeta, staticString } from '@react-a11y/core';
+import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@aish/react-a11y-core';
+import { attrProvidesValue, isStaticTrue, readOwnPackageMeta, staticString } from '@aish/react-a11y-core';
 
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
 const HELP_BASE = homepage ? `${homepage}/blob/main/docs/rules/native.md#` : undefined;
