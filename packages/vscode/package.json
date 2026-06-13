@@ -1,7 +1,7 @@
 {
   "name": "react-a11y-vscode",
   "displayName": "react-a11y",
-  "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React, Next.js and React Native.",
+  "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
   "version": "0.1.0",
   "publisher": "aishwaryasharma",
   "private": true,

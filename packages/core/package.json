@@ -11,8 +11,15 @@
       "default": "./dist/index.js"
     }
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "dependencies": {
     "typescript": "^5.6.0"

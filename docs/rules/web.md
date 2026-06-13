@@ -1,6 +1,6 @@
 # Web rules
 
-Rules for React DOM, Next.js, Vite, Remix and any other React-based web framework.
+Rules for React DOM and any React-based web framework.
 Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success criteria.
 
 | Rule | Severity | WCAG |

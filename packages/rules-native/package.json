@@ -11,11 +11,18 @@
       "default": "./dist/index.js"
     }
   },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "dependencies": {
-    "@react-a11y/core": "0.1.0",
+    "@react-a11y/core": "^0.1.0",
     "typescript": "^5.6.0"
   },
   "license": "MIT",

@@ -1,20 +1,27 @@
 {
-  "name": "react-a11y",
+  "name": "@react-a11y/cli",
   "version": "0.1.0",
-  "description": "Enterprise-grade accessibility scanner for React, Next.js and React Native — pinpoints WCAG 2.2 issues with file:line precision.",
+  "description": "Static accessibility scanner for React and React Native — reports WCAG 2.2 issues with file:line locations.",
   "type": "module",
   "bin": {
     "react-a11y": "dist/index.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "dependencies": {
-    "@react-a11y/core": "0.1.0",
-    "@react-a11y/rules-native": "0.1.0",
-    "@react-a11y/rules-web": "0.1.0",
+    "@react-a11y/core": "^0.1.0",
+    "@react-a11y/rules-native": "^0.1.0",
+    "@react-a11y/rules-web": "^0.1.0",
     "picocolors": "^1.1.0"
   },
   "license": "MIT",

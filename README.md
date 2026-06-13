@@ -1,8 +1,8 @@
 # react-a11y
 
-**Enterprise-grade accessibility scanner for React, Next.js and React Native.**
-Statically analyzes your codebase and pinpoints WCAG 2.2 violations with
-file:line precision — no browser, no rendering, no config required.
+A static accessibility scanner for React and React Native. It analyzes your
+source and reports WCAG 2.2 issues with file:line locations — no browser, no
+rendering, no configuration required.
 
 ```
 $ react-a11y .
@@ -20,45 +20,51 @@ src/components/Hero.tsx
 
 ## Why
 
-- **Static, fast, deterministic.** Scans TSX/JSX with the TypeScript compiler —
-  works on code that doesn't even build yet, and runs in CI in well under a second
-  for most repos.
-- **Latest guidelines.** Every finding is mapped to WCAG 2.2 success criteria
-  (including the new 2.5.8 Target Size minimum) and ARIA 1.2 vocabulary, with
-  links to the W3C Understanding pages.
-- **Low false-positive design.** Spread props, dynamic expressions and unknown
-  wrapper components get the benefit of the doubt — findings are meant to be
-  actionable, not noise.
-- **One core, every React platform.** The engine is platform-agnostic; web and
-  React Native ship as separate rule packs over the same element model.
+- **Static and deterministic.** Parses TSX/JSX with the TypeScript compiler, so
+  it works on code that doesn't build yet and is fast enough to run in CI.
+- **Mapped to current guidelines.** Findings cite WCAG 2.2 success criteria
+  (including 2.5.8 Target Size) and ARIA 1.2 vocabulary, with links to the W3C
+  Understanding pages.
+- **Conservative by design.** Spread props, dynamic expressions and unknown
+  wrapper components are skipped rather than guessed at, to keep false positives
+  low.
+- **Shared core across platforms.** The engine is platform-agnostic; web and
+  React Native are separate rule packs over the same element model.
 
 ## Usage
 
 ```sh
 # audit the current project (platform auto-detected from package.json)
-npx react-a11y .
+npx @react-a11y/cli .
 
 # explicit platform
-npx react-a11y apps/mobile --platform native
+npx @react-a11y/cli apps/mobile --platform native
 
 # machine-readable output
-npx react-a11y . --format json
-npx react-a11y . --format sarif --output a11y.sarif   # GitHub code scanning
+npx @react-a11y/cli . --format json
+npx @react-a11y/cli . --format sarif --output a11y.sarif   # GitHub code scanning
 
 # gate CI: exit 1 when serious or critical issues exist (default)
-npx react-a11y . --fail-on serious
+npx @react-a11y/cli . --fail-on serious
 
 # apply safe mechanical fixes (ARIA casing, redundant roles, RN prop typos, …)
-npx react-a11y . --fix
+npx @react-a11y/cli . --fix
 
 # scan only files changed in git — fast PR checks
-npx react-a11y . --changed
+npx @react-a11y/cli . --changed
 
 # see every rule with severity + WCAG mapping
-npx react-a11y --list-rules
+npx @react-a11y/cli --list-rules
 
 # WCAG 2.2 success-criteria coverage report
-npx react-a11y --coverage
+npx @react-a11y/cli --coverage
+```
+
+Install it globally (or as a dev dependency) to get the bare `react-a11y`
+command:
+
+```sh
+npm install -g @react-a11y/cli   # then: react-a11y .
 ```
 
 ### VS Code extension
@@ -98,13 +104,13 @@ issues** from the command palette. To fix on every save:
 
 ### Expo / React Native projects
 
-No setup needed — `npx react-a11y .` detects `react-native`/`expo` in
+No setup needed — `npx @react-a11y/cli .` detects `react-native`/`expo` in
 package.json and runs the native rule pack, including project-config checks
 that go beyond JSX. Orientation locks (WCAG 1.3.4) are flagged wherever they
 live:
 
 ```
-$ npx react-a11y .
+$ npx @react-a11y/cli .
 
 app.json
   6:5   moderate  no-orientation-lock
@@ -128,7 +134,7 @@ project:
 ### CI (GitHub Actions)
 
 ```yaml
-- run: npx react-a11y . --format sarif --output a11y.sarif --fail-on none
+- run: npx @react-a11y/cli . --format sarif --output a11y.sarif --fail-on none
 - uses: github/codeql-action/upload-sarif@v3
   with:
     sarif_file: a11y.sarif
@@ -164,11 +170,11 @@ project:
   silent prop typos, and orientation locks in project config (app.json,
   AndroidManifest, Info.plist). [Full list →](docs/rules/native.md)
 
-`npx react-a11y --coverage` reports WCAG 2.2 conformance posture: **29 of the
-55 Level A+AA criteria are automated (53%)**, and the remaining 26 — things
-like reflow, use of color, and consistent navigation that no static tool can
-decide — ship as a **guided manual checklist**, so all 55 A+AA criteria
-(100%) are addressed by either a rule or an explicit verification step.
+`npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **29 of the 55
+Level A+AA criteria are checked automatically (53%)**. The remaining 26 — things
+like reflow, use of color, and consistent navigation that a static tool cannot
+decide — are listed as a manual checklist, so all 55 A+AA criteria are addressed
+by either a rule or an explicit verification step.
 
 ## Architecture
 
@@ -177,7 +183,7 @@ packages/
   core/           @react-a11y/core — parsing (TS compiler API), normalized JSX
                   element model, rule engine, WCAG 2.2 + ARIA 1.2 metadata,
                   JSON/SARIF reporters. Platform-agnostic.
-  rules-web/      @react-a11y/rules-web — WCAG-mapped rules for React DOM/Next.js
+  rules-web/      @react-a11y/rules-web — WCAG-mapped rules for React DOM
   rules-native/   @react-a11y/rules-native — rules for React Native/Expo
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
   vscode/         react-a11y-vscode — VS Code extension: live diagnostics,
@@ -217,6 +223,23 @@ npm test          # vitest
 node packages/cli/dist/index.js examples/web-demo
 node packages/cli/dist/index.js examples/native-demo
 ```
+
+### Publishing (maintainers)
+
+Four packages publish to npm under the `@react-a11y` scope — the engine
+(`@react-a11y/core`), both rule packs, and the CLI (`@react-a11y/cli`). They
+must go out in dependency order; `npm run release` builds, tests, and publishes
+all four in that order. One-time setup: create a free npm org named
+`react-a11y` (Settings → organizations) so the scope is yours, then `npm login`.
+
+```sh
+npm version patch --workspaces --include-workspace-root   # bump all packages in lockstep
+npm run release                                           # build + test + publish core → rules → cli
+```
+
+`publishConfig.access` is set to `public` on every package, so no `--access`
+flag is needed. The VS Code extension (`packages/vscode`) is `private` and
+ships as a `.vsix`, not to npm.
 
 ## Roadmap
 

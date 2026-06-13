@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc -b packages/core packages/rules-web packages/rules-native packages/cli",
     "test": "vitest run",
-    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo"
+    "clean": "rm -rf packages/*/dist packages/*/tsconfig.tsbuildinfo",
+    "release": "npm run build && npm test && npm publish -w @react-a11y/core && npm publish -w @react-a11y/rules-web && npm publish -w @react-a11y/rules-native && npm publish -w @react-a11y/cli"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",

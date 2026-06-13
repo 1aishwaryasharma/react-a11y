@@ -1,7 +1,7 @@
 # react-a11y for VS Code
 
-Inline WCAG 2.2 accessibility diagnostics for React, Next.js and React
-Native, powered by the [react-a11y](https://github.com/1aishwaryasharma/react-a11y)
+Inline WCAG 2.2 accessibility diagnostics for React and React Native,
+powered by the [react-a11y](https://github.com/1aishwaryasharma/react-a11y)
 static analyzer — no browser, no build, results as you type.
 
 ## Features
