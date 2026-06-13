@@ -3,6 +3,12 @@
 Rules for React DOM and any React-based web framework.
 Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success criteria.
 
+> **Default vs. `--full`.** The web pack ships two presets. The **default** runs
+> only the rules [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
+> does *not* cover — pair the two for complete web coverage. The ~34 rules that
+> overlap jsx-a11y are off unless you pass `--full` (for projects not running
+> jsx-a11y). `--list-rules` shows which group each rule is in.
+
 | Rule | Severity | WCAG |
 | --- | --- | --- |
 | [img-alt](#img-alt) | critical | 1.1.1 |

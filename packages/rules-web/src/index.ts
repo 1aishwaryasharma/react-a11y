@@ -128,44 +128,73 @@ export {
   targetSize,
 };
 
-/** The recommended web preset: every rule, mapped to WCAG 2.2. */
+/**
+ * The default web preset — the WCAG 2.2 criteria, document structure, focus
+ * visibility and project-aware checks that eslint-plugin-jsx-a11y does NOT
+ * cover. Pair this with eslint-plugin-jsx-a11y, which owns the rest (see
+ * `webRulesJsxA11yOverlap`).
+ */
 export const webRules: Rule[] = [
-  // names & alternatives
-  imgAlt,
-  anchorHasContent,
-  anchorAmbiguousText,
-  anchorIsValid,
+  // names jsx-a11y lacks
   buttonHasName,
-  headingHasContent,
-  iframeHasTitle,
   inputButtonHasName,
   // document
-  htmlHasLang,
-  langValid,
   titleHasContent,
   metaViewportZoomable,
   noMetaRefresh,
   // media
-  mediaHasCaptions,
   mediaNoAutoplay,
-  // aria
-  ariaAttrsValid,
-  ariaAttrValueValid,
-  roleValid,
-  ariaRequiredAttrs,
+  // aria (required-context has no jsx-a11y equivalent)
   ariaRequiredContext,
-  ariaHiddenFocusable,
-  roleSupportsAriaProps,
-  ariaUnsupportedElements,
-  ariaActivedescendantHasTabindex,
-  noRedundantRoles,
-  scopeOnTh,
   // structure
   headingOrder,
   listStructure,
   tableHasHeader,
   fieldsetHasLegend,
   noDuplicateMain,
+  // focus visibility
+  noOutlineNone,
+  // forms (WCAG 2.2)
+  accessibleAuthentication,
+  errorIdentification,
+  noAutocompleteOff,
+  // pointer, contrast, target size, reading order, label-in-name (WCAG 2.1/2.2)
+  labelInName,
+  pointerCancellation,
+  colorContrast,
+  targetSize,
+  meaningfulOrder,
+];
+
+/**
+ * Rules that duplicate eslint-plugin-jsx-a11y, the canonical implementation.
+ * OFF by default — enable (via `webRulesAll` / CLI `--full`) only if you are
+ * not already running jsx-a11y, to avoid double-reporting.
+ */
+export const webRulesJsxA11yOverlap: Rule[] = [
+  // names & alternatives
+  imgAlt,
+  anchorHasContent,
+  anchorAmbiguousText,
+  anchorIsValid,
+  headingHasContent,
+  iframeHasTitle,
+  // document
+  htmlHasLang,
+  langValid,
+  // media
+  mediaHasCaptions,
+  // aria
+  ariaAttrsValid,
+  ariaAttrValueValid,
+  roleValid,
+  ariaRequiredAttrs,
+  ariaHiddenFocusable,
+  roleSupportsAriaProps,
+  ariaUnsupportedElements,
+  ariaActivedescendantHasTabindex,
+  noRedundantRoles,
+  scopeOnTh,
   // roles & semantics
   interactiveSupportsFocus,
   noNoninteractiveElementInteractions,
@@ -181,17 +210,13 @@ export const webRules: Rule[] = [
   noAutofocus,
   noAccessKey,
   noDistractingElements,
-  noOutlineNone,
   // forms
   formControlHasLabel,
   autocompleteValid,
-  accessibleAuthentication,
-  errorIdentification,
-  noAutocompleteOff,
-  // pointer, contrast & order
-  labelInName,
-  pointerCancellation,
-  colorContrast,
-  targetSize,
-  meaningfulOrder,
 ];
+
+/**
+ * Every web rule, including the jsx-a11y overlap. Use this for a standalone
+ * scan when jsx-a11y is not part of the project.
+ */
+export const webRulesAll: Rule[] = [...webRules, ...webRulesJsxA11yOverlap];

@@ -1,35 +1,48 @@
 # react-a11y
 
-A static accessibility scanner for React and React Native. It analyzes your
-source and reports WCAG 2.2 issues with file:line locations — no browser, no
-rendering, no configuration required.
+A static accessibility scanner for **React Native and React** that catches what
+your ESLint setup can't: full React Native accessibility (including focus and
+reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
+report — analyzed from source with file:line precision, no browser or rendering.
+
+It complements [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
+rather than competing with it: the web pack runs only the rules jsx-a11y
+*doesn't*, so there's no double-reporting. jsx-a11y owns standard web a11y;
+react-a11y owns React Native and the gaps.
 
 ```
-$ react-a11y .
+$ react-a11y apps/mobile
 
-react-a11y v0.1.0 — platform: web — 214 files scanned in 480ms
+react-a11y v0.1.0 — platform: native — 92 files scanned in 210ms
 
-src/components/Hero.tsx
-  12:7   critical  img-alt
-         <img> is missing an alt attribute. Use alt="" only if the image is purely decorative.
-            12 |       <img src="/hero.png" />
-         WCAG 1.1.1 Non-text Content (Level A)
+src/screens/Profile.tsx
+  34:7   serious  accessible-grouping-hides-interactive
+         <View accessible> groups its whole subtree into one focus stop, so the
+         <Pressable> inside is no longer separately focusable and the reading
+         order changes. Move the grouping off the interactive content.
+            34 |       <View accessible={true}>
+         WCAG 2.4.3 Focus Order (Level A)
 
-✖ 14 issues (3 critical, 10 serious, 1 moderate) in 6 files
+✖ 7 issues (1 critical, 5 serious, 1 moderate) in 4 files
 ```
 
 ## Why
 
-- **Static and deterministic.** Parses TSX/JSX with the TypeScript compiler, so
-  it works on code that doesn't build yet and is fast enough to run in CI.
-- **Mapped to current guidelines.** Findings cite WCAG 2.2 success criteria
-  (including 2.5.8 Target Size) and ARIA 1.2 vocabulary, with links to the W3C
-  Understanding pages.
-- **Conservative by design.** Spread props, dynamic expressions and unknown
-  wrapper components are skipped rather than guessed at, to keep false positives
-  low.
-- **Shared core across platforms.** The engine is platform-agnostic; web and
-  React Native are separate rule packs over the same element model.
+- **React Native a11y nobody else lints.** Focus and reading order
+  (`accessible={true}` grouping), touch-target size, cross-platform hiding, and
+  Expo config (orientation locks) — from the same engine as web.
+- **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
+  label-in-name, pointer cancellation, viewport zoom and reading order — each
+  mapped to a success criterion with a link to the W3C Understanding page.
+- **Complements eslint-plugin-jsx-a11y, doesn't fight it.** The default web pack
+  excludes everything jsx-a11y already does, so the two run together cleanly.
+  (`--full` runs the overlap too, if you're not using jsx-a11y.)
+- **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
+  cross-file checks (label resolution, duplicate landmarks) that per-file ESLint
+  rules structurally can't do.
+- **Static and deterministic.** Parses TSX/JSX with the TypeScript compiler —
+  works on code that doesn't build yet, runs in CI in under a second, and is
+  conservative about spreads and dynamic values to keep false positives low.
 
 ## Usage
 
@@ -53,12 +66,26 @@ npx @react-a11y/cli . --fix
 # scan only files changed in git — fast PR checks
 npx @react-a11y/cli . --changed
 
+# include the web rules that overlap jsx-a11y (if you don't run jsx-a11y)
+npx @react-a11y/cli . --full
+
 # see every rule with severity + WCAG mapping
 npx @react-a11y/cli --list-rules
 
 # WCAG 2.2 success-criteria coverage report
 npx @react-a11y/cli --coverage
 ```
+
+### How it fits with eslint-plugin-jsx-a11y
+
+For **web**, keep running `eslint-plugin-jsx-a11y` in your ESLint config — it's
+the canonical implementation of the standard web a11y rules. react-a11y's
+default web pack deliberately runs only what jsx-a11y doesn't (the WCAG 2.2
+criteria, document structure, focus visibility, and project-wide checks), so the
+two don't double-report. If you're *not* using jsx-a11y, pass `--full` to run
+the overlapping rules here too.
+
+For **React Native**, there's no equivalent — react-a11y is the whole story.
 
 Install it globally (or as a dev dependency) to get the bare `react-a11y`
 command:
@@ -149,21 +176,21 @@ project:
   "platform": "web",
   "ignore": ["**/*.stories.tsx", "src/legacy/**"],
   "rules": {
-    "no-autofocus": "off",
-    "form-control-has-label": "critical"
+    "target-size": "off",
+    "color-contrast": "critical"
   }
 }
 ```
 
 ## Rules
 
-- **Web** — 55 rules covering alternative text, accessible names, ARIA 1.2
-  validity (attributes, values, roles, required context, supported props),
-  element/role semantics (interactive vs. non-interactive, focus support),
-  document structure (headings, lists, tables, fieldsets), keyboard access and
-  focus visibility, color contrast and target size, label-in-name, pointer
-  cancellation, forms (labels, autofill purpose, error identification,
-  accessible authentication), media, viewport zoom and document language.
+- **Web** — 55 rules total, split into two presets. The **default** 21 are the
+  ones jsx-a11y doesn't cover: color contrast, target size, label-in-name,
+  pointer cancellation, viewport zoom, meta-refresh, reading order, document
+  structure (heading order, lists, tables, fieldsets, duplicate landmarks),
+  focus visibility, required-context, and the WCAG 2.2 form criteria (error
+  identification, accessible authentication, autocomplete-off). The other 34
+  **overlap eslint-plugin-jsx-a11y** and are off unless you pass `--full`.
   [Full list →](docs/rules/web.md)
 - **React Native** — 20 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
@@ -175,10 +202,12 @@ project:
   [Full list →](docs/rules/native.md)
 
 `npx @react-a11y/cli --coverage` reports WCAG 2.2 coverage: **31 of the 55
-Level A+AA criteria are checked automatically (56%)**. The remaining 24 — things
-like reflow, use of color, and consistent navigation that a static tool cannot
-decide — are listed as a manual checklist, so all 55 A+AA criteria are addressed
-by either a rule or an explicit verification step.
+Level A+AA criteria are checked automatically (56%)**, counting both the default
+pack and the jsx-a11y-overlap rules the tool ships (the default scan defers the
+overlap to jsx-a11y). The remaining 24 — things like reflow, use of color, and
+consistent navigation that a static tool cannot decide — are listed as a manual
+checklist, so all 55 A+AA criteria are addressed by either a rule or an explicit
+verification step.
 
 ## Architecture
 

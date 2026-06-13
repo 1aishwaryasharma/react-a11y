@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { analyze, applyFixes, buildFileModel, parseSource } from '@react-a11y/core';
-import { createLabelForPass, webRules } from '@react-a11y/rules-web';
+import { createLabelForPass, webRules, webRulesAll, webRulesJsxA11yOverlap } from '@react-a11y/rules-web';
 
 function run(code: string): string[] {
-  return analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules }).map((d) => d.ruleId);
+  return analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRulesAll }).map((d) => d.ruleId);
 }
 
 describe('img-alt', () => {
@@ -95,7 +95,7 @@ describe('interactions', () => {
 describe('autofixes', () => {
   it('fixes aria casing and redundant roles', () => {
     const code = `const x = <nav role="navigation" aria-Label="Main" />;`;
-    const diags = analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRules });
+    const diags = analyze({ code, filename: 'test.tsx', platform: 'web', rules: webRulesAll });
     const fixes = diags.filter((d) => d.fix).map((d) => d.fix!);
     expect(fixes.length).toBe(2);
     const { output } = applyFixes(code, fixes);
@@ -288,6 +288,32 @@ describe('forms', () => {
   });
 });
 
+describe('preset split (delta vs jsx-a11y overlap)', () => {
+  const ids = (rules: typeof webRules) => rules.map((r) => r.meta.id);
+
+  it('default preset keeps the unique WCAG 2.2 / structure rules', () => {
+    expect(ids(webRules)).toEqual(expect.arrayContaining([
+      'color-contrast', 'target-size', 'label-in-name', 'heading-order',
+      'meta-viewport-zoomable', 'aria-required-context', 'accessible-authentication',
+    ]));
+  });
+
+  it('default preset excludes rules that overlap eslint-plugin-jsx-a11y', () => {
+    expect(ids(webRules)).not.toContain('img-alt');
+    expect(ids(webRules)).not.toContain('aria-props');
+    expect(ids(webRules)).not.toContain('no-static-element-interactions');
+    expect(ids(webRulesJsxA11yOverlap)).toEqual(expect.arrayContaining([
+      'img-alt', 'aria-attrs-valid', 'anchor-is-valid', 'no-static-element-interactions',
+    ]));
+  });
+
+  it('the two presets are disjoint and together form webRulesAll', () => {
+    const delta = new Set(ids(webRules));
+    expect(ids(webRulesJsxA11yOverlap).some((id) => delta.has(id))).toBe(false);
+    expect(webRulesAll.length).toBe(webRules.length + webRulesJsxA11yOverlap.length);
+  });
+});
+
 describe('role semantics', () => {
   it('interactive-supports-focus', () => {
     expect(run(`<div role="button" onClick={f}>Go</div>`)).toContain('interactive-supports-focus');
@@ -350,7 +376,7 @@ describe('keyboard and aria support', () => {
     expect(run(`<meta name="x" content="y" aria-hidden="true" />`)).toContain('aria-unsupported-elements');
     expect(run(`<html role="main"><body /></html>`)).toContain('aria-unsupported-elements');
     expect(run(`<div aria-hidden="true" />`)).not.toContain('aria-unsupported-elements');
-    const diags = analyze({ code: `const x = <meta content="y" aria-hidden="true" />;`, filename: 'test.tsx', platform: 'web', rules: webRules });
+    const diags = analyze({ code: `const x = <meta content="y" aria-hidden="true" />;`, filename: 'test.tsx', platform: 'web', rules: webRulesAll });
     const fix = diags.find((d) => d.ruleId === 'aria-unsupported-elements')?.fix;
     expect(fix).toBeDefined();
   });

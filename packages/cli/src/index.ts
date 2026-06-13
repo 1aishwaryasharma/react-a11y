@@ -23,7 +23,7 @@ import {
   type Severity,
   type WcagLevel,
 } from '@react-a11y/core';
-import { createLabelForPass, webRules } from '@react-a11y/rules-web';
+import { createLabelForPass, webRules, webRulesAll, webRulesJsxA11yOverlap } from '@react-a11y/rules-web';
 import { nativeRules } from '@react-a11y/rules-native';
 import { printPretty } from './pretty.js';
 
@@ -43,10 +43,16 @@ ${pc.bold('Options')}
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
   --fix                          Apply safe mechanical fixes, then report what remains
   --changed                      Scan only files changed in git (vs HEAD, incl. untracked)
+  --full                         (web) Also run the rules that overlap eslint-plugin-jsx-a11y
   --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
   --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
   --help                         Show this help
+
+${pc.bold('Web a11y')}
+  By default the web pack runs only what eslint-plugin-jsx-a11y does NOT cover
+  (WCAG 2.2 criteria, structure, focus visibility, project-wide checks). Run
+  jsx-a11y in your ESLint config for the rest, or pass --full to include it here.
 
 ${pc.bold('Config')}
   react-a11y.config.json / .react-a11yrc.json / package.json "react-a11y" key:
@@ -63,6 +69,7 @@ interface CliArgs {
   coverage: boolean;
   fix: boolean;
   changed: boolean;
+  full: boolean;
 }
 
 function fail(msg: string): never {
@@ -73,7 +80,7 @@ function fail(msg: string): never {
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious',
-    listRules: false, coverage: false, fix: false, changed: false,
+    listRules: false, coverage: false, fix: false, changed: false, full: false,
   };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -120,6 +127,9 @@ function parseArgs(argv: string[]): CliArgs {
       case '--changed':
         args.changed = true;
         break;
+      case '--full':
+        args.full = true;
+        break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
         paths.push(arg);
@@ -139,7 +149,8 @@ function listRules(): void {
       );
     }
   };
-  print(`Web rules (${webRules.length})`, webRules);
+  print(`Web rules — default, complement eslint-plugin-jsx-a11y (${webRules.length})`, webRules);
+  print(`Web rules — overlap eslint-plugin-jsx-a11y, off unless --full (${webRulesJsxA11yOverlap.length})`, webRulesJsxA11yOverlap);
   print(`React Native rules (${nativeRules.length})`, nativeRules);
 }
 
@@ -198,14 +209,15 @@ function printCoverage(): void {
       }
     }
   };
-  count(webRules, 'web');
+  count(webRulesAll, 'web');
   count(nativeRules, 'native');
 
   const refs = [...covered.keys()].map((sc) => WCAG[sc]).sort((a, b) =>
     a.sc.localeCompare(b.sc, undefined, { numeric: true }),
   );
 
-  console.log(pc.bold(`\nAutomated: WCAG 2.2 criteria with at least one rule (${webRules.length} web + ${nativeRules.length} native rules)\n`));
+  console.log(pc.bold(`\nAutomated: WCAG 2.2 criteria with at least one rule (${webRulesAll.length} web + ${nativeRules.length} native rules)\n`));
+  console.log(pc.dim(`(Web counts include the ${webRulesJsxA11yOverlap.length} rules that overlap eslint-plugin-jsx-a11y; the default scan defers those to jsx-a11y — use --full to run them here.)\n`));
   for (const ref of refs) {
     const entry = covered.get(ref.sc)!;
     const packs = [entry.web ? `${entry.web} web` : null, entry.native ? `${entry.native} native` : null]
@@ -258,7 +270,7 @@ function main(): void {
   const config = loadConfig(args.root);
   const platform: Platform =
     args.platform !== 'auto' ? args.platform : config.platform ?? detectPlatform(args.root);
-  const rules = platform === 'native' ? nativeRules : webRules;
+  const rules = platform === 'native' ? nativeRules : args.full ? webRulesAll : webRules;
   const files = args.changed ? changedFiles(args.root) : undefined;
   // Cross-file passes need the whole project; skip them on partial scans.
   // Passes are stateful, so each scan gets fresh instances.
