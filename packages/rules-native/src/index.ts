@@ -1,0 +1,78 @@
+import type { Rule } from '@aishware/react-a11y-core';
+import {
+  touchableHasLabel,
+  touchableHasRole,
+  noNestedTouchables,
+  touchTargetSize,
+} from './rules/touchables.js';
+import {
+  imageHasLabel,
+  textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
+  validAccessibilityRole,
+  validAccessibilityProps,
+  accessibilityActionsHandled,
+} from './rules/components.js';
+
+export { RN_ROLES } from './rules/components.js';
+import { accessibilityStateValid, liveRegionValid } from './rules/state.js';
+import {
+  noHiddenInteractive,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
+} from './rules/platform.js';
+import {
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
+} from './rules/focus.js';
+import { colorContrast } from './rules/contrast.js';
+import { noOrientationLock } from './rules/expo-config.js';
+
+export {
+  touchableHasLabel,
+  touchableHasRole,
+  noNestedTouchables,
+  touchTargetSize,
+  imageHasLabel,
+  textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
+  validAccessibilityRole,
+  validAccessibilityProps,
+  accessibilityStateValid,
+  liveRegionValid,
+  noHiddenInteractive,
+  accessibilityActionsHandled,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
+  colorContrast,
+  noOrientationLock,
+};
+
+/** The recommended React Native / Expo preset. */
+export const nativeRules: Rule[] = [
+  touchableHasLabel,
+  touchableHasRole,
+  noNestedTouchables,
+  touchTargetSize,
+  imageHasLabel,
+  textInputHasLabel,
+  switchHasLabel,
+  modalHasRequestClose,
+  validAccessibilityRole,
+  validAccessibilityProps,
+  accessibilityStateValid,
+  liveRegionValid,
+  noHiddenInteractive,
+  accessibilityActionsHandled,
+  validImportantForAccessibility,
+  hiddenCrossPlatform,
+  // focus & reading order
+  accessibleGroupingHidesInteractive,
+  labelNeedsAccessible,
+  colorContrast,
+  noOrientationLock,
+];
