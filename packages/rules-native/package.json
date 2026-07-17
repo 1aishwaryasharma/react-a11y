@@ -1,8 +1,15 @@
 {
   "name": "@aishware/react-a11y-rules-native",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Accessibility rules for React Native and Expo, built on the shared @aishware/react-a11y-core engine.",
-  "keywords": ["accessibility", "a11y", "wcag", "react-native", "expo", "linter"],
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "react-native",
+    "expo",
+    "linter"
+  ],
   "type": "module",
   "sideEffects": false,
   "main": "dist/index.js",
@@ -24,7 +31,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@aishware/react-a11y-core": "^0.1.0",
+    "@aishware/react-a11y-core": "^0.2.0",
     "typescript": "^5.6.0"
   },
   "license": "MIT",

@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## [0.2.0] — 2026-07-18
 
 ### Added
 
@@ -62,4 +62,5 @@ Initial release. Published under the `@aishware` scope; the installed command is
 - An upstream-parity test that keeps the React Native `accessibilityRole` list
   in sync with `eslint-plugin-react-native-a11y`.
 
+[0.2.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.2.0
 [0.1.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.1.0
