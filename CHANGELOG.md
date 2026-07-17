@@ -3,7 +3,19 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] — Unreleased
+## Unreleased
+
+### Added
+
+- A reusable composite GitHub Action (`action.yml`) — add the scan to any
+  workflow with `uses: 1aishwaryasharma/react-a11y@main`, with optional SARIF
+  output for GitHub code scanning.
+- CI on GitHub Actions (build + tests on Node 18/20/22, plus a dogfood scan of
+  the example projects).
+- The npm package README now carries the full documentation (why, usage, CI
+  recipes, rule summary) instead of a stub pointing at GitHub.
+
+## [0.1.0] — 2026-06-14
 
 Initial release. Published under the `@aishware` scope; the installed command is
 `react-a11y`.

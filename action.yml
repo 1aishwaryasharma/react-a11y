@@ -1,0 +1,43 @@
+name: react-a11y
+description: >-
+  Static WCAG 2.2 accessibility scan for React and React Native source —
+  file:line issues, optional SARIF for GitHub code scanning.
+author: Aishwarya Sharma
+branding:
+  icon: eye
+  color: purple
+
+inputs:
+  path:
+    description: Directory to scan.
+    default: .
+  platform:
+    description: Rule pack to run — web, native, or auto (detect from package.json).
+    default: auto
+  fail-on:
+    description: Fail the step when issues at/above this severity exist (critical, serious, moderate, minor, or none).
+    default: serious
+  sarif-file:
+    description: If set, also write a SARIF report to this path (upload it with github/codeql-action/upload-sarif).
+    default: ''
+  version:
+    description: "@aishware/react-a11y version to run."
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Write SARIF report
+      if: inputs.sarif-file != ''
+      shell: bash
+      run: >-
+        npx --yes @aishware/react-a11y@${{ inputs.version }} "${{ inputs.path }}"
+        --platform "${{ inputs.platform }}"
+        --format sarif --output "${{ inputs.sarif-file }}"
+        --fail-on none
+    - name: Scan
+      shell: bash
+      run: >-
+        npx --yes @aishware/react-a11y@${{ inputs.version }} "${{ inputs.path }}"
+        --platform "${{ inputs.platform }}"
+        --fail-on "${{ inputs.fail-on }}"

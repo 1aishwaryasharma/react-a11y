@@ -1,6 +1,8 @@
 # react-a11y
 
 [![npm](https://img.shields.io/npm/v/@aishware/react-a11y)](https://www.npmjs.com/package/@aishware/react-a11y)
+[![downloads](https://img.shields.io/npm/dm/@aishware/react-a11y)](https://www.npmjs.com/package/@aishware/react-a11y)
+[![CI](https://github.com/1aishwaryasharma/react-a11y/actions/workflows/ci.yml/badge.svg)](https://github.com/1aishwaryasharma/react-a11y/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/npm/l/@aishware/react-a11y)](LICENSE)
 
 A static accessibility scanner for **React Native and React** that catches what
@@ -167,8 +169,22 @@ project:
 
 ### CI (GitHub Actions)
 
-Run react-a11y next to your existing `eslint-plugin-jsx-a11y` setup — together
-they cover Level A+AA web a11y, and react-a11y adds React Native:
+The repo ships a composite action — one `uses:` line adds the scan to any
+workflow, with optional SARIF for GitHub code scanning:
+
+```yaml
+- uses: 1aishwaryasharma/react-a11y@main
+  with:
+    path: .                 # directory to scan (default: .)
+    fail-on: serious        # gate severity (default: serious)
+    sarif-file: a11y.sarif  # optional — upload with codeql-action below
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: a11y.sarif
+```
+
+Or run it by hand next to your existing `eslint-plugin-jsx-a11y` setup —
+together they cover Level A+AA web a11y, and react-a11y adds React Native:
 
 ```yaml
 - name: ESLint (incl. eslint-plugin-jsx-a11y) — standard web a11y
