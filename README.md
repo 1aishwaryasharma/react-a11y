@@ -233,7 +233,7 @@ export default [
   WCAG 2.2 form criteria (error identification, accessible authentication,
   autocomplete-off), and a project-wide cross-file label check ESLint can't do.
   Run jsx-a11y for the standard web rules. [Full list →](docs/rules/web.md)
-- **React Native** — 20 rules covering touchable labels/roles, nested
+- **React Native** — 21 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
   inputs, switches, modal keyboard traps, live regions, state/value props,
   silent prop typos, accessibility actions, cross-platform hiding, **focus and
@@ -330,7 +330,7 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 42 rules (22 web + 20 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
+- ~~Broader rule coverage~~ ✓ 43 rules (22 web + 21 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (e.g. miscapitalized React Native accessibility props)
@@ -343,6 +343,8 @@ Noted for later (not started):
 
 - Marketplace publishing for the VS Code extension (icon, publisher account)
 - LSP server for other editors (Neovim, JetBrains) on top of `analyze()`
+- Rules for `experimental_accessibilityOrder` (RN 0.82+'s focus-order prop)
+  once it stabilizes — e.g. referenced `nativeID`s that don't exist
 
 ## License
 

@@ -1,4 +1,5 @@
 import { objectLiteralKeys, staticString } from '@aishware/react-a11y-core';
+import { ARIA_PROPS, BOOLEAN_ARIA_PROPS } from '../aria.js';
 import { defineRule } from '../util.js';
 
 const STATE_KEYS = new Set(['disabled', 'selected', 'checked', 'busy', 'expanded']);
@@ -27,6 +28,37 @@ export const accessibilityStateValid = defineRule(
           });
         }
       }
+    }
+  },
+);
+
+/**
+ * Unlike the DOM, React Native treats aria-* state props as plain JS values —
+ * the string "false" is truthy, so aria-checked="false" reads as CHECKED to a
+ * screen reader. A habit carried over from web markup, where string booleans
+ * are the norm.
+ */
+export const ariaStateValid = defineRule(
+  {
+    id: 'aria-state-valid',
+    description: 'Boolean aria-* state props must be booleans — strings are truthy in React Native.',
+    severity: 'serious',
+    wcag: ['4.1.2'],
+  },
+  (el, ctx) => {
+    for (const prop of BOOLEAN_ARIA_PROPS) {
+      const value = staticString(el, prop);
+      if (value === undefined) continue;
+      if (ARIA_PROPS.get(prop)!.kind === 'tristate' && value === 'mixed') continue;
+      const state = prop.slice('aria-'.length);
+      ctx.report({
+        el,
+        message:
+          value === 'false'
+            ? `${prop}="false" is a string, and strings are truthy in React Native — screen readers read this as ${state}. Use ${prop}={false}.`
+            : `${prop}="${value}" is a string — React Native expects a boolean${ARIA_PROPS.get(prop)!.kind === 'tristate' ? ` (or "mixed")` : ''}. Use ${prop}={${value === 'true' ? 'true' : '…'}}.`,
+        ...(value === 'true' ? { severity: 'moderate' as const } : {}),
+      });
     }
   },
 );

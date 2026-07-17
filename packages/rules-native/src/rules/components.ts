@@ -1,4 +1,5 @@
 import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@aishware/react-a11y-core';
+import { KNOWN_ARIA_PROPS } from '../aria.js';
 import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent } from '../util.js';
 
 const IMAGE = new Set(['Image']);
@@ -106,20 +107,70 @@ export const RN_ROLES = new Set([
   'slidingdrawer', 'iconmenu', 'toast', 'toolbar',
 ]);
 
+/**
+ * Valid values for the `role` prop (the recommended, ARIA-style spelling since
+ * RN 0.71). Deliberately a different vocabulary from accessibilityRole — e.g.
+ * `heading` not `header`, `img` not `image` — and `role` wins when both are set.
+ * Both sets mirror the published RN docs verbatim (RN_ROLES is additionally
+ * pinned by the upstream parity test), so they stay explicit rather than
+ * derived; only the renames below relate the two.
+ */
+export const RN_ROLE_PROP_VALUES = new Set([
+  'alert', 'button', 'checkbox', 'combobox', 'grid', 'heading', 'img', 'link',
+  'list', 'listitem', 'menu', 'menubar', 'menuitem', 'none', 'presentation',
+  'progressbar', 'radio', 'radiogroup', 'scrollbar', 'searchbox', 'slider',
+  'spinbutton', 'summary', 'switch', 'tab', 'tablist', 'timer', 'toolbar',
+]);
+
+/** Role names that differ between the two vocabularies. */
+const ROLE_RENAMES: ReadonlyArray<[accessibilityRole: string, role: string]> = [
+  ['header', 'heading'],
+  ['image', 'img'],
+  ['search', 'searchbox'],
+  ['adjustable', 'slider'],
+];
+
+const ROLE_VOCABULARY = {
+  accessibilityRole: {
+    valid: RN_ROLES,
+    otherProp: 'role' as const,
+    rename: new Map(ROLE_RENAMES.map(([a, r]) => [r, a])),
+  },
+  role: {
+    valid: RN_ROLE_PROP_VALUES,
+    otherProp: 'accessibilityRole' as const,
+    rename: new Map(ROLE_RENAMES),
+  },
+};
+
+/** Diagnostic for an invalid role value on either prop, or undefined if valid. */
+function describeInvalidRole(prop: keyof typeof ROLE_VOCABULARY, value: string): string | undefined {
+  const { valid, otherProp, rename } = ROLE_VOCABULARY[prop];
+  if (value === '' || valid.has(value)) return undefined;
+  const renamed = rename.get(value);
+  if (renamed) {
+    return `${prop}="${value}" is not valid — ${prop} spells it "${renamed}". Use ${prop}="${renamed}" (or ${otherProp}="${value}").`;
+  }
+  if (ROLE_VOCABULARY[otherProp].valid.has(value)) {
+    return `${prop}="${value}" is only valid for ${otherProp} — use ${otherProp}="${value}" instead.`;
+  }
+  return `${prop}="${value}" is not a valid React Native role — it will be silently ignored on device.`;
+}
+
 export const validAccessibilityRole = defineRule(
   {
     id: 'valid-accessibility-role',
-    description: 'accessibilityRole must be a value React Native recognizes.',
+    description: 'accessibilityRole / role must be a value React Native recognizes.',
     severity: 'serious',
     wcag: ['4.1.2'],
   },
   (el, ctx) => {
-    const role = staticString(el, 'accessibilityRole')?.trim();
-    if (role === undefined || role === '' || RN_ROLES.has(role)) return;
-    ctx.report({
-      el,
-      message: `accessibilityRole="${role}" is not a valid React Native role — it will be silently ignored on device.`,
-    });
+    for (const prop of ['accessibilityRole', 'role'] as const) {
+      const value = staticString(el, prop)?.trim();
+      if (value === undefined) continue;
+      const message = describeInvalidRole(prop, value);
+      if (message) ctx.report({ el, message });
+    }
   },
 );
 
@@ -134,28 +185,47 @@ const KNOWN_A11Y_PROPS = new Set([
   'accessibilityShowsLargeContentViewer', 'accessibilityLargeContentTitle',
 ]);
 
+/**
+ * Common aria-* misspellings we can confidently rename. Unknown aria-* props
+ * that don't match anything are left alone — react-native-web forwards extra
+ * aria attributes, so flagging them would false-positive there.
+ */
+const ARIA_ALIASES = new Map([
+  ['aria-labeledby', 'aria-labelledby'],
+  ['aria-role', 'role'],
+]);
+
 /** Misspelled accessibility props fail silently at runtime — catch them statically. */
 export const validAccessibilityProps = defineRule(
   {
     id: 'valid-accessibility-props',
-    description: 'accessibility* props must be ones React Native actually supports.',
+    description: 'accessibility* and aria-* props must be ones React Native actually supports.',
     severity: 'serious',
     wcag: ['4.1.2'],
     fixable: true,
   },
   (el, ctx) => {
     for (const name of el.attrs.keys()) {
-      if (!name.startsWith('accessibility')) continue;
-      if (KNOWN_A11Y_PROPS.has(name)) continue;
       const lower = name.toLowerCase();
-      const match = [...KNOWN_A11Y_PROPS].find((k) => k.toLowerCase() === lower);
-      ctx.report({
-        el,
-        message: match
-          ? `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
-          : `"${name}" is not a React Native accessibility prop and is silently ignored.`,
-        ...(match ? { fix: fixRenameAttr(el, name, match) } : {}),
-      });
+      if (name.startsWith('accessibility')) {
+        if (KNOWN_A11Y_PROPS.has(name)) continue;
+        const match = [...KNOWN_A11Y_PROPS].find((k) => k.toLowerCase() === lower);
+        ctx.report({
+          el,
+          message: match
+            ? `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
+            : `"${name}" is not a React Native accessibility prop and is silently ignored.`,
+          ...(match ? { fix: fixRenameAttr(el, name, match) } : {}),
+        });
+      } else if (lower.startsWith('aria-') && !KNOWN_ARIA_PROPS.has(name)) {
+        const target = KNOWN_ARIA_PROPS.has(lower) ? lower : ARIA_ALIASES.get(lower);
+        if (!target) continue; // unknown aria-* prop — may be intentional (react-native-web)
+        ctx.report({
+          el,
+          message: `"${name}" is not a React Native prop — did you mean "${target}"? As written it is silently ignored.`,
+          fix: fixRenameAttr(el, name, target),
+        });
+      }
     }
   },
 );

@@ -83,6 +83,21 @@ describe('component rules', () => {
     expect(run(`<View accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
     expect(run(`<View accessibilityRole="button" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
   });
+  it('valid-accessibility-role validates the ARIA-style role prop', () => {
+    expect(run(`<View role="pushbutton" />`)).toContain('valid-accessibility-role');
+    expect(run(`<View role="button" aria-label="x" />`)).not.toContain('valid-accessibility-role');
+    expect(run(`<View role="heading" aria-label="x" />`)).not.toContain('valid-accessibility-role');
+    // the vocabularies differ — mixing them up names the equivalent, both ways
+    const roleMessage = (jsx: string) =>
+      analyze({
+        code: `${RN_IMPORT}const x = ${jsx};`,
+        filename: 'App.tsx', platform: 'native', rules: nativeRules,
+      }).find((d) => d.ruleId === 'valid-accessibility-role')?.message;
+    expect(roleMessage(`<View role="header" aria-label="x" />`)).toContain('role="heading"');
+    expect(roleMessage(`<View accessibilityRole="heading" accessibilityLabel="x" />`)).toContain('accessibilityRole="header"');
+    expect(roleMessage(`<View role="togglebutton" />`)).toContain('accessibilityRole="togglebutton"');
+    expect(roleMessage(`<View accessibilityRole="listitem" />`)).toContain('role="listitem"');
+  });
   it('switch-has-label and modal-has-request-close', () => {
     const RN2 = `import { Switch, Modal, Text } from 'react-native';\n`;
     const runX = (jsx: string) =>
@@ -97,6 +112,18 @@ describe('component rules', () => {
     expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" accessibilityState={{ disabled: true }} onPress={f} />`)).not.toContain('accessibility-state-valid');
     expect(run(`<View accessibilityValue={{ current: 3 }} />`)).toContain('accessibility-state-valid');
     expect(run(`<View accessibilityValue={{ now: 3, min: 0, max: 10 }} />`)).not.toContain('accessibility-state-valid');
+  });
+  it('aria-state-valid flags string values on boolean aria props', () => {
+    // the string "false" is truthy in RN — reads as checked to a screen reader
+    expect(run(`<View role="checkbox" aria-label="Terms" aria-checked="false" />`)).toContain('aria-state-valid');
+    expect(run(`<View role="checkbox" aria-label="Terms" aria-checked={false} />`)).not.toContain('aria-state-valid');
+    expect(run(`<View role="checkbox" aria-label="Terms" aria-checked="mixed" />`)).not.toContain('aria-state-valid');
+    expect(run(`<View aria-hidden={true}><Text>x</Text></View>`)).not.toContain('aria-state-valid');
+    const stringTrue = analyze({
+      code: `${RN_IMPORT}const x = <View accessible={true} aria-label="x" aria-selected="true" />;`,
+      filename: 'App.tsx', platform: 'native', rules: nativeRules,
+    }).find((d) => d.ruleId === 'aria-state-valid');
+    expect(stringTrue?.severity).toBe('moderate'); // works by accident, still wrong type
   });
   it('live-region-valid', () => {
     expect(run(`<View accessibilityLiveRegion="loud" />`)).toContain('live-region-valid');
@@ -123,6 +150,16 @@ describe('component rules', () => {
       filename: 'App.tsx', platform: 'native', rules: nativeRules,
     });
     expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
+  });
+  it('valid-accessibility-props catches aria-* typos but leaves unknown aria props alone', () => {
+    const misspelled = analyze({
+      code: `${RN_IMPORT}const x = <View accessible={true} aria-labeledby="title" />;`,
+      filename: 'App.tsx', platform: 'native', rules: nativeRules,
+    });
+    expect(misspelled.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('aria-labelledby'))).toBe(true);
+    expect(run(`<View accessible={true} aria-Label="x" />`)).toContain('valid-accessibility-props');
+    // not in RN's list, but react-native-web forwards it — don't flag
+    expect(run(`<View accessible={true} aria-label="x" aria-describedby="hint" />`)).not.toContain('valid-accessibility-props');
   });
   it('no-orientation-lock across config formats', () => {
     const project = (files: Record<string, string>) => {
@@ -205,6 +242,8 @@ describe('focus and reading order', () => {
 
   it('label-needs-accessible', () => {
     expect(run(`<View accessibilityLabel="Rating 4 of 5"><Text>****</Text></View>`)).toContain('label-needs-accessible');
+    expect(run(`<View aria-label="Rating 4 of 5"><Text>****</Text></View>`)).toContain('label-needs-accessible');
+    expect(run(`<View accessible={true} aria-label="Rating 4 of 5"><Text>****</Text></View>`)).not.toContain('label-needs-accessible');
     expect(run(`<View accessibilityState={{ selected: true }}><Text>Tab</Text></View>`)).toContain('label-needs-accessible');
     expect(run(`<View accessible={true} accessibilityLabel="Rating 4 of 5"><Text>****</Text></View>`)).not.toContain('label-needs-accessible');
     expect(run(`<View accessible={isA11y} accessibilityLabel="x"><Text>y</Text></View>`)).not.toContain('label-needs-accessible');

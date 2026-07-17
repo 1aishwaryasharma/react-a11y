@@ -1,5 +1,6 @@
 import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@aishware/react-a11y-core';
 import { attrProvidesValue, isStaticTrue, readOwnPackageMeta, staticString } from '@aishware/react-a11y-core';
+import { ARIA_LABEL_PROPS } from './aria.js';
 
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
 const HELP_BASE = homepage ? `${homepage}/blob/main/docs/rules/native.md#` : undefined;
@@ -76,8 +77,7 @@ export function isHiddenFromAT(el: ElementNode): boolean {
 export function hasNativeLabel(el: ElementNode): boolean {
   return (
     attrProvidesValue(el, 'accessibilityLabel') ||
-    attrProvidesValue(el, 'aria-label') ||
     attrProvidesValue(el, 'accessibilityLabelledBy') ||
-    attrProvidesValue(el, 'aria-labelledby')
+    ARIA_LABEL_PROPS.some((prop) => attrProvidesValue(el, prop))
   );
 }

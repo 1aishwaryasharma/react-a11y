@@ -1,5 +1,6 @@
 import { attrProvidesValue, hasAttr, isStaticTrue, staticValue, walkDescendants } from '@aishware/react-a11y-core';
 import type { ElementNode } from '@aishware/react-a11y-core';
+import { ARIA_DESCRIPTOR_PROPS } from '../aria.js';
 import { defineRule, isHiddenFromAT, isNativeInteractive, isRNComponent } from '../util.js';
 
 /** Containers whose `accessible` prop groups (or fails to group) their subtree. */
@@ -49,7 +50,10 @@ export const accessibleGroupingHidesInteractive = defineRule(
 );
 
 /** Descriptor props that only take effect on an accessibility element. */
-const DESCRIPTOR_PROPS = ['accessibilityLabel', 'accessibilityHint', 'accessibilityValue', 'accessibilityState'];
+const DESCRIPTOR_PROPS = [
+  'accessibilityLabel', 'accessibilityHint', 'accessibilityValue', 'accessibilityState',
+  ...ARIA_DESCRIPTOR_PROPS,
+];
 
 /**
  * WCAG 1.3.2 / 4.1.2. accessibilityLabel/Hint/Value/State describe an

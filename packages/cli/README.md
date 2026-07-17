@@ -31,7 +31,7 @@ src/screens/Profile.tsx
 - **React Native a11y nobody else lints.** Focus and reading order
   (`accessible={true}` grouping), touch-target size, cross-platform hiding, and
   Expo config (orientation locks in `app.json`, `AndroidManifest.xml`,
-  `Info.plist`) — 20 rules, from the same engine as web.
+  `Info.plist`) — 21 rules, from the same engine as web.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — 22
   rules, each mapped to a success criterion with a link to the W3C
@@ -120,7 +120,7 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 
 - **Web** — 22 rules, none of which overlap eslint-plugin-jsx-a11y.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/web.md)
-- **React Native** — 20 rules, including focus/reading order and project-config
+- **React Native** — 21 rules, including focus/reading order and project-config
   checks.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/native.md)
 

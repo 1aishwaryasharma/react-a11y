@@ -15,8 +15,9 @@ import {
   accessibilityActionsHandled,
 } from './rules/components.js';
 
-export { RN_ROLES } from './rules/components.js';
-import { accessibilityStateValid, liveRegionValid } from './rules/state.js';
+export { RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
+export { ARIA_PROPS, KNOWN_ARIA_PROPS } from './aria.js';
+import { accessibilityStateValid, ariaStateValid, liveRegionValid } from './rules/state.js';
 import {
   noHiddenInteractive,
   validImportantForAccessibility,
@@ -41,6 +42,7 @@ export {
   validAccessibilityRole,
   validAccessibilityProps,
   accessibilityStateValid,
+  ariaStateValid,
   liveRegionValid,
   noHiddenInteractive,
   accessibilityActionsHandled,
@@ -65,6 +67,7 @@ export const nativeRules: Rule[] = [
   validAccessibilityRole,
   validAccessibilityProps,
   accessibilityStateValid,
+  ariaStateValid,
   liveRegionValid,
   noHiddenInteractive,
   accessibilityActionsHandled,

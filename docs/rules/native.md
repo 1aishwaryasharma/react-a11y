@@ -18,6 +18,7 @@ are assumed to be design-system wrappers and skipped.
 | [valid-accessibility-role](#valid-accessibility-role) | serious | 4.1.2 |
 | [valid-accessibility-props](#valid-accessibility-props) | serious | 4.1.2 |
 | [accessibility-state-valid](#accessibility-state-valid) | serious | 4.1.2 |
+| [aria-state-valid](#aria-state-valid) | serious/moderate | 4.1.2 |
 | [live-region-valid](#live-region-valid) | serious | 4.1.3 |
 | [no-hidden-interactive](#no-hidden-interactive) | serious | 4.1.2, 1.3.1 |
 | [accessibility-actions-handled](#accessibility-actions-handled) | serious | 4.1.2 |
@@ -72,14 +73,20 @@ use `accessibilityLabel`.
 
 ## valid-accessibility-role
 
-`accessibilityRole` values React Native does not recognize are silently
-ignored on device.
+`accessibilityRole` and `role` values React Native does not recognize are
+silently ignored on device. The two props use different vocabularies — `role`
+(the recommended spelling since RN 0.71) takes ARIA names, so it's
+`role="heading"` but `accessibilityRole="header"`, `role="img"` but
+`accessibilityRole="image"`. When a value from one vocabulary is used with the
+other prop, the message names the correct equivalent.
 
 ## valid-accessibility-props
 
-Misspelled props (`accessibilitylabel`, `accessibiltyLabel`, …) fail silently
-at runtime. Catches casing mistakes and unknown `accessibility*` props, with a
-suggestion when one is close.
+Misspelled props (`accessibilitylabel`, `aria-labeledby`, `aria-Label`, …)
+fail silently at runtime. Catches casing mistakes and misspellings in both the
+`accessibility*` and `aria-*` prop families, with a rename fix when the
+intended prop is clear. Unknown `aria-*` props with no close match are left
+alone — react-native-web forwards them, so they may be intentional.
 
 ## switch-has-label
 
@@ -96,6 +103,15 @@ modal becomes a keyboard trap for hardware-navigation users (WCAG 2.1.2).
 `accessibilityState` only supports `disabled`, `selected`, `checked`, `busy`,
 `expanded`; `accessibilityValue` only `min`, `max`, `now`, `text`. Unknown
 keys are silently dropped on device.
+
+## aria-state-valid
+
+Flags string values on the boolean `aria-*` state props (`aria-checked`,
+`aria-selected`, `aria-disabled`, …): unlike the DOM, React Native treats
+these as plain JS values, so `aria-checked="false"` is a truthy string and
+screen readers announce the checkbox as **checked**. Use
+`aria-checked={false}` (booleans, or `"mixed"` for tri-state checkboxes).
+String `"true"` values work by accident and are reported at moderate severity.
 
 ## live-region-valid
 

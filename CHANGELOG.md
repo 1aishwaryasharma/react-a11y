@@ -7,6 +7,24 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Added
 
+- **First-class support for React Native's ARIA-style props** (the recommended
+  spellings since RN 0.71), driven by one canonical model of RN's aria-* props
+  (`@aishware/react-a11y-rules-native` exports it as `ARIA_PROPS`):
+  - `valid-accessibility-role` now validates the `role` prop against its own
+    ARIA-style vocabulary (which differs from `accessibilityRole` — `heading`
+    vs `header`, `img` vs `image`, `searchbox` vs `search`, `slider` vs
+    `adjustable`) and names the correct equivalent when the two vocabularies
+    are mixed up, in either direction.
+  - `valid-accessibility-props` now catches `aria-*` casing mistakes and
+    misspellings (`aria-labeledby`, `aria-Label`, `aria-role`) with rename
+    fixes. Unknown `aria-*` props with no close match are not flagged, since
+    react-native-web forwards them.
+  - New rule **`aria-state-valid`**: flags string values on boolean `aria-*`
+    state props — in React Native `aria-checked="false"` is a truthy string,
+    so screen readers announce it as *checked*. (21 native rules, 43 total.)
+  - `label-needs-accessible` counts `aria-label` and the other ARIA-style
+    descriptors when deciding a `<View>` needs `accessible={true}`.
+
 - A reusable composite GitHub Action (`action.yml`) — add the scan to any
   workflow with `uses: 1aishwaryasharma/react-a11y@main`, with optional SARIF
   output for GitHub code scanning.
