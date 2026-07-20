@@ -3,6 +3,29 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-07-21
+
+### Added
+
+- A WebStorm/JetBrains plugin with live JS/JSX/TS/TSX diagnostics, Alt+Enter
+  quick fixes, fix-all support, and project-wide scans. The plugin bundles the
+  CLI and supports every JetBrains IDE that includes the JavaScript plugin.
+- CLI `--stdin` and `--stdin-filename` modes for editor integrations that need
+  to analyze an in-memory buffer while retaining project configuration.
+
+### Security
+
+- Prevented shell injection through inputs to the composite GitHub Action and
+  pinned its default scanner version to the matching release.
+- Replaced backtracking ignore-glob regular expressions with bounded dynamic
+  matching to prevent malicious configuration from hanging scans or editors.
+- Prevented the JetBrains plugin from starting processes for untrusted projects
+  and stopped automatically executing a workspace-local CLI. Its bundled CLI
+  cache is content-addressed and integrity-checked before execution.
+- Escaped terminal control characters in repository-controlled pretty output.
+- Pinned CI actions to immutable commits, restricted workflow permissions, and
+  verified the Gradle distribution checksum.
+
 ## [0.3.0] — 2026-07-20
 
 ### Added
@@ -89,6 +112,7 @@ Initial release. Published under the `@aishware` scope; the installed command is
 - An upstream-parity test that keeps the React Native `accessibilityRole` list
   in sync with `eslint-plugin-react-native-a11y`.
 
+[0.4.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.4.0
 [0.3.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.3.0
 [0.2.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.2.0
 [0.1.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.1.0

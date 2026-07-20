@@ -1,6 +1,6 @@
 {
   "name": "@aishware/react-a11y-rules-native",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Accessibility rules for React Native and Expo, built on the shared @aishware/react-a11y-core engine.",
   "keywords": [
     "accessibility",
@@ -31,7 +31,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@aishware/react-a11y-core": "^0.3.0",
+    "@aishware/react-a11y-core": "^0.4.0",
     "typescript": "^5.6.0"
   },
   "license": "MIT",

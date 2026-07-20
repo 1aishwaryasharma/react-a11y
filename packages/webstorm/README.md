@@ -23,10 +23,10 @@ IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, Rider, and more.
   which also runs the cross-file passes (label resolution, Expo config)
   and lists results in a console with clickable locations.
 
-The plugin bundles the react-a11y CLI, so nothing needs to be installed in
-your project — though a project-local `@aishware/react-a11y` install is
-preferred when present, keeping IDE results in sync with your CI. Node.js
-20+ must be available on your machine.
+The plugin uses its bundled, version-pinned react-a11y CLI, so nothing needs
+to be installed in your project. It does not start Node or any other external
+process until the IDE marks the project as trusted. Node.js 20+ must be
+available on your machine.
 
 Static analysis cannot reproduce a rendered app, assistive technology, or
 device settings; use the
@@ -42,7 +42,7 @@ alongside it.
 | Enable diagnostics | on | Toggle live analysis. |
 | Rule pack | `auto` | `web`, `native`, or auto-detect from package.json. |
 | Node.js executable | blank | Auto-detected from PATH, Homebrew, nvm, volta, fnm. |
-| CLI script | blank | Project install when present, else the bundled copy. |
+| CLI script | blank | Bundled copy. A custom path is an explicit local override. |
 
 ## Privacy
 

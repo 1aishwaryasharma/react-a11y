@@ -17,8 +17,8 @@
     </ul>
     <p>The web rule pack covers what eslint-plugin-jsx-a11y does not (WCAG 2.2 criteria, structure,
     focus visibility, project-wide checks) — run both for full coverage. Requires Node.js 20+ on
-    your machine; the react-a11y CLI itself ships inside the plugin, and a project-local
-    <code>@aishware/react-a11y</code> install is preferred when present.</p>
+    your machine. The version-pinned react-a11y CLI ships inside the plugin, and the plugin
+    does not start external processes until the IDE marks the project as trusted.</p>
   ]]></description>
 
   <depends>com.intellij.modules.platform</depends>

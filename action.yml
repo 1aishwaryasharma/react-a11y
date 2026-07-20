@@ -22,22 +22,45 @@ inputs:
     default: ''
   version:
     description: "@aishware/react-a11y version to run."
-    default: latest
+    default: 0.4.0
 
 runs:
   using: composite
   steps:
+    - name: Validate inputs
+      shell: bash
+      env:
+        REACT_A11Y_VERSION: ${{ inputs.version }}
+        REACT_A11Y_PLATFORM: ${{ inputs.platform }}
+        REACT_A11Y_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        if [[ ! "$REACT_A11Y_VERSION" =~ ^([0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?|[A-Za-z][0-9A-Za-z._-]*)$ ]]; then
+          echo "error: invalid react-a11y version" >&2
+          exit 2
+        fi
+        case "$REACT_A11Y_PLATFORM" in web|native|auto) ;; *) echo "error: invalid platform" >&2; exit 2 ;; esac
+        case "$REACT_A11Y_FAIL_ON" in critical|serious|moderate|minor|none) ;; *) echo "error: invalid fail-on severity" >&2; exit 2 ;; esac
     - name: Write SARIF report
       if: inputs.sarif-file != ''
       shell: bash
+      env:
+        REACT_A11Y_VERSION: ${{ inputs.version }}
+        REACT_A11Y_PATH: ${{ inputs.path }}
+        REACT_A11Y_PLATFORM: ${{ inputs.platform }}
+        REACT_A11Y_SARIF_FILE: ${{ inputs.sarif-file }}
       run: >-
-        npx --yes @aishware/react-a11y@${{ inputs.version }} "${{ inputs.path }}"
-        --platform "${{ inputs.platform }}"
-        --format sarif --output "${{ inputs.sarif-file }}"
+        npx --yes "@aishware/react-a11y@${REACT_A11Y_VERSION}" "${REACT_A11Y_PATH}"
+        --platform "${REACT_A11Y_PLATFORM}"
+        --format sarif --output "${REACT_A11Y_SARIF_FILE}"
         --fail-on none
     - name: Scan
       shell: bash
+      env:
+        REACT_A11Y_VERSION: ${{ inputs.version }}
+        REACT_A11Y_PATH: ${{ inputs.path }}
+        REACT_A11Y_PLATFORM: ${{ inputs.platform }}
+        REACT_A11Y_FAIL_ON: ${{ inputs.fail-on }}
       run: >-
-        npx --yes @aishware/react-a11y@${{ inputs.version }} "${{ inputs.path }}"
-        --platform "${{ inputs.platform }}"
-        --fail-on "${{ inputs.fail-on }}"
+        npx --yes "@aishware/react-a11y@${REACT_A11Y_VERSION}" "${REACT_A11Y_PATH}"
+        --platform "${REACT_A11Y_PLATFORM}"
+        --fail-on "${REACT_A11Y_FAIL_ON}"

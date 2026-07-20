@@ -157,10 +157,21 @@ describe('fixes', () => {
 });
 
 describe('glob matcher', () => {
-  it('supports * and **', () => {
+  it('supports *, ** and ?', () => {
     expect(globToRegExp('**/*.stories.tsx').test('src/deep/Button.stories.tsx')).toBe(true);
     expect(globToRegExp('**/*.stories.tsx').test('Button.stories.tsx')).toBe(true);
     expect(globToRegExp('src/*.tsx').test('src/App.tsx')).toBe(true);
     expect(globToRegExp('src/*.tsx').test('src/deep/App.tsx')).toBe(false);
+    expect(globToRegExp('src/?.tsx').test('src/A.tsx')).toBe(true);
+    expect(globToRegExp('src/?.tsx').test('src/App.tsx')).toBe(false);
+  });
+
+  it('handles pathological wildcard patterns without regex backtracking', () => {
+    const matcher = globToRegExp(`${'**/'.repeat(100)}never.tsx`);
+    expect(matcher.test(`${'segment/'.repeat(1000)}file.tsx`)).toBe(false);
+  });
+
+  it('rejects unreasonably large config globs', () => {
+    expect(() => globToRegExp('*'.repeat(1025))).toThrow('ignore glob exceeds 1024 characters');
   });
 });

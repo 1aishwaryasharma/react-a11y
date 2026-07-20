@@ -69,7 +69,7 @@ to launch an Extension Development Host. To build an installable `.vsix`:
 
 ```sh
 npm run package -w packages/vscode
-code --install-extension packages/vscode/react-a11y-0.3.0.vsix
+code --install-extension packages/vscode/react-a11y-0.4.0.vsix
 ```
 
 (`--no-dependencies` is correct: the build bundles everything with esbuild.)

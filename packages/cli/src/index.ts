@@ -27,7 +27,7 @@ import {
 } from '@aishware/react-a11y-core';
 import { webProjectPasses, webRules, JSX_A11Y_COVERED_WCAG } from '@aishware/react-a11y-rules-web';
 import { nativeRules } from '@aishware/react-a11y-rules-native';
-import { printPretty } from './pretty.js';
+import { printPretty, sanitizeTerminalText } from './pretty.js';
 
 const PKG = readOwnPackageMeta(import.meta.url);
 const VERSION = PKG.version ?? '0.0.0';
@@ -78,7 +78,7 @@ interface CliArgs {
 }
 
 function fail(msg: string): never {
-  console.error(pc.red(`error: ${msg}`));
+  console.error(pc.red(`error: ${sanitizeTerminalText(msg)}`));
   process.exit(2);
 }
 
@@ -345,7 +345,7 @@ function report(result: ScanResult, args: CliArgs, rules: Rule[]): void {
   if (rendered !== null) {
     if (args.output) {
       fs.writeFileSync(args.output, rendered);
-      console.error(`report written to ${args.output}`);
+      console.error(`report written to ${sanitizeTerminalText(args.output)}`);
     } else {
       console.log(rendered);
     }

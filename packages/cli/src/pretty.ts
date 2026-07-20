@@ -11,12 +11,20 @@ const SEVERITY_COLOR: Record<Severity, (s: string) => string> = {
   minor: (s) => pc.blue(s),
 };
 
+/** Render repository-controlled text without letting it emit terminal commands. */
+export function sanitizeTerminalText(value: string): string {
+  return value.replace(/[\u0000-\u001f\u007f-\u009f]/g, (char) => {
+    return `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`;
+  });
+}
+
 function snippet(root: string, diag: Diagnostic): string | null {
   try {
     const lines = fs.readFileSync(path.join(root, diag.file), 'utf8').split('\n');
     const line = lines[diag.line - 1];
     if (line === undefined) return null;
-    const trimmed = line.length > 120 ? `${line.slice(0, 117)}...` : line;
+    const safeLine = sanitizeTerminalText(line);
+    const trimmed = safeLine.length > 120 ? `${safeLine.slice(0, 117)}...` : safeLine;
     return `${pc.dim(`${String(diag.line).padStart(5)} |`)} ${trimmed}`;
   } catch {
     return null;
@@ -46,12 +54,12 @@ export function printPretty(result: ScanResult, version: string): void {
   }
 
   for (const [file, diags] of byFile) {
-    out.push(pc.bold(pc.underline(file)));
+    out.push(pc.bold(pc.underline(sanitizeTerminalText(file))));
     for (const d of diags) {
       const pos = pc.dim(`${d.line}:${d.column}`.padEnd(8));
       const sev = SEVERITY_COLOR[d.severity](d.severity.padEnd(8));
       out.push(`  ${pos} ${sev} ${pc.cyan(d.ruleId)}`);
-      out.push(`           ${d.message}`);
+      out.push(`           ${sanitizeTerminalText(d.message)}`);
       const snip = snippet(result.root, d);
       if (snip) out.push(`           ${snip}`);
       const wcag = d.wcag

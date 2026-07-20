@@ -26,7 +26,7 @@ the npm packages, to the
    ```
 
 3. Smoke-test the built plugin in a sandboxed IDE (`./gradlew runIde`), or
-   install `build/distributions/react-a11y-<version>.zip` into WebStorm via
+   install `build/distributions/react-a11y-0.4.0.zip` into WebStorm via
    Settings → Plugins → ⚙ → Install Plugin from Disk. Check a web and a React
    Native project: live squiggles, Alt+Enter quick fixes, and
    **Tools → react-a11y: Scan Project**.
@@ -62,5 +62,6 @@ repository.
   lists it for WebStorm, IntelliJ IDEA Ultimate, PhpStorm, PyCharm
   Professional, Rider, etc. — not Community editions, which lack the
   JavaScript plugin.
-- `verifyPlugin` runs the JetBrains Plugin Verifier against the declared
-  range; treat its warnings as release blockers.
+- `verifyPlugin` runs the JetBrains Plugin Verifier against WebStorm 2024.1
+  (the oldest supported release) and the latest WebStorm release; treat
+  compatibility failures as release blockers.

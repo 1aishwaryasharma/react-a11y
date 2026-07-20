@@ -13,7 +13,7 @@ report — analyzed from source with file:line precision, no browser or renderin
 ```
 $ npx @aishware/react-a11y apps/mobile
 
-react-a11y v0.3.0 — platform: native — 92 files scanned in 210ms
+react-a11y v0.4.0 — platform: native — 92 files scanned in 210ms
 
 src/screens/Profile.tsx
   34:7   serious  accessible-grouping-hides-interactive

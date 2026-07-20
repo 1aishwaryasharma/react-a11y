@@ -6,6 +6,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.SimplePersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.openapi.components.StoragePathMacros
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.project.Project
@@ -25,12 +26,12 @@ class A11ySettingsState : BaseState() {
     /** Node.js executable; blank = auto-detect from PATH and common install locations. */
     var nodePath by string("")
 
-    /** react-a11y CLI script; blank = project node_modules install, else the bundled copy. */
+    /** react-a11y CLI script; blank = the bundled, version-pinned copy. */
     var cliPath by string("")
 }
 
 @Service(Service.Level.PROJECT)
-@State(name = "ReactA11ySettings", storages = [Storage("react-a11y.xml")])
+@State(name = "ReactA11ySettings", storages = [Storage(StoragePathMacros.WORKSPACE_FILE)])
 class A11ySettings : SimplePersistentStateComponent<A11ySettingsState>(A11ySettingsState()) {
     companion object {
         fun getInstance(project: Project): A11ySettings = project.service()
@@ -51,7 +52,7 @@ class A11ySettingsConfigurable(private val project: Project) : Configurable {
         .addComponent(enabled)
         .addLabeledComponent("Rule pack:", platform)
         .addLabeledComponent("Node.js executable (blank = auto-detect):", nodePath)
-        .addLabeledComponent("react-a11y CLI script (blank = project install or bundled):", cliPath)
+        .addLabeledComponent("react-a11y CLI script (blank = bundled):", cliPath)
         .addComponentFillVertically(JPanel(), 0)
         .panel
 

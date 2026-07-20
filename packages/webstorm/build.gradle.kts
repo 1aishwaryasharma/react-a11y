@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.2.20"
@@ -5,7 +7,7 @@ plugins {
 }
 
 group = "com.aishware"
-version = "0.3.0"
+version = "0.4.0"
 
 repositories {
     mavenCentral()
@@ -53,6 +55,16 @@ tasks.processResources {
 }
 
 intellijPlatform {
+    pluginVerification {
+        ides {
+            // Verify the oldest supported WebStorm and the latest release.
+            // IntelliJ Community does not bundle the required JavaScript plugin.
+            create(IntelliJPlatformType.WebStorm, "2024.1")
+            latest {
+                types = listOf(IntelliJPlatformType.WebStorm)
+            }
+        }
+    }
     pluginConfiguration {
         ideaVersion {
             // Matches the platform version we compile against; no until-build,

@@ -55,7 +55,7 @@ class ScanProjectAction : AnAction(), DumbAware {
             .showRunContent(DefaultRunExecutor.getRunExecutorInstance(), descriptor)
 
         console.print(
-            "react-a11y — platform: ${report.platform}, ${report.filesScanned} files scanned in ${report.durationMs} ms\n\n",
+            "react-a11y — platform: ${consoleSafe(report.platform)}, ${report.filesScanned} files scanned in ${report.durationMs} ms\n\n",
             ConsoleViewContentType.SYSTEM_OUTPUT,
         )
         if (report.issues.isEmpty()) {
@@ -72,9 +72,11 @@ class ScanProjectAction : AnAction(), DumbAware {
                 "critical", "serious" -> ConsoleViewContentType.ERROR_OUTPUT
                 else -> ConsoleViewContentType.NORMAL_OUTPUT
             }
-            console.print("  ${issue.severity}  ${issue.ruleId}\n", contentType)
-            val wcag = issue.wcag.joinToString("; ") { "${it.sc} ${it.name} (${it.level})" }
-            console.print("    ${issue.message} [WCAG $wcag]\n", ConsoleViewContentType.NORMAL_OUTPUT)
+            console.print("  ${consoleSafe(issue.severity)}  ${consoleSafe(issue.ruleId)}\n", contentType)
+            val wcag = issue.wcag.joinToString("; ") {
+                "${consoleSafe(it.sc)} ${consoleSafe(it.name)} (${consoleSafe(it.level)})"
+            }
+            console.print("    ${consoleSafe(issue.message)} [WCAG $wcag]\n", ConsoleViewContentType.NORMAL_OUTPUT)
         }
         val counts = sorted.groupingBy { it.severity }.eachCount()
         val summary = listOf("critical", "serious", "moderate", "minor")
@@ -84,12 +86,23 @@ class ScanProjectAction : AnAction(), DumbAware {
     }
 
     private fun printLocation(console: ConsoleView, project: Project, root: String, issue: CliIssue) {
-        val location = "${issue.file}:${issue.line}:${issue.column}"
+        val location = "${consoleSafe(issue.file)}:${issue.line}:${issue.column}"
         val virtualFile = LocalFileSystem.getInstance().findFileByNioFile(Path.of(root, issue.file))
         if (virtualFile != null) {
             console.printHyperlink(location, OpenFileHyperlinkInfo(project, virtualFile, issue.line - 1, issue.column - 1))
         } else {
             console.print(location, ConsoleViewContentType.NORMAL_OUTPUT)
+        }
+    }
+}
+
+/** Prevent repository-controlled report text from emitting terminal control sequences. */
+private fun consoleSafe(value: String): String = buildString(value.length) {
+    for (char in value) {
+        if (char.code in 0x00..0x1f || char.code in 0x7f..0x9f) {
+            append("\\x").append(char.code.toString(16).padStart(2, '0'))
+        } else {
+            append(char)
         }
     }
 }

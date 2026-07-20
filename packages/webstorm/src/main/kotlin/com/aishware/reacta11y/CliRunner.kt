@@ -3,21 +3,23 @@ package com.aishware.reacta11y
 import com.google.gson.Gson
 import com.intellij.execution.configurations.GeneralCommandLine
 import com.intellij.execution.process.CapturingProcessHandler
-import com.intellij.ide.plugins.PluginManagerCore
+import com.intellij.ide.impl.isTrusted
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.util.EnvironmentUtil
 import java.io.File
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 
 data class CliWcagRef(val sc: String = "", val name: String = "", val level: String = "")
 
@@ -46,8 +48,6 @@ data class CliReport(
 )
 
 object CliRunner {
-    const val PLUGIN_ID = "com.aishware.react-a11y"
-
     private val LOG = Logger.getInstance(CliRunner::class.java)
     private val NOTIFIED = Key.create<Boolean>("react-a11y.setup-notified")
     private val gson = Gson()
@@ -64,6 +64,10 @@ object CliRunner {
         run(project, listOf(root), null, timeoutMs = 120_000)
 
     private fun run(project: Project, args: List<String>, stdin: String?, timeoutMs: Int = 15_000): CliReport? {
+        // Never start a process for a project still in the IDE's safe mode.
+        // Project files and settings are attacker-controlled until it is trusted.
+        if (!project.isTrusted()) return null
+
         val node = nodeExecutable(project) ?: run {
             notifySetupProblem(project, "Node.js was not found. Set its path in Settings → Tools → react-a11y.")
             return null
@@ -151,28 +155,49 @@ object CliRunner {
         if (!configured.isNullOrBlank()) {
             return Path.of(configured).takeIf { Files.isRegularFile(it) }
         }
-        project.basePath?.let { base ->
-            val local = Path.of(base, "node_modules", "@aishware", "react-a11y", "dist", "index.js")
-            if (Files.isRegularFile(local)) return local
-        }
         return bundledCli
     }
 
     private val bundledCli: Path? by lazy {
-        val version = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.version ?: "dev"
-        val target = Path.of(PathManager.getSystemPath(), "react-a11y", version, "cli.cjs")
+        val bytes = CliRunner::class.java.getResourceAsStream("/react-a11y/cli.cjs")
+            ?.use { it.readBytes() }
+            ?: return@lazy null
+        val digest = MessageDigest.getInstance("SHA-256").digest(bytes)
+        val cacheKey = digest
+            .take(12)
+            .joinToString("") { "%02x".format(it.toInt() and 0xff) }
+        val target = Path.of(PathManager.getSystemPath(), "react-a11y", cacheKey, "cli.cjs")
         try {
-            if (!Files.isRegularFile(target)) {
+            if (!isExpectedCli(target, bytes.size.toLong(), digest)) {
                 Files.createDirectories(target.parent)
-                CliRunner::class.java.getResourceAsStream("/react-a11y/cli.cjs")?.use { input ->
-                    Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING)
-                } ?: return@lazy null
+                val temporary = Files.createTempFile(target.parent, "cli-", ".tmp")
+                try {
+                    Files.write(temporary, bytes)
+                    try {
+                        Files.move(
+                            temporary,
+                            target,
+                            StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING,
+                        )
+                    } catch (_: AtomicMoveNotSupportedException) {
+                        Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                } finally {
+                    Files.deleteIfExists(temporary)
+                }
             }
             target
         } catch (e: IOException) {
             LOG.warn("could not unpack bundled react-a11y CLI", e)
             null
         }
+    }
+
+    private fun isExpectedCli(target: Path, size: Long, digest: ByteArray): Boolean {
+        if (!Files.isRegularFile(target, LinkOption.NOFOLLOW_LINKS) || Files.size(target) != size) return false
+        val cachedDigest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(target))
+        return MessageDigest.isEqual(digest, cachedDigest)
     }
 
     private fun isWindows(): Boolean =

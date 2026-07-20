@@ -1,7 +1,4 @@
 {
-  "dependencies": {
-    "@aishware/react-a11y": "0.3.0"
-  },
   "description": "Bundles the react-a11y CLI into the JetBrains plugin resources. The plugin itself is built with Gradle.",
   "devDependencies": {
     "esbuild": "^0.28.1"
@@ -11,5 +8,5 @@
   "scripts": {
     "build": "esbuild ../cli/src/index.ts --bundle --minify --platform=node --format=cjs --outfile=src/main/resources/react-a11y/cli.cjs --define:import.meta.url=__importMetaUrl \"--banner:js=const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;\""
   },
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

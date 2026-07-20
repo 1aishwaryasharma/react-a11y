@@ -18,7 +18,7 @@ react-a11y adds broader React Native, structural, and project-wide analysis.
 ```
 $ react-a11y apps/mobile
 
-react-a11y v0.3.0 — platform: native — 92 files scanned in 210ms
+react-a11y v0.4.0 — platform: native — 92 files scanned in 210ms
 
 src/screens/Profile.tsx
   34:7   serious  accessible-grouping-hides-interactive
@@ -131,7 +131,7 @@ live as you type — squiggles with WCAG citations, clickable rule docs,
 ```sh
 npm install && npm run build
 npm run package -w packages/vscode
-code --install-extension packages/vscode/react-a11y-0.3.0.vsix
+code --install-extension packages/vscode/react-a11y-0.4.0.vsix
 ```
 
 Or for development: open this repo in VS Code and press **F5** to launch an
@@ -168,8 +168,9 @@ WebStorm and every other JetBrains IDE with the JavaScript plugin (IntelliJ
 IDEA Ultimate, PhpStorm, PyCharm Professional, Rider): live diagnostics with
 WCAG citations, Alt+Enter quick fixes, a fix-all-in-file intention, and
 **Tools → react-a11y: Scan Project** for the project-wide checks. It shells
-out to a bundled copy of the CLI (a project-local `@aishware/react-a11y`
-install is preferred when present), so it needs Node.js 20+ on the machine.
+out to a bundled, version-pinned copy of the CLI, so it needs Node.js 20+ on
+the machine. It does not start external processes until the IDE marks the
+project as trusted.
 
 **Install** (before the first Marketplace publication, build the zip):
 
@@ -179,7 +180,7 @@ cd packages/webstorm && ./gradlew buildPlugin
 ```
 
 Then in the IDE: Settings → Plugins → ⚙ → **Install Plugin from Disk** →
-`packages/webstorm/build/distributions/react-a11y-0.3.0.zip`. Configuration
+`packages/webstorm/build/distributions/react-a11y-0.4.0.zip`. Configuration
 lives under **Settings → Tools → react-a11y**; see the
 [plugin README](packages/webstorm/README.md) for details.
 
