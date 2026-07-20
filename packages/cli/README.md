@@ -28,23 +28,28 @@ src/screens/Profile.tsx
 
 ## Why
 
-- **React Native a11y nobody else lints.** Focus and reading order
-  (`accessible={true}` grouping), touch-target size, text scaling,
-  role/state consistency, cross-platform hiding, and Expo config (orientation
-  locks in `app.json`, `AndroidManifest.xml`, `Info.plist`) — 25 rules, from
-  the same engine as web.
+- **Broader React Native coverage than lint rules alone.** Beyond per-line
+  basics, react-a11y checks focus and reading order (`accessible={true}`
+  grouping), touch-target size, text scaling, role/state consistency,
+  cross-platform hiding, and project-wide config per-file linters can't see
+  (orientation locks in `app.json`, `AndroidManifest.xml`, `Info.plist`) —
+  25 rules, from the same engine as web.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — 22
   rules, each mapped to a success criterion with a link to the W3C
   Understanding page.
 - **Complements [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y), doesn't fight it.**
   The web pack contains none of the rules jsx-a11y already does, so the two run
-  together with no double-reporting — run both for full Level A+AA web
-  coverage. For React Native, react-a11y supplies a 25-rule static pack;
-  rendered and real-device behavior still needs
+  together with no double-reporting — run both for broader automated coverage,
+  then use the manual checklist for the remaining criteria. For React Native,
+  react-a11y supplies a 25-rule static pack that overlaps
+  [eslint-plugin-react-native-a11y](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y)
+  on per-line basics and adds structural and project-wide analysis — you
+  generally don't need both native packs; if you run both, disable the
+  overlapping rules on one side. Rendered and real-device behavior still needs
   [manual testing](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 - **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
-  cross-file checks (label resolution, duplicate landmarks) that per-file
+  cross-file label resolution and project-config checks that per-file
   ESLint rules structurally can't do.
 - **Static and deterministic.** Parses TSX/JSX with the TypeScript compiler —
   works on code that doesn't build yet, runs in CI in under a second, and is

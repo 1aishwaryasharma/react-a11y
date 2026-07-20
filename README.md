@@ -13,7 +13,7 @@ report — analyzed from source with file:line precision, no browser or renderin
 It complements [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
 rather than competing with it: the web pack runs only the rules jsx-a11y
 *doesn't*, so there's no double-reporting. jsx-a11y owns standard web a11y;
-react-a11y owns React Native and the gaps.
+react-a11y adds broader React Native, structural, and project-wide analysis.
 
 ```
 $ react-a11y apps/mobile
@@ -33,18 +33,21 @@ src/screens/Profile.tsx
 
 ## Why
 
-- **React Native a11y nobody else lints.** Focus and reading order
-  (`accessible={true}` grouping), touch-target size, cross-platform hiding, and
-  Expo config (orientation locks), text scaling, and role/state consistency —
+- **Broader React Native coverage than lint rules alone.** Beyond per-line
+  basics, react-a11y checks focus and reading order (`accessible={true}`
+  grouping), touch-target size, text scaling, role/state consistency,
+  cross-platform hiding, and project-wide config that per-file linters can't
+  see — orientation locks in `app.json`, `AndroidManifest.xml`, `Info.plist` —
   from the same engine as web.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — each
   mapped to a success criterion with a link to the W3C Understanding page.
 - **Complements eslint-plugin-jsx-a11y, doesn't fight it.** The web pack
   contains none of the rules jsx-a11y already does, so the two run together with
-  no double-reporting — run both for full Level A+AA web coverage.
+  no double-reporting — run both for broader automated coverage, then use the
+  manual checklist for the remaining criteria.
 - **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
-  cross-file checks (label resolution, duplicate landmarks) that per-file ESLint
+  cross-file label resolution and project-config checks that per-file ESLint
   rules structurally can't do.
 - **Static and deterministic.** Parses TSX/JSX with the TypeScript compiler —
   works on code that doesn't build yet, runs in CI in under a second, and is
@@ -94,10 +97,19 @@ For **web**, keep running `eslint-plugin-jsx-a11y` in your ESLint config — it'
 the canonical implementation of the standard web a11y rules. react-a11y's web
 pack deliberately contains only what jsx-a11y doesn't (the WCAG 2.2 criteria,
 document structure, focus visibility, and project-wide checks), so the two don't
-double-report. Run **both** for full Level A+AA web coverage — see the
+double-report. Run **both** for broader automated coverage, then work through
+the manual checklist for the criteria no static tool can decide — see the
 [CI example](#ci-github-actions) below.
 
-For **React Native**, react-a11y provides a 25-rule static pack. Static analysis
+For **React Native**, react-a11y provides a 25-rule static pack that goes
+beyond per-line linting — focus and reading order, touch targets, text scaling,
+and project-config checks. If you already run
+[`eslint-plugin-react-native-a11y`](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y),
+react-a11y covers similar per-line ground plus the structural and project-wide
+checks a per-file linter can't do (a [parity test](#staying-current-with-upstream-a11y-vocabulary)
+keeps our role vocabulary in sync with it). You generally don't need both
+native rule packs; if you do run both, disable the overlapping per-line rules
+on one side to avoid duplicate diagnostics. Static analysis of any kind
 cannot reproduce a rendered app, screen reader, or device settings; use the
 [manual accessibility testing guide](docs/manual-testing.md) alongside it.
 
