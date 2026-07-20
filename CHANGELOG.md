@@ -22,6 +22,7 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Changed
 
+- The npm packages now require Node.js 20 or newer.
 - Component import tracking now preserves named aliases and namespace exports,
   so native rules recognize forms such as aliased `Text` and `<rn.Switch>`.
 - Object-literal analysis now has one canonical shape model with static
