@@ -18,7 +18,7 @@ react-a11y adds broader React Native, structural, and project-wide analysis.
 ```
 $ react-a11y apps/mobile
 
-react-a11y v0.1.0 — platform: native — 92 files scanned in 210ms
+react-a11y v0.3.0 — platform: native — 92 files scanned in 210ms
 
 src/screens/Profile.tsx
   34:7   serious  accessible-grouping-hides-interactive
@@ -132,7 +132,7 @@ live as you type — squiggles with WCAG citations, clickable rule docs,
 npm install && npm run build
 npm run build -w react-a11y-vscode
 cd packages/vscode && npx @vscode/vsce package --no-dependencies
-code --install-extension react-a11y-vscode-0.1.0.vsix
+code --install-extension react-a11y-vscode-0.3.0.vsix
 ```
 
 Or for development: open this repo in VS Code and press **F5** to launch an
