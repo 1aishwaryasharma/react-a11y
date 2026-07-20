@@ -34,10 +34,29 @@ describe('element model', () => {
     `);
     const [div, image, span] = elements;
     expect(div.hasSpread).toBe(true);
+    expect(image.importName).toBe('Image');
     expect(image.importSource).toBe('next/image');
     expect(image.parent).toBe(div);
     expect(div.childElements).toHaveLength(2);
     expect(span.hasTextChild).toBe(true);
+  });
+
+  it('preserves imported component names through aliases and namespaces', () => {
+    const { elements } = model(`
+      import { Text as RNText } from 'react-native';
+      import * as RN from 'react-native';
+      import * as rn from 'react-native';
+      const label = <RNText>Label</RNText>;
+      const toggle = <RN.Switch value={enabled} />;
+      const lowerAlias = <rn.Text>Lower alias</rn.Text>;
+    `);
+    expect(elements[0].importName).toBe('Text');
+    expect(elements[0].importSource).toBe('react-native');
+    expect(elements[1].importName).toBe('Switch');
+    expect(elements[1].importSource).toBe('react-native');
+    expect(elements[2].importName).toBe('Text');
+    expect(elements[2].importSource).toBe('react-native');
+    expect(elements[2].isComponent).toBe(true);
   });
 
   it('finds elements inside conditional expressions', () => {

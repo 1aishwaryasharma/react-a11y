@@ -1,5 +1,12 @@
 import type { ElementNode, Rule, RuleMeta, RuleContext, RuleVisitor } from '@aishware/react-a11y-core';
-import { attrProvidesValue, isStaticTrue, readOwnPackageMeta, staticString } from '@aishware/react-a11y-core';
+import {
+  attrProvidesValue,
+  findAncestor,
+  isStaticTrue,
+  readOwnPackageMeta,
+  staticString,
+} from '@aishware/react-a11y-core';
+import ts from 'typescript';
 import { ARIA_LABEL_PROPS } from './aria.js';
 
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
@@ -25,13 +32,17 @@ export function defineRule(
 const RN_SOURCES = new Set(['react-native', 'react-native-web', 'react-native-gesture-handler']);
 
 /**
- * True when `el` is the named React Native component. If the identifier was
- * imported from an unrelated module (a custom wrapper that may handle a11y
- * itself), the element is not matched — keeps false positives down.
+ * True when the element is unresolved/local or imported from a trusted React
+ * Native source. Components imported from design systems are intentionally
+ * excluded because they may synthesize accessibility props internally.
  */
+export function isRNElement(el: ElementNode): boolean {
+  return el.isComponent && (el.importSource === null || RN_SOURCES.has(el.importSource));
+}
+
+/** True when `el` is a named component from a trusted React Native source. */
 export function isRNComponent(el: ElementNode, names: ReadonlySet<string>): boolean {
-  if (!el.isComponent || !names.has(el.name)) return false;
-  return el.importSource === null || RN_SOURCES.has(el.importSource);
+  return names.has(el.importName ?? el.name) && isRNElement(el);
 }
 
 export const TOUCHABLES = new Set([
@@ -42,8 +53,14 @@ export const TOUCHABLES = new Set([
   'TouchableNativeFeedback',
 ]);
 
+const SWITCH_COMPONENTS = new Set(['Switch']);
+
 export function isTouchable(el: ElementNode): boolean {
   return isRNComponent(el, TOUCHABLES);
+}
+
+export function isSwitch(el: ElementNode): boolean {
+  return isRNComponent(el, SWITCH_COMPONENTS);
 }
 
 /** Stock React Native controls that are interactive on their own. */
@@ -64,13 +81,23 @@ export function androidHidesSubtree(el: ElementNode): boolean {
   return staticString(el, 'importantForAccessibility') === 'no-hide-descendants';
 }
 
-/** Element is hidden from assistive technology by any platform's mechanism. */
-export function isHiddenFromAT(el: ElementNode): boolean {
+function directlyHiddenFromAT(el: ElementNode): boolean {
   if (isStaticTrue(el, 'aria-hidden') || iosHidesSubtree(el)) return true;
   const important = staticString(el, 'importantForAccessibility');
-  if (important === 'no' || important === 'no-hide-descendants') return true;
-  const role = staticString(el, 'accessibilityRole') ?? staticString(el, 'role');
-  return role === 'none' || role === 'presentation';
+  return important === 'no' || important === 'no-hide-descendants';
+}
+
+function hidesDescendantsFromAT(el: ElementNode): boolean {
+  return (
+    isStaticTrue(el, 'aria-hidden') ||
+    iosHidesSubtree(el) ||
+    androidHidesSubtree(el)
+  );
+}
+
+/** Element is hidden directly or by an ancestor that hides its whole subtree. */
+export function isHiddenFromAT(el: ElementNode): boolean {
+  return directlyHiddenFromAT(el) || findAncestor(el, hidesDescendantsFromAT) !== null;
 }
 
 /** Any of the label-bearing props provides a usable value. */
@@ -80,4 +107,51 @@ export function hasNativeLabel(el: ElementNode): boolean {
     attrProvidesValue(el, 'accessibilityLabelledBy') ||
     ARIA_LABEL_PROPS.some((prop) => attrProvidesValue(el, prop))
   );
+}
+
+/**
+ * Conservative accessible-name check. React Native derives names from
+ * descendant Text; dynamic or component children are treated as potentially
+ * named to avoid false positives in static analysis.
+ */
+export function mayHaveNativeAccessibleName(el: ElementNode): boolean {
+  return (
+    hasNativeLabel(el) ||
+    el.hasExpressionChild ||
+    el.hasTextChild ||
+    el.childElements.length > 0
+  );
+}
+
+/**
+ * Validity of a statically-known accessibilityState property initializer.
+ * Unknown expressions are left to runtime analysis.
+ */
+export function staticAccessibilityStateValueValidity(
+  key: string,
+  node: ts.Expression,
+): 'invalid' | 'unknown' | 'valid' {
+  if (
+    node.kind === ts.SyntaxKind.FalseKeyword ||
+    node.kind === ts.SyntaxKind.TrueKeyword
+  ) {
+    return 'valid';
+  }
+  if (ts.isStringLiteralLike(node)) {
+    return key === 'checked' && node.text === 'mixed' ? 'valid' : 'invalid';
+  }
+  if (
+    node.kind === ts.SyntaxKind.NullKeyword ||
+    ts.isArrayLiteralExpression(node) ||
+    ts.isBigIntLiteral(node) ||
+    ts.isNumericLiteral(node) ||
+    ts.isObjectLiteralExpression(node) ||
+    (ts.isPrefixUnaryExpression(node) &&
+      (ts.isBigIntLiteral(node.operand) || ts.isNumericLiteral(node.operand))) ||
+    ts.isVoidExpression(node) ||
+    (ts.isIdentifier(node) && node.text === 'undefined')
+  ) {
+    return 'invalid';
+  }
+  return 'unknown';
 }

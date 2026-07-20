@@ -1,10 +1,9 @@
 import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@aishware/react-a11y-core';
 import { KNOWN_ARIA_PROPS } from '../aria.js';
-import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent } from '../util.js';
+import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent, isSwitch } from '../util.js';
 
 const IMAGE = new Set(['Image']);
 const TEXT_INPUT = new Set(['TextInput']);
-const SWITCH = new Set(['Switch']);
 const MODAL = new Set(['Modal']);
 
 /**
@@ -61,7 +60,7 @@ export const switchHasLabel = defineRule(
     wcag: ['4.1.2', '3.3.2'],
   },
   (el, ctx) => {
-    if (!isRNComponent(el, SWITCH)) return;
+    if (!isSwitch(el)) return;
     if (el.hasSpread || isHiddenFromAT(el)) return;
     if (hasNativeLabel(el)) return;
     ctx.report({

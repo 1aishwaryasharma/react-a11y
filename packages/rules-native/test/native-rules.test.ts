@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { analyze, applyFixes, scanProject } from '@aishware/react-a11y-core';
 import { nativeRules, noOrientationLock } from '@aishware/react-a11y-rules-native';
 
-const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, TouchableOpacity } from 'react-native';\n`;
+const RN_IMPORT = `import { View, Text, Image, TextInput, Pressable, Switch, TouchableOpacity } from 'react-native';\n`;
 
 function run(jsx: string): string[] {
   return analyze({
@@ -110,7 +110,15 @@ describe('component rules', () => {
   it('accessibility-state-valid', () => {
     expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" accessibilityState={{ pressed: true }} onPress={f} />`)).toContain('accessibility-state-valid');
     expect(run(`<Pressable accessibilityRole="button" accessibilityLabel="x" accessibilityState={{ disabled: true }} onPress={f} />`)).not.toContain('accessibility-state-valid');
-    expect(run(`<View accessibilityValue={{ current: 3 }} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={{ checked: 'false' }} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={{ selected: 0 }} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={{ ['checked']: false }} />`)).not.toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={{ checked: 'mixed' }} />`)).not.toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState='disabled' />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={1} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={null} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityState={1n} />`)).toContain('accessibility-state-valid');
+    expect(run(`<View accessibilityValue={{ current: 3 }} />`)).toContain('accessibility-value-valid');
     expect(run(`<View accessibilityValue={{ now: 3, min: 0, max: 10 }} />`)).not.toContain('accessibility-state-valid');
   });
   it('aria-state-valid flags string values on boolean aria props', () => {
@@ -134,6 +142,7 @@ describe('component rules', () => {
     expect(run(`<Pressable accessibilityElementsHidden onPress={f}><Text>Buy</Text></Pressable>`)).toContain('no-hidden-interactive');
     expect(run(`<TextInput accessibilityElementsHidden accessibilityLabel="x" />`)).toContain('no-hidden-interactive');
     expect(run(`<View accessibilityElementsHidden />`)).not.toContain('no-hidden-interactive');
+    expect(run(`<Pressable accessibilityLabel='Buy' onPress={f} role='none' />`)).not.toContain('no-hidden-interactive');
     const RN2 = `import { Switch } from 'react-native';\n`;
     const runSwitch = (jsx: string) =>
       analyze({ code: `${RN2}const x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules }).map((d) => d.ruleId);
@@ -227,6 +236,144 @@ describe('component rules', () => {
     expect(fixes).toHaveLength(1);
     const { output } = applyFixes(code, fixes);
     expect(output).toContain(`accessibilityLabel="profile"`);
+  });
+});
+
+describe('additional native semantics', () => {
+  it('accessibility-hint-has-label requires a name before a hint', () => {
+    expect(run(`<Pressable accessibilityHint='Closes this screen' accessibilityRole='button' onPress={f} />`))
+      .toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityHint='Closes this screen' accessibilityLabel='Close' accessibilityRole='button' onPress={f} />`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityHint='Saves changes' accessibilityRole='button' onPress={f}><Text>Save</Text></Pressable>`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityElementsHidden accessibilityHint='Hidden action' accessibilityRole='button' onPress={f} />`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityHint='' accessibilityRole='button' onPress={f} />`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityHint={null} accessibilityRole='button' onPress={f} />`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<Pressable accessibilityHint={undefined} accessibilityRole='button' onPress={f} />`))
+      .not.toContain('accessibility-hint-has-label');
+    expect(run(`<View aria-hidden={true}><Pressable accessibilityHint='Hidden action' accessibilityRole='button' onPress={f} /></View>`))
+      .not.toContain('accessibility-hint-has-label');
+  });
+
+  it('accessibility-value-valid checks shape, types, and range order', () => {
+    expect(run(`<View accessibilityValue="half" />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ text: 50 }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ ['text']: 50 }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ text: -1n }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ text: undefined }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ now: 50 }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: -1n }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: undefined }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: '50' }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 0, min: 10 }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: 150 }} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ text: 'half' }} />`)).not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: 50, text: 'half' }} />`))
+      .not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max: 100, min: 0, now: 50 }} />`)).not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ max, min, now }} />`)).not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={{ ...runtimeValue }} />`)).not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={valueFromState} />`)).not.toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={1n} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={-1n} />`)).toContain('accessibility-value-valid');
+    expect(run(`<View accessibilityValue={+1} />`)).toContain('accessibility-value-valid');
+  });
+
+  it('no-disable-font-scaling protects system text-size preferences', () => {
+    expect(run(`<Text allowFontScaling={false}>Fixed</Text>`)).toContain('no-disable-font-scaling');
+    expect(run(`<TextInput accessibilityLabel="Name" maxFontSizeMultiplier={1} />`)).toContain('no-disable-font-scaling');
+    expect(run(`<Text maxFontSizeMultiplier={0}>Unlimited</Text>`)).not.toContain('no-disable-font-scaling');
+    expect(run(`<Text maxFontSizeMultiplier={1.5}>Scalable</Text>`)).not.toContain('no-disable-font-scaling');
+  });
+
+  it('role-has-required-state checks custom toggles and tabs', () => {
+    expect(run(`<View accessibilityLabel='Terms' role='checkbox' />`)).toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ checked }} role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ ['checked']: false }} role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View aria-checked={checked} aria-label='Terms' role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Profile' role='tab' />`)).toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Profile' accessibilityState={{ selected }} role='tab' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Profile' accessibilityState={{ selected: 'false' }} role='tab' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityRole='checkbox' role={runtimeRole} />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={runtimeState} role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ ...runtimeState }} role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ checked: null }} role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ checked: 'false' }} role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ checked: 0 }} role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityState={{ checked: undefined }} role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View aria-checked={null} aria-label='Terms' role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View aria-checked={undefined} aria-label='Terms' role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View aria-checked='false' aria-label='Terms' role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View aria-checked={false} aria-label='Terms' role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' role='Checkbox' />`)).toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityRole='checkbox' role='button' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityRole='button' role='checkbox' />`))
+      .toContain('role-has-required-state');
+    expect(run(`<View accessibilityLabel='Terms' accessibilityElementsHidden role='checkbox' />`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View accessibilityElementsHidden><View accessibilityLabel='Terms' role='checkbox' /></View>`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View importantForAccessibility='no-hide-descendants'><View accessibilityLabel='Terms' role='checkbox' /></View>`))
+      .not.toContain('role-has-required-state');
+    expect(run(`<View importantForAccessibility='no'><View accessibilityLabel='Terms' role='checkbox' /></View>`))
+      .toContain('role-has-required-state');
+    expect(run(`<Switch accessibilityLabel='Dark mode' accessibilityRole='switch' value={dark} />`))
+      .not.toContain('role-has-required-state');
+  });
+
+  it('skips imported design-system wrappers', () => {
+    const diagnostics = analyze({
+      code: `
+        import { IconButton, Toggle } from './design-system';
+        const button = <IconButton accessibilityHint='Closes' />;
+        const toggle = <Toggle checked={false} role='checkbox' />;
+      `,
+      filename: 'App.tsx',
+      platform: 'native',
+      rules: nativeRules,
+    }).map((diagnostic) => diagnostic.ruleId);
+    expect(diagnostics).not.toContain('accessibility-hint-has-label');
+    expect(diagnostics).not.toContain('role-has-required-state');
+  });
+
+  it('recognizes aliased and namespace React Native components', () => {
+    const diagnostics = analyze({
+      code: `
+        import { Switch as RNSwitch, Text as RNText } from 'react-native';
+        import * as RN from 'react-native';
+        import * as rn from 'react-native';
+        const first = <RNText allowFontScaling={false}>First</RNText>;
+        const second = <RN.Text allowFontScaling={false}>Second</RN.Text>;
+        const third = <rn.Text allowFontScaling={false}>Third</rn.Text>;
+        const toggle = <RNSwitch accessibilityLabel='Mode' accessibilityRole='switch' value={enabled} />;
+      `,
+      filename: 'App.tsx',
+      platform: 'native',
+      rules: nativeRules,
+    }).map((diagnostic) => diagnostic.ruleId);
+    expect(diagnostics.filter((ruleId) => ruleId === 'no-disable-font-scaling')).toHaveLength(3);
+    expect(diagnostics).not.toContain('role-has-required-state');
   });
 });
 

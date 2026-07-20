@@ -1,32 +1,53 @@
-import { objectLiteralKeys, staticString } from '@aishware/react-a11y-core';
+import { objectLiteralShape, staticString } from '@aishware/react-a11y-core';
 import { ARIA_PROPS, BOOLEAN_ARIA_PROPS } from '../aria.js';
-import { defineRule } from '../util.js';
+import {
+  defineRule,
+  staticAccessibilityStateValueValidity,
+} from '../util.js';
 
 const STATE_KEYS = new Set(['disabled', 'selected', 'checked', 'busy', 'expanded']);
-const VALUE_KEYS = new Set(['min', 'max', 'now', 'text']);
 
-/** Unknown keys in accessibilityState/accessibilityValue are silently dropped. */
+/** Unknown keys in accessibilityState are silently dropped. */
 export const accessibilityStateValid = defineRule(
   {
+    description: 'accessibilityState must use the keys React Native supports.',
     id: 'accessibility-state-valid',
-    description: 'accessibilityState/accessibilityValue must use the keys React Native supports.',
     severity: 'serious',
     wcag: ['4.1.2'],
   },
   (el, ctx) => {
-    for (const [attrName, allowed] of [
-      ['accessibilityState', STATE_KEYS],
-      ['accessibilityValue', VALUE_KEYS],
-    ] as const) {
-      const keys = objectLiteralKeys(el, attrName);
-      if (!keys) continue;
-      for (const key of keys) {
-        if (!allowed.has(key)) {
-          ctx.report({
-            el,
-            message: `${attrName} key "${key}" is not supported (allowed: ${[...allowed].join(', ')}) — it is silently ignored on device.`,
-          });
-        }
+    const attr = el.attrs.get('accessibilityState');
+    if (!attr) return;
+    const shape = objectLiteralShape(el, 'accessibilityState');
+    if (
+      attr.kind === 'static' ||
+      (attr.node &&
+        !shape &&
+        staticAccessibilityStateValueValidity('state', attr.node) === 'invalid')
+    ) {
+      ctx.report({
+        el,
+        message: 'accessibilityState must be an object.',
+      });
+      return;
+    }
+    if (!shape?.complete) return;
+    for (const [key, value] of shape.properties) {
+      if (!STATE_KEYS.has(key)) {
+        ctx.report({
+          el,
+          message: `accessibilityState key "${key}" is not supported (allowed: ${[...STATE_KEYS].join(', ')}) — it is silently ignored on device.`,
+        });
+        continue;
+      }
+      if (value && staticAccessibilityStateValueValidity(key, value) === 'invalid') {
+        ctx.report({
+          el,
+          message:
+            key === 'checked'
+              ? 'accessibilityState.checked must be a boolean or "mixed".'
+              : `accessibilityState.${key} must be a boolean.`,
+        });
       }
     }
   },

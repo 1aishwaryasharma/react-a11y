@@ -4,10 +4,13 @@ Accessibility rules for React Native and Expo, built on the shared
 [`@aishware/react-a11y-core`](https://www.npmjs.com/package/@aishware/react-a11y-core) engine.
 Covers touchable labels/roles, nested touchables, WCAG 2.5.8 touch-target size,
 color contrast, images, text inputs, switches, modal keyboard traps, live
-regions, accessibility state/value props, silent prop typos, accessibility
-actions, cross-platform hiding (iOS vs Android), focus and reading order
+regions, text scaling, hint/name pairing, accessibility state/value shape,
+role/state consistency, silent prop typos, accessibility actions,
+cross-platform hiding (iOS vs Android), focus and reading order
 (`accessible={true}` grouping), and orientation locks in project config
-(`app.json`, `app.config.*`, `AndroidManifest.xml`, `Info.plist`).
+(`app.json`, `app.config.*`, `AndroidManifest.xml`, `Info.plist`). Runtime and
+real-device checks remain essential; follow the
+[manual testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 
 ```ts
 import { analyze } from '@aishware/react-a11y-core';

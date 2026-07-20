@@ -14,12 +14,15 @@ are assumed to be design-system wrappers and skipped.
 | [image-has-label](#image-has-label) | moderate | 1.1.1 |
 | [textinput-has-label](#textinput-has-label) | serious | 3.3.2, 4.1.2 |
 | [switch-has-label](#switch-has-label) | serious | 4.1.2, 3.3.2 |
+| [accessibility-hint-has-label](#accessibility-hint-has-label) | serious | 3.3.2, 4.1.2 |
 | [modal-has-request-close](#modal-has-request-close) | serious | 2.1.2 |
 | [valid-accessibility-role](#valid-accessibility-role) | serious | 4.1.2 |
 | [valid-accessibility-props](#valid-accessibility-props) | serious | 4.1.2 |
 | [accessibility-state-valid](#accessibility-state-valid) | serious | 4.1.2 |
+| [accessibility-value-valid](#accessibility-value-valid) | serious | 4.1.2 |
 | [aria-state-valid](#aria-state-valid) | serious/moderate | 4.1.2 |
 | [live-region-valid](#live-region-valid) | serious | 4.1.3 |
+| [role-has-required-state](#role-has-required-state) | serious | 4.1.2 |
 | [no-hidden-interactive](#no-hidden-interactive) | serious | 4.1.2, 1.3.1 |
 | [accessibility-actions-handled](#accessibility-actions-handled) | serious | 4.1.2 |
 | [valid-important-for-accessibility](#valid-important-for-accessibility) | moderate | 4.1.2, 1.3.1 |
@@ -27,6 +30,7 @@ are assumed to be design-system wrappers and skipped.
 | [accessible-grouping-hides-interactive](#accessible-grouping-hides-interactive) | serious | 2.4.3, 4.1.2 |
 | [label-needs-accessible](#label-needs-accessible) | moderate | 1.3.2, 4.1.2 |
 | [color-contrast](#color-contrast) | serious | 1.4.3 |
+| [no-disable-font-scaling](#no-disable-font-scaling) | serious | 1.4.4 |
 | [no-orientation-lock](#no-orientation-lock) | moderate | 1.3.4 |
 
 ## touchable-has-label
@@ -93,6 +97,25 @@ alone — react-native-web forwards them, so they may be intentional.
 An unlabeled `<Switch>` is announced as just "switch, off" with no indication
 of what it controls.
 
+## accessibility-hint-has-label
+
+An `accessibilityHint` explains the result of an action; it cannot identify the
+element by itself. A hint therefore needs an accessible name from
+`accessibilityLabel`, an ARIA label, or text content. Hints remain optional when
+the action is already clear from the name.
+
+```tsx
+// ✖ announces an outcome without identifying the control
+<Pressable accessibilityHint='Closes this screen' accessibilityRole='button' />
+
+// ✔
+<Pressable
+  accessibilityHint='Closes this screen'
+  accessibilityLabel='Close'
+  accessibilityRole='button'
+/>
+```
+
 ## modal-has-request-close
 
 Without `onRequestClose`, the Android hardware back button does nothing — the
@@ -100,9 +123,30 @@ modal becomes a keyboard trap for hardware-navigation users (WCAG 2.1.2).
 
 ## accessibility-state-valid
 
-`accessibilityState` only supports `disabled`, `selected`, `checked`, `busy`,
-`expanded`; `accessibilityValue` only `min`, `max`, `now`, `text`. Unknown
-keys are silently dropped on device.
+`accessibilityState` must be an object and only supports `disabled`, `selected`,
+`checked`, `busy`, and `expanded`. State values are booleans, except `checked`
+also accepts `"mixed"`. Invalid shapes, keys, and literal value types are
+ignored or misannounced on device.
+
+## accessibility-value-valid
+
+`accessibilityValue` must be an object containing a string `text` value and/or
+numeric `min`/`now`/`max` range information. When `now` is present, React
+Native requires both `min` and `max`; `text` may coexist and overrides the
+numeric announcement. The rule rejects scalar values, unknown keys, known
+wrong value types, missing bounds, and statically impossible ranges where
+`now` falls outside `min`/`max`. Dynamic expressions are left to runtime
+testing.
+
+```tsx
+// ✖
+<View accessibilityValue={{ now: 50 }} />
+<View accessibilityValue={{ max: 100, min: 0, now: 150 }} />
+
+// ✔
+<View accessibilityValue={{ max: 100, min: 0, now: 50 }} />
+<View accessibilityValue={{ text: 'Half full' }} />
+```
 
 ## aria-state-valid
 
@@ -118,6 +162,25 @@ String `"true"` values work by accident and are reported at moderate severity.
 `accessibilityLiveRegion` (none/polite/assertive) and `aria-live`
 (off/polite/assertive) with invalid values mean status changes are never
 announced (WCAG 4.1.3).
+
+## role-has-required-state
+
+Custom checkboxes, radios, switches, and toggle buttons need a `checked`
+state; tabs need a `selected` state. Otherwise assistive technology announces
+the type of control but not its current value. The stock React Native
+`<Switch>` is excluded because its native `value` supplies the state.
+
+```tsx
+// ✖
+<View accessibilityLabel='Terms' role='checkbox' />
+
+// ✔
+<View
+  accessibilityLabel='Terms'
+  accessibilityState={{ checked }}
+  role='checkbox'
+/>
+```
 
 ## no-hidden-interactive
 
@@ -195,6 +258,17 @@ dynamic `accessible={…}` is given the benefit of the doubt.
 Computes the WCAG 1.4.3 contrast ratio when `color` and `backgroundColor` are
 inline literals on the same element. `StyleSheet.create` references and
 dynamic styles are skipped — *partial* coverage by design.
+
+## no-disable-font-scaling
+
+Flags `allowFontScaling={false}` and positive `maxFontSizeMultiplier` values at
+or below `1` on stock `Text` and `TextInput`. Both prevent users' system text
+size preference from enlarging content. `maxFontSizeMultiplier={0}` is valid:
+React Native defines zero as unlimited scaling.
+
+This rule can verify that scaling is not disabled, but it cannot prove that the
+resulting layout remains usable at large sizes. Test that separately using the
+[manual accessibility testing guide](../manual-testing.md#text-scaling-and-layout).
 
 ## no-orientation-lock
 

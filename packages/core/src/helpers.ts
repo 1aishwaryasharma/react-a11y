@@ -192,17 +192,63 @@ export function targetSizeTier(width: number, height: number): 'below-min' | 'be
   return null;
 }
 
-/** Statically-known keys of an object-literal prop, e.g. accessibilityState={{...}}. */
-export function objectLiteralKeys(el: ElementNode, attrName: string): string[] | undefined {
+export interface ObjectLiteralShape {
+  complete: boolean;
+  properties: Map<string, ts.Expression | undefined>;
+}
+
+function staticPropertyName(name: ts.PropertyName): string | undefined {
+  if (ts.isIdentifier(name) || ts.isNumericLiteral(name) || ts.isStringLiteral(name)) {
+    return name.text;
+  }
+  if (!ts.isComputedPropertyName(name)) return undefined;
+  const expression = name.expression;
+  if (
+    ts.isNoSubstitutionTemplateLiteral(expression) ||
+    ts.isNumericLiteral(expression) ||
+    ts.isStringLiteral(expression)
+  ) {
+    return expression.text;
+  }
+  return undefined;
+}
+
+/**
+ * Decode a statically-known object-literal prop. `complete` is false when a
+ * spread, dynamic computed key, method, or accessor makes its shape unknowable.
+ */
+export function objectLiteralShape(
+  el: ElementNode,
+  attrName: string,
+): ObjectLiteralShape | undefined {
   const attr = el.attrs.get(attrName);
   if (attr?.kind !== 'expression' || !attr.node || !ts.isObjectLiteralExpression(attr.node)) return undefined;
-  const keys: string[] = [];
-  for (const p of attr.node.properties) {
-    if (ts.isSpreadAssignment(p)) return undefined; // unknowable
-    if ((ts.isPropertyAssignment(p) || ts.isShorthandPropertyAssignment(p)) &&
-        (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name))) {
-      keys.push(p.name.text);
+  let complete = true;
+  const properties = new Map<string, ts.Expression | undefined>();
+  for (const property of attr.node.properties) {
+    if (ts.isSpreadAssignment(property)) {
+      complete = false;
+      continue;
     }
+    if (!ts.isPropertyAssignment(property) && !ts.isShorthandPropertyAssignment(property)) {
+      complete = false;
+      continue;
+    }
+    const name = staticPropertyName(property.name);
+    if (name === undefined) {
+      complete = false;
+      continue;
+    }
+    properties.set(
+      name,
+      ts.isPropertyAssignment(property) ? property.initializer : undefined,
+    );
   }
-  return keys;
+  return { complete, properties };
+}
+
+/** Statically-known keys of an object-literal prop, e.g. accessibilityState={{...}}. */
+export function objectLiteralKeys(el: ElementNode, attrName: string): string[] | undefined {
+  const shape = objectLiteralShape(el, attrName);
+  return shape?.complete ? [...shape.properties.keys()] : undefined;
 }

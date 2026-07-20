@@ -1,34 +1,38 @@
 import type { Rule } from '@aishware/react-a11y-core';
 import {
-  touchableHasLabel,
-  touchableHasRole,
-  noNestedTouchables,
-  touchTargetSize,
-} from './rules/touchables.js';
-import {
-  imageHasLabel,
-  textInputHasLabel,
-  switchHasLabel,
-  modalHasRequestClose,
-  validAccessibilityRole,
-  validAccessibilityProps,
   accessibilityActionsHandled,
+  imageHasLabel,
+  modalHasRequestClose,
+  switchHasLabel,
+  textInputHasLabel,
+  validAccessibilityProps,
+  validAccessibilityRole,
 } from './rules/components.js';
-
-export { RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
-export { ARIA_PROPS, KNOWN_ARIA_PROPS } from './aria.js';
-import { accessibilityStateValid, ariaStateValid, liveRegionValid } from './rules/state.js';
-import {
-  noHiddenInteractive,
-  validImportantForAccessibility,
-  hiddenCrossPlatform,
-} from './rules/platform.js';
-import {
-  accessibleGroupingHidesInteractive,
-  labelNeedsAccessible,
-} from './rules/focus.js';
 import { colorContrast } from './rules/contrast.js';
 import { noOrientationLock } from './rules/expo-config.js';
+import { accessibleGroupingHidesInteractive, labelNeedsAccessible } from './rules/focus.js';
+import {
+  hiddenCrossPlatform,
+  noHiddenInteractive,
+  validImportantForAccessibility,
+} from './rules/platform.js';
+import { accessibilityHintHasLabel, roleHasRequiredState } from './rules/semantics.js';
+import {
+  accessibilityStateValid,
+  ariaStateValid,
+  liveRegionValid,
+} from './rules/state.js';
+import { noDisableFontScaling } from './rules/text.js';
+import {
+  noNestedTouchables,
+  touchableHasLabel,
+  touchableHasRole,
+  touchTargetSize,
+} from './rules/touchables.js';
+import { accessibilityValueValid } from './rules/value.js';
+
+export { ARIA_PROPS, KNOWN_ARIA_PROPS } from './aria.js';
+export { RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
 
 export {
   touchableHasLabel,
@@ -42,8 +46,11 @@ export {
   validAccessibilityRole,
   validAccessibilityProps,
   accessibilityStateValid,
+  accessibilityValueValid,
+  accessibilityHintHasLabel,
   ariaStateValid,
   liveRegionValid,
+  roleHasRequiredState,
   noHiddenInteractive,
   accessibilityActionsHandled,
   validImportantForAccessibility,
@@ -51,6 +58,7 @@ export {
   accessibleGroupingHidesInteractive,
   labelNeedsAccessible,
   colorContrast,
+  noDisableFontScaling,
   noOrientationLock,
 };
 
@@ -67,8 +75,11 @@ export const nativeRules: Rule[] = [
   validAccessibilityRole,
   validAccessibilityProps,
   accessibilityStateValid,
+  accessibilityValueValid,
+  accessibilityHintHasLabel,
   ariaStateValid,
   liveRegionValid,
+  roleHasRequiredState,
   noHiddenInteractive,
   accessibilityActionsHandled,
   validImportantForAccessibility,
@@ -77,5 +88,6 @@ export const nativeRules: Rule[] = [
   accessibleGroupingHidesInteractive,
   labelNeedsAccessible,
   colorContrast,
+  noDisableFontScaling,
   noOrientationLock,
 ];

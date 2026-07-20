@@ -6,8 +6,8 @@
 [![license: MIT](https://img.shields.io/npm/l/@aishware/react-a11y)](LICENSE)
 
 A static accessibility scanner for **React Native and React** that catches what
-your ESLint setup can't: full React Native accessibility (including focus and
-reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
+your ESLint setup can't: a 25-rule React Native static pack (including focus
+and reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
 report — analyzed from source with file:line precision, no browser or rendering.
 
 It complements [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
@@ -35,7 +35,8 @@ src/screens/Profile.tsx
 
 - **React Native a11y nobody else lints.** Focus and reading order
   (`accessible={true}` grouping), touch-target size, cross-platform hiding, and
-  Expo config (orientation locks) — from the same engine as web.
+  Expo config (orientation locks), text scaling, and role/state consistency —
+  from the same engine as web.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — each
   mapped to a success criterion with a link to the W3C Understanding page.
@@ -87,7 +88,9 @@ document structure, focus visibility, and project-wide checks), so the two don't
 double-report. Run **both** for full Level A+AA web coverage — see the
 [CI example](#ci-github-actions) below.
 
-For **React Native**, there's no equivalent — react-a11y is the whole story.
+For **React Native**, react-a11y provides a 25-rule static pack. Static analysis
+cannot reproduce a rendered app, screen reader, or device settings; use the
+[manual accessibility testing guide](docs/manual-testing.md) alongside it.
 
 Install it globally (or as a dev dependency) to get the bare `react-a11y`
 command:
@@ -233,13 +236,14 @@ export default [
   WCAG 2.2 form criteria (error identification, accessible authentication,
   autocomplete-off), and a project-wide cross-file label check ESLint can't do.
   Run jsx-a11y for the standard web rules. [Full list →](docs/rules/web.md)
-- **React Native** — 21 rules covering touchable labels/roles, nested
+- **React Native** — 25 rules covering touchable labels/roles, nested
   touchables, WCAG 2.5.8 touch-target size, color contrast, images, text
-  inputs, switches, modal keyboard traps, live regions, state/value props,
-  silent prop typos, accessibility actions, cross-platform hiding, **focus and
-  reading order** (`accessible={true}` grouping that swallows interactive
-  children, or descriptors dropped for lack of it), and orientation locks in
-  project config (app.json, AndroidManifest, Info.plist).
+  inputs, switches, text scaling, hints, modal keyboard traps, live regions,
+  state/value shape and role/state consistency, silent prop typos,
+  accessibility actions, cross-platform hiding, **focus and reading order**
+  (`accessible={true}` grouping that swallows interactive children, or
+  descriptors dropped for lack of it), and orientation locks in project config
+  (app.json, AndroidManifest, Info.plist).
   [Full list →](docs/rules/native.md)
 
 `npx @aishware/react-a11y --coverage` reports WCAG 2.2 coverage: react-a11y
@@ -248,6 +252,15 @@ automates **25 of the 55 Level A+AA criteria (45%)** on its own, and **31/55
 like reflow, use of color, and consistent navigation that a static tool cannot
 decide — are listed as a manual checklist, so all 55 A+AA criteria are addressed
 by a rule (here or in jsx-a11y) or an explicit verification step.
+
+### What static analysis cannot check
+
+Focus movement after navigation, modal containment, dynamic announcements,
+rendered text scaling, theme-dependent contrast, effective touch geometry,
+Reduce Motion behavior, gesture alternatives, captions, and the actual
+VoiceOver/TalkBack experience all depend on runtime behavior. Follow the
+[manual accessibility testing guide](docs/manual-testing.md) for a practical
+real-device checklist and suggested release routine.
 
 ## Architecture
 
@@ -330,7 +343,7 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 
 ## Roadmap
 
-- ~~Broader rule coverage~~ ✓ 43 rules (22 web + 21 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
+- ~~Broader rule coverage~~ ✓ 47 rules (22 web + 25 native), zero overlap with jsx-a11y; 31/55 A+AA automated with jsx-a11y, the remaining 24 documented as manual checks
 - ~~Color-contrast checks for statically-known styles~~ ✓ web + native
 - ~~Heading-order and landmark analysis~~ ✓
 - ~~Autofixes for mechanical findings~~ ✓ `--fix` (e.g. miscapitalized React Native accessibility props)

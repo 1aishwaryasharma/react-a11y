@@ -6,8 +6,8 @@
 [![license: MIT](https://img.shields.io/npm/l/@aishware/react-a11y)](https://github.com/1aishwaryasharma/react-a11y/blob/main/LICENSE)
 
 A static accessibility scanner for **React Native and React** that catches what
-your ESLint setup can't: full React Native accessibility (including focus and
-reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
+your ESLint setup can't: a 25-rule React Native static pack (including focus
+and reading order), the newer **WCAG 2.2** web criteria, and a WCAG conformance
 report — analyzed from source with file:line precision, no browser or rendering.
 
 ```
@@ -29,9 +29,10 @@ src/screens/Profile.tsx
 ## Why
 
 - **React Native a11y nobody else lints.** Focus and reading order
-  (`accessible={true}` grouping), touch-target size, cross-platform hiding, and
-  Expo config (orientation locks in `app.json`, `AndroidManifest.xml`,
-  `Info.plist`) — 21 rules, from the same engine as web.
+  (`accessible={true}` grouping), touch-target size, text scaling,
+  role/state consistency, cross-platform hiding, and Expo config (orientation
+  locks in `app.json`, `AndroidManifest.xml`, `Info.plist`) — 25 rules, from
+  the same engine as web.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — 22
   rules, each mapped to a success criterion with a link to the W3C
@@ -39,8 +40,9 @@ src/screens/Profile.tsx
 - **Complements [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y), doesn't fight it.**
   The web pack contains none of the rules jsx-a11y already does, so the two run
   together with no double-reporting — run both for full Level A+AA web
-  coverage. For React Native there's no equivalent; react-a11y is the whole
-  story.
+  coverage. For React Native, react-a11y supplies a 25-rule static pack;
+  rendered and real-device behavior still needs
+  [manual testing](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 - **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
   cross-file checks (label resolution, duplicate landmarks) that per-file
   ESLint rules structurally can't do.
@@ -120,7 +122,7 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 
 - **Web** — 22 rules, none of which overlap eslint-plugin-jsx-a11y.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/web.md)
-- **React Native** — 21 rules, including focus/reading order and project-config
+- **React Native** — 25 rules, including focus/reading order and project-config
   checks.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/native.md)
 
@@ -128,6 +130,10 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 automates **25 of the 55 Level A+AA criteria (45%)** on its own, and **31/55
 (56%)** when run alongside eslint-plugin-jsx-a11y; the criteria a static tool
 cannot decide are listed as a manual checklist.
+
+For focus movement, dynamic announcements, rendered text scaling, effective
+touch geometry, Reduce Motion, and VoiceOver/TalkBack behavior, follow the
+[manual accessibility testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 
 ## Embedding
 

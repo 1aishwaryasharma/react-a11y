@@ -1,5 +1,5 @@
 import { findAncestor, hasAttr, inlineStyleNumber, targetSizeTier } from '@aishware/react-a11y-core';
-import { defineRule, hasNativeLabel, isHiddenFromAT, isTouchable } from '../util.js';
+import { defineRule, isHiddenFromAT, isTouchable, mayHaveNativeAccessibleName } from '../util.js';
 
 /**
  * Touchables with no label and no children are announced as nothing at all.
@@ -16,9 +16,7 @@ export const touchableHasLabel = defineRule(
   (el, ctx) => {
     if (!isTouchable(el)) return;
     if (el.hasSpread || isHiddenFromAT(el)) return;
-    if (hasNativeLabel(el)) return;
-    const hasChildren = el.hasTextChild || el.hasExpressionChild || el.childElements.length > 0;
-    if (hasChildren) return;
+    if (mayHaveNativeAccessibleName(el)) return;
     ctx.report({
       el,
       message: `<${el.name}> has no accessible name — screen readers announce it as an unlabeled button. Add accessibilityLabel or text children.`,

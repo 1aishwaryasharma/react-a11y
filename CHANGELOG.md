@@ -3,6 +3,32 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — Unreleased
+
+### Added
+
+- Four React Native accessibility rules (25 native rules, 47 total):
+  - `accessibility-hint-has-label` requires hints to supplement a usable
+    accessible name.
+  - `accessibility-value-valid` validates object shape, supported fields,
+    literal types, and numeric ranges.
+  - `no-disable-font-scaling` prevents stock `Text` and `TextInput` from
+    disabling or effectively capping system text scaling.
+  - `role-has-required-state` requires checked state for custom toggles and
+    selected state for tabs.
+- A [manual accessibility testing guide](docs/manual-testing.md) for checks
+  static analysis cannot prove, including screen-reader focus, rendered text
+  scaling, contrast, alternative input, motion, and media.
+
+### Changed
+
+- Component import tracking now preserves named aliases and namespace exports,
+  so native rules recognize forms such as aliased `Text` and `<rn.Switch>`.
+- Object-literal analysis now has one canonical shape model with static
+  computed-key support and explicit handling for unknowable spreads.
+- Native hidden-tree, role precedence, and state/value validation now use
+  shared conservative helpers to reduce false positives and silent misses.
+
 ## [0.2.0] — 2026-07-18
 
 ### Added
@@ -62,5 +88,6 @@ Initial release. Published under the `@aishware` scope; the installed command is
 - An upstream-parity test that keeps the React Native `accessibilityRole` list
   in sync with `eslint-plugin-react-native-a11y`.
 
+[0.3.0]: https://github.com/1aishwaryasharma/react-a11y/compare/v0.2.0...HEAD
 [0.2.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.2.0
 [0.1.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.1.0

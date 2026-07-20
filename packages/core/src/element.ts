@@ -20,6 +20,8 @@ export interface ElementNode {
   name: string;
   /** True for components (uppercase / member expressions), false for DOM tags. */
   isComponent: boolean;
+  /** Original exported component name, preserving aliases and namespaces. */
+  importName: string | null;
   /** Module the component's root identifier was imported from, if resolvable. */
   importSource: string | null;
   attrs: Map<string, AttrValue>;
@@ -42,24 +44,42 @@ export interface FileModel {
   sourceFile: ts.SourceFile;
 }
 
-function collectImports(sf: ts.SourceFile): Map<string, string> {
-  const imports = new Map<string, string>();
+interface ImportBinding {
+  importedName: string;
+  source: string;
+}
+
+function collectImports(sf: ts.SourceFile): {
+  bindings: Map<string, ImportBinding>;
+  sources: Map<string, string>;
+} {
+  const importBindings = new Map<string, ImportBinding>();
+  const sources = new Map<string, string>();
   for (const stmt of sf.statements) {
     if (!ts.isImportDeclaration(stmt) || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
     const source = stmt.moduleSpecifier.text;
     const clause = stmt.importClause;
     if (!clause) continue;
-    if (clause.name) imports.set(clause.name.text, source);
-    const bindings = clause.namedBindings;
-    if (bindings) {
-      if (ts.isNamespaceImport(bindings)) {
-        imports.set(bindings.name.text, source);
+    if (clause.name) {
+      importBindings.set(clause.name.text, { importedName: 'default', source });
+      sources.set(clause.name.text, source);
+    }
+    const namedBindings = clause.namedBindings;
+    if (namedBindings) {
+      if (ts.isNamespaceImport(namedBindings)) {
+        sources.set(namedBindings.name.text, source);
+        // Preserve the namespace marker; the JSX tag supplies the export name.
+        importBindings.set(namedBindings.name.text, { importedName: '*', source });
       } else {
-        for (const spec of bindings.elements) imports.set(spec.name.text, source);
+        for (const spec of namedBindings.elements) {
+          const importedName = spec.propertyName?.text ?? spec.name.text;
+          importBindings.set(spec.name.text, { importedName, source });
+          sources.set(spec.name.text, source);
+        }
       }
     }
   }
-  return imports;
+  return { bindings: importBindings, sources };
 }
 
 function attrValue(init: ts.JsxAttribute['initializer']): AttrValue {
@@ -92,8 +112,19 @@ function rootIdentifier(tag: ts.JsxTagNameExpression): string {
   return ts.isIdentifier(node) ? node.text : node.getText();
 }
 
+function componentImportName(
+  tag: ts.JsxTagNameExpression,
+  root: string,
+  binding: ImportBinding | undefined,
+): string | null {
+  if (!binding) return null;
+  if (binding.importedName === 'default') return root;
+  if (binding.importedName !== '*') return binding.importedName;
+  return tag.getText().split('.').at(-1) ?? null;
+}
+
 export function buildFileModel(sf: ts.SourceFile): FileModel {
-  const imports = collectImports(sf);
+  const { bindings, sources: imports } = collectImports(sf);
   const elements: ElementNode[] = [];
 
   function makeElement(
@@ -103,7 +134,9 @@ export function buildFileModel(sf: ts.SourceFile): FileModel {
   ): ElementNode {
     const name = opening.tagName.getText(sf);
     const root = rootIdentifier(opening.tagName);
-    const isComponent = !/^[a-z]/.test(name);
+    const isComponent =
+      ts.isPropertyAccessExpression(opening.tagName) || !/^[a-z]/.test(name);
+    const binding = isComponent ? bindings.get(root) : undefined;
     const attrs = new Map<string, AttrValue>();
     let hasSpread = false;
     for (const prop of opening.attributes.properties) {
@@ -118,23 +151,26 @@ export function buildFileModel(sf: ts.SourceFile): FileModel {
     const start = sf.getLineAndCharacterOfPosition(opening.getStart(sf));
     const end = sf.getLineAndCharacterOfPosition(opening.getEnd());
     const el: ElementNode = {
-      name,
-      isComponent,
-      importSource: isComponent ? imports.get(root) ?? null : null,
       attrs,
-      hasSpread,
-      parent,
       childElements: [],
-      hasTextChild: false,
       directText: '',
       hasExpressionChild: false,
-      selfClosing,
+      hasSpread,
+      hasTextChild: false,
+      importName: isComponent
+        ? componentImportName(opening.tagName, root, binding)
+        : null,
+      importSource: binding?.source ?? null,
+      isComponent,
       loc: {
-        line: start.line + 1,
         column: start.character + 1,
-        endLine: end.line + 1,
         endColumn: end.character + 1,
+        endLine: end.line + 1,
+        line: start.line + 1,
       },
+      name,
+      parent,
+      selfClosing,
     };
     if (parent) parent.childElements.push(el);
     elements.push(el);
