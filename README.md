@@ -126,13 +126,12 @@ The [`packages/vscode`](packages/vscode) extension surfaces the same rules
 live as you type — squiggles with WCAG citations, clickable rule docs,
 💡 quick fixes for the mechanical issues, and fix-on-save.
 
-**Install** (not yet on the Marketplace — build the `.vsix` once):
+**Install** (before the first Marketplace publication, build the `.vsix`):
 
 ```sh
 npm install && npm run build
-npm run build -w react-a11y-vscode
-cd packages/vscode && npx @vscode/vsce package --no-dependencies
-code --install-extension react-a11y-vscode-0.3.0.vsix
+npm run package -w packages/vscode
+code --install-extension packages/vscode/react-a11y-0.3.0.vsix
 ```
 
 Or for development: open this repo in VS Code and press **F5** to launch an
@@ -294,7 +293,7 @@ packages/
                   jsx-a11y doesn't cover (complement, not replacement)
   rules-native/   @aishware/react-a11y-rules-native — rules for React Native/Expo
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
-  vscode/         react-a11y-vscode — VS Code extension: live diagnostics,
+  vscode/         react-a11y — VS Code extension: live diagnostics,
                   quick fixes, fix-on-save (esbuild-bundled, ships as .vsix)
 ```
 
@@ -350,7 +349,9 @@ npm run release                                           # build + test + publi
 
 `publishConfig.access` is set to `public` on every package, so no `--access`
 flag is needed. The VS Code extension (`packages/vscode`) is `private` and
-ships as a `.vsix`, not to npm.
+ships as a `.vsix`, not to npm. See the
+[VS Code publishing guide](docs/publishing-vscode.md) for its separate
+Marketplace release process.
 
 ### Staying current with upstream a11y vocabulary
 

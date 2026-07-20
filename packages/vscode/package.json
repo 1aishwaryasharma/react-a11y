@@ -1,58 +1,17 @@
 {
-  "name": "react-a11y-vscode",
-  "displayName": "react-a11y",
-  "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
-  "version": "0.3.0",
-  "publisher": "aishwaryasharma",
-  "private": true,
-  "license": "MIT",
-  "homepage": "https://github.com/1aishwaryasharma/react-a11y",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/1aishwaryasharma/react-a11y.git",
-    "directory": "packages/vscode"
-  },
-  "engines": {
-    "vscode": "^1.85.0"
-  },
-  "categories": [
-    "Linters"
-  ],
-  "keywords": [
-    "accessibility",
-    "a11y",
-    "wcag",
-    "react",
-    "react-native"
-  ],
-  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
     "onLanguage:typescript",
     "onLanguage:typescriptreact"
   ],
+  "bugs": {
+    "url": "https://github.com/1aishwaryasharma/react-a11y/issues"
+  },
+  "categories": [
+    "Linters"
+  ],
   "contributes": {
-    "configuration": {
-      "title": "react-a11y",
-      "properties": {
-        "react-a11y.enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable react-a11y diagnostics."
-        },
-        "react-a11y.platform": {
-          "type": "string",
-          "enum": [
-            "auto",
-            "web",
-            "native"
-          ],
-          "default": "auto",
-          "description": "Rule pack to run. \"auto\" detects React Native/Expo from the workspace package.json."
-        }
-      }
-    },
     "commands": [
       {
         "command": "react-a11y.fixAll",
@@ -62,20 +21,73 @@
         "command": "react-a11y.scanWorkspace",
         "title": "react-a11y: Scan workspace (project-wide checks)"
       }
-    ]
-  },
-  "scripts": {
-    "build": "esbuild src/extension.ts --bundle --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --define:import.meta.url=__importMetaUrl \"--banner:js=const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;\"",
-    "typecheck": "tsc --noEmit",
-    "package": "vsce package --no-dependencies"
+    ],
+    "configuration": {
+      "properties": {
+        "react-a11y.enable": {
+          "default": true,
+          "description": "Enable react-a11y diagnostics.",
+          "type": "boolean"
+        },
+        "react-a11y.platform": {
+          "default": "auto",
+          "description": "Rule pack to run. \"auto\" detects React Native/Expo from the workspace package.json.",
+          "enum": [
+            "auto",
+            "web",
+            "native"
+          ],
+          "type": "string"
+        }
+      },
+      "title": "react-a11y"
+    }
   },
   "dependencies": {
     "@aishware/react-a11y-core": "0.3.0",
     "@aishware/react-a11y-rules-native": "0.3.0",
     "@aishware/react-a11y-rules-web": "0.3.0"
   },
+  "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
   "devDependencies": {
     "@types/vscode": "^1.85.0",
-    "esbuild": "^0.24.0"
-  }
+    "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1"
+  },
+  "displayName": "react-a11y",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "galleryBanner": {
+    "color": "#D9F5FF",
+    "theme": "light"
+  },
+  "homepage": "https://github.com/1aishwaryasharma/react-a11y",
+  "icon": "images/icon.png",
+  "keywords": [
+    "accessibility",
+    "a11y",
+    "wcag",
+    "react",
+    "react-native"
+  ],
+  "license": "MIT",
+  "main": "./dist/extension.js",
+  "name": "react-a11y",
+  "pricing": "Free",
+  "private": true,
+  "publisher": "aishwaryasharma",
+  "qna": "marketplace",
+  "repository": {
+    "directory": "packages/vscode",
+    "type": "git",
+    "url": "git+https://github.com/1aishwaryasharma/react-a11y.git"
+  },
+  "scripts": {
+    "build": "esbuild src/extension.ts --bundle --minify --platform=node --format=cjs --external:vscode --outfile=dist/extension.js --define:import.meta.url=__importMetaUrl \"--banner:js=const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;\"",
+    "package": "vsce package --no-dependencies",
+    "typecheck": "tsc --noEmit",
+    "vscode:prepublish": "npm run typecheck && npm run build"
+  },
+  "version": "0.3.0"
 }

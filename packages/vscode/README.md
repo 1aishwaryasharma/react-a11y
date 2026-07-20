@@ -2,7 +2,8 @@
 
 Inline WCAG 2.2 accessibility diagnostics for React and React Native,
 powered by the [react-a11y](https://github.com/1aishwaryasharma/react-a11y)
-static analyzer — no browser, no build, results as you type.
+static analyzer. No browser or application build is required, and analysis
+runs locally as you type.
 
 ## Features
 
@@ -17,6 +18,20 @@ static analyzer — no browser, no build, results as you type.
 - **Platform auto-detection** per workspace folder (React Native/Expo →
   native rule pack), and full support for `react-a11y.config.json` rule
   overrides and ignore globs.
+- **Project-wide checks** through the `react-a11y: Scan workspace` command.
+
+The extension bundles 22 web rules and 25 React Native rules. Static analysis
+cannot reproduce a rendered app, assistive technology, or device settings;
+use the
+[manual accessibility testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md)
+alongside it.
+
+## Getting started
+
+Open a React or React Native project and edit a JavaScript or TypeScript file.
+Diagnostics appear in the editor and Problems panel. Use the lightbulb menu for
+safe quick fixes, or run `react-a11y: Scan workspace` from the Command Palette
+for project-wide checks.
 
 ## Settings
 
@@ -31,19 +46,30 @@ Fix on save:
 "editor.codeActionsOnSave": { "source.fixAll.reactA11y": "explicit" }
 ```
 
+## Privacy
+
+Analysis runs entirely on your machine. The extension does not upload source
+code or require an account.
+
+## Issues
+
+Report bugs and false positives on
+[GitHub](https://github.com/1aishwaryasharma/react-a11y/issues).
+
 ## Development
 
 ```sh
 npm install            # at the repo root
-npm run build -w react-a11y-vscode
+npm run typecheck -w packages/vscode
+npm run build -w packages/vscode
 ```
 
 Then open the repo in VS Code and press **F5** ("Run react-a11y extension")
 to launch an Extension Development Host. To build an installable `.vsix`:
 
 ```sh
-npx @vscode/vsce package --no-dependencies   # in packages/vscode
-code --install-extension react-a11y-vscode-0.1.0.vsix
+npm run package -w packages/vscode
+code --install-extension packages/vscode/react-a11y-0.3.0.vsix
 ```
 
 (`--no-dependencies` is correct: the build bundles everything with esbuild.)

@@ -21,10 +21,8 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
-      - name: VS Code extension — typecheck and bundle
-        run: |
-          npm run typecheck -w react-a11y-vscode
-          npm run build -w react-a11y-vscode
+      - name: VS Code extension — typecheck, bundle, and package
+        run: npm run package -w packages/vscode
       - name: Dogfood — scan the example projects
         run: |
           node packages/cli/dist/index.js examples/web-demo --fail-on none
