@@ -4,9 +4,10 @@ import {
   findAncestor,
   isStaticTrue,
   readOwnPackageMeta,
+  staticExpression,
   staticString,
 } from '@aishware/react-a11y-core';
-import ts from 'typescript';
+import type ts from 'typescript';
 import { ARIA_LABEL_PROPS } from './aria.js';
 
 const homepage = readOwnPackageMeta(import.meta.url).homepage;
@@ -124,34 +125,17 @@ export function mayHaveNativeAccessibleName(el: ElementNode): boolean {
 }
 
 /**
- * Validity of a statically-known accessibilityState property initializer.
- * Unknown expressions are left to runtime analysis.
+ * Validity of a statically-known accessibilityState property initializer:
+ * booleans (plus "mixed" for checked) are valid, any other known value is
+ * invalid, and unknown expressions are left to runtime analysis.
  */
 export function staticAccessibilityStateValueValidity(
   key: string,
   node: ts.Expression,
 ): 'invalid' | 'unknown' | 'valid' {
-  if (
-    node.kind === ts.SyntaxKind.FalseKeyword ||
-    node.kind === ts.SyntaxKind.TrueKeyword
-  ) {
-    return 'valid';
-  }
-  if (ts.isStringLiteralLike(node)) {
-    return key === 'checked' && node.text === 'mixed' ? 'valid' : 'invalid';
-  }
-  if (
-    node.kind === ts.SyntaxKind.NullKeyword ||
-    ts.isArrayLiteralExpression(node) ||
-    ts.isBigIntLiteral(node) ||
-    ts.isNumericLiteral(node) ||
-    ts.isObjectLiteralExpression(node) ||
-    (ts.isPrefixUnaryExpression(node) &&
-      (ts.isBigIntLiteral(node.operand) || ts.isNumericLiteral(node.operand))) ||
-    ts.isVoidExpression(node) ||
-    (ts.isIdentifier(node) && node.text === 'undefined')
-  ) {
-    return 'invalid';
-  }
-  return 'unknown';
+  const literal = staticExpression(node);
+  if (literal.kind === 'unknown') return 'unknown';
+  if (literal.kind === 'composite') return 'invalid';
+  if (typeof literal.value === 'boolean') return 'valid';
+  return key === 'checked' && literal.value === 'mixed' ? 'valid' : 'invalid';
 }

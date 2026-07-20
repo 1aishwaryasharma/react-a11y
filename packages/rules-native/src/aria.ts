@@ -30,18 +30,11 @@ export const ARIA_PROPS: ReadonlyMap<string, AriaPropDef> = new Map<string, Aria
   ['aria-valuetext', { kind: 'string', descriptor: true }],
 ]);
 
-const entries = [...ARIA_PROPS];
-
 /** Every aria-* prop name React Native recognizes. */
 export const KNOWN_ARIA_PROPS = new Set(ARIA_PROPS.keys());
 
-/** Props that expect a boolean (aria-checked also allows "mixed"). */
-export const BOOLEAN_ARIA_PROPS = entries
-  .filter(([, def]) => def.kind === 'boolean' || def.kind === 'tristate')
-  .map(([name]) => name);
-
 /** Props that only take effect on an accessibility element. */
-export const ARIA_DESCRIPTOR_PROPS = entries
+export const ARIA_DESCRIPTOR_PROPS = [...ARIA_PROPS]
   .filter(([, def]) => def.descriptor)
   .map(([name]) => name);
 

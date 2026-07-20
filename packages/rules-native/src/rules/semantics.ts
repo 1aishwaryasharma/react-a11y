@@ -67,12 +67,9 @@ function hasState(el: ElementNode, key: string, ariaProp: string): boolean {
   const shape = objectLiteralShape(el, 'accessibilityState');
   if (shape) {
     if (!shape.complete) return true;
-    if (!shape.properties.has(key)) return false;
     const initializer = shape.properties.get(key);
-    return (
-      !initializer ||
-      staticAccessibilityStateValueValidity(key, initializer) !== 'invalid'
-    );
+    if (!initializer) return false;
+    return staticAccessibilityStateValueValidity(key, initializer) !== 'invalid';
   }
   // A present dynamic expression or object spread may provide the state.
   return state.kind === 'expression';

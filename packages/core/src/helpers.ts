@@ -194,7 +194,8 @@ export function targetSizeTier(width: number, height: number): 'below-min' | 'be
 
 export interface ObjectLiteralShape {
   complete: boolean;
-  properties: Map<string, ts.Expression | undefined>;
+  /** Property initializers; a shorthand `{ checked }` maps to its identifier. */
+  properties: Map<string, ts.Expression>;
 }
 
 function staticPropertyName(name: ts.PropertyName): string | undefined {
@@ -224,7 +225,7 @@ export function objectLiteralShape(
   const attr = el.attrs.get(attrName);
   if (attr?.kind !== 'expression' || !attr.node || !ts.isObjectLiteralExpression(attr.node)) return undefined;
   let complete = true;
-  const properties = new Map<string, ts.Expression | undefined>();
+  const properties = new Map<string, ts.Expression>();
   for (const property of attr.node.properties) {
     if (ts.isSpreadAssignment(property)) {
       complete = false;
@@ -239,16 +240,11 @@ export function objectLiteralShape(
       complete = false;
       continue;
     }
+    // A shorthand's identifier is its value expression — classified 'unknown'.
     properties.set(
       name,
-      ts.isPropertyAssignment(property) ? property.initializer : undefined,
+      ts.isPropertyAssignment(property) ? property.initializer : property.name,
     );
   }
   return { complete, properties };
-}
-
-/** Statically-known keys of an object-literal prop, e.g. accessibilityState={{...}}. */
-export function objectLiteralKeys(el: ElementNode, attrName: string): string[] | undefined {
-  const shape = objectLiteralShape(el, attrName);
-  return shape?.complete ? [...shape.properties.keys()] : undefined;
 }

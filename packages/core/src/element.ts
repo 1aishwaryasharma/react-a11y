@@ -49,37 +49,70 @@ interface ImportBinding {
   source: string;
 }
 
-function collectImports(sf: ts.SourceFile): {
-  bindings: Map<string, ImportBinding>;
-  sources: Map<string, string>;
-} {
-  const importBindings = new Map<string, ImportBinding>();
-  const sources = new Map<string, string>();
+function collectImports(sf: ts.SourceFile): Map<string, ImportBinding> {
+  const bindings = new Map<string, ImportBinding>();
   for (const stmt of sf.statements) {
     if (!ts.isImportDeclaration(stmt) || !ts.isStringLiteral(stmt.moduleSpecifier)) continue;
     const source = stmt.moduleSpecifier.text;
     const clause = stmt.importClause;
     if (!clause) continue;
-    if (clause.name) {
-      importBindings.set(clause.name.text, { importedName: 'default', source });
-      sources.set(clause.name.text, source);
-    }
+    if (clause.name) bindings.set(clause.name.text, { importedName: 'default', source });
     const namedBindings = clause.namedBindings;
     if (namedBindings) {
       if (ts.isNamespaceImport(namedBindings)) {
-        sources.set(namedBindings.name.text, source);
         // Preserve the namespace marker; the JSX tag supplies the export name.
-        importBindings.set(namedBindings.name.text, { importedName: '*', source });
+        bindings.set(namedBindings.name.text, { importedName: '*', source });
       } else {
         for (const spec of namedBindings.elements) {
           const importedName = spec.propertyName?.text ?? spec.name.text;
-          importBindings.set(spec.name.text, { importedName, source });
-          sources.set(spec.name.text, source);
+          bindings.set(spec.name.text, { importedName, source });
         }
       }
     }
   }
-  return { bindings: importBindings, sources };
+  return bindings;
+}
+
+/** Static classification of an expression node. */
+export type StaticExpression =
+  | { kind: 'value'; value: string | number | boolean | bigint | null | undefined }
+  | { kind: 'composite' }
+  | { kind: 'unknown' };
+
+/**
+ * Classify an expression as a statically-known primitive value, a composite
+ * (object/array) literal, or statically unknowable. The single decoder behind
+ * attribute values and object-literal property checks.
+ */
+export function staticExpression(node: ts.Expression): StaticExpression {
+  if (ts.isStringLiteralLike(node)) return { kind: 'value', value: node.text };
+  if (ts.isNumericLiteral(node)) return { kind: 'value', value: Number(node.text) };
+  if (ts.isBigIntLiteral(node)) return { kind: 'value', value: BigInt(node.text.slice(0, -1)) };
+  if (node.kind === ts.SyntaxKind.TrueKeyword) return { kind: 'value', value: true };
+  if (node.kind === ts.SyntaxKind.FalseKeyword) return { kind: 'value', value: false };
+  if (node.kind === ts.SyntaxKind.NullKeyword) return { kind: 'value', value: null };
+  if (ts.isIdentifier(node)) {
+    return node.text === 'undefined' ? { kind: 'value', value: undefined } : { kind: 'unknown' };
+  }
+  if (ts.isVoidExpression(node)) return { kind: 'value', value: undefined };
+  if (
+    ts.isPrefixUnaryExpression(node) &&
+    (node.operator === ts.SyntaxKind.MinusToken || node.operator === ts.SyntaxKind.PlusToken)
+  ) {
+    const negate = node.operator === ts.SyntaxKind.MinusToken;
+    const operand = staticExpression(node.operand);
+    if (operand.kind === 'value' && typeof operand.value === 'number') {
+      return { kind: 'value', value: negate ? -operand.value : operand.value };
+    }
+    if (operand.kind === 'value' && typeof operand.value === 'bigint') {
+      return { kind: 'value', value: negate ? -operand.value : operand.value };
+    }
+    return { kind: 'unknown' };
+  }
+  if (ts.isObjectLiteralExpression(node) || ts.isArrayLiteralExpression(node)) {
+    return { kind: 'composite' };
+  }
+  return { kind: 'unknown' };
 }
 
 function attrValue(init: ts.JsxAttribute['initializer']): AttrValue {
@@ -88,18 +121,9 @@ function attrValue(init: ts.JsxAttribute['initializer']): AttrValue {
   if (ts.isJsxExpression(init)) {
     const expr = init.expression;
     if (!expr) return { kind: 'expression', text: '' };
-    if (ts.isStringLiteralLike(expr)) return { kind: 'static', value: expr.text };
-    if (ts.isNumericLiteral(expr)) return { kind: 'static', value: Number(expr.text) };
-    if (expr.kind === ts.SyntaxKind.TrueKeyword) return { kind: 'static', value: true };
-    if (expr.kind === ts.SyntaxKind.FalseKeyword) return { kind: 'static', value: false };
-    if (expr.kind === ts.SyntaxKind.NullKeyword) return { kind: 'static', value: null };
-    if (ts.isIdentifier(expr) && expr.text === 'undefined') return { kind: 'static', value: undefined };
-    if (
-      ts.isPrefixUnaryExpression(expr) &&
-      expr.operator === ts.SyntaxKind.MinusToken &&
-      ts.isNumericLiteral(expr.operand)
-    ) {
-      return { kind: 'static', value: -Number(expr.operand.text) };
+    const literal = staticExpression(expr);
+    if (literal.kind === 'value' && typeof literal.value !== 'bigint') {
+      return { kind: 'static', value: literal.value };
     }
     return { kind: 'expression', text: expr.getText(), node: expr };
   }
@@ -124,7 +148,8 @@ function componentImportName(
 }
 
 export function buildFileModel(sf: ts.SourceFile): FileModel {
-  const { bindings, sources: imports } = collectImports(sf);
+  const bindings = collectImports(sf);
+  const imports = new Map([...bindings].map(([local, binding]) => [local, binding.source]));
   const elements: ElementNode[] = [];
 
   function makeElement(

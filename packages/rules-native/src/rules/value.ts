@@ -1,52 +1,9 @@
-import { objectLiteralShape } from '@aishware/react-a11y-core';
+import { objectLiteralShape, staticExpression } from '@aishware/react-a11y-core';
 import ts from 'typescript';
 import { defineRule } from '../util.js';
 
 const VALUE_KEYS = new Set(['max', 'min', 'now', 'text']);
 const RANGE_KEYS = ['max', 'min', 'now'];
-
-function knownLiteralType(node: ts.Expression): 'number' | 'other' | 'string' | undefined {
-  if (ts.isNumericLiteral(node)) return 'number';
-  if (
-    ts.isPrefixUnaryExpression(node) &&
-    (node.operator === ts.SyntaxKind.MinusToken ||
-      node.operator === ts.SyntaxKind.PlusToken) &&
-    ts.isNumericLiteral(node.operand)
-  ) {
-    return 'number';
-  }
-  if (ts.isPrefixUnaryExpression(node) && ts.isBigIntLiteral(node.operand)) {
-    return 'other';
-  }
-  if (ts.isStringLiteralLike(node)) return 'string';
-  if (
-    node.kind === ts.SyntaxKind.FalseKeyword ||
-    node.kind === ts.SyntaxKind.NullKeyword ||
-    node.kind === ts.SyntaxKind.TrueKeyword ||
-    ts.isArrayLiteralExpression(node) ||
-    ts.isBigIntLiteral(node) ||
-    ts.isObjectLiteralExpression(node) ||
-    ts.isVoidExpression(node) ||
-    (ts.isIdentifier(node) && node.text === 'undefined')
-  ) {
-    return 'other';
-  }
-  return undefined;
-}
-
-function numericLiteral(node: ts.Expression): number | undefined {
-  if (ts.isNumericLiteral(node)) return Number(node.text);
-  if (
-    ts.isPrefixUnaryExpression(node) &&
-    (node.operator === ts.SyntaxKind.MinusToken ||
-      node.operator === ts.SyntaxKind.PlusToken) &&
-    ts.isNumericLiteral(node.operand)
-  ) {
-    const value = Number(node.operand.text);
-    return node.operator === ts.SyntaxKind.MinusToken ? -value : value;
-  }
-  return undefined;
-}
 
 /** Validate the statically-known shape and values of accessibilityValue. */
 export const accessibilityValueValid = defineRule(
@@ -65,9 +22,10 @@ export const accessibilityValueValid = defineRule(
     }
     if (!attr.node) return;
     if (!ts.isObjectLiteralExpression(attr.node)) {
-      if (ts.isArrayLiteralExpression(attr.node)) {
+      const literal = staticExpression(attr.node);
+      if (literal.kind === 'composite') {
         ctx.report({ el, message: 'accessibilityValue must be an object, not an array.' });
-      } else if (knownLiteralType(attr.node) !== undefined) {
+      } else if (literal.kind === 'value') {
         ctx.report({ el, message: 'accessibilityValue must be an object.' });
       }
       return;
@@ -86,10 +44,12 @@ export const accessibilityValueValid = defineRule(
     }
 
     const text = shape.properties.get('text');
-    const textType = text ? knownLiteralType(text) : undefined;
-    if (textType === 'number' || textType === 'other') {
-      ctx.report({ el, message: 'accessibilityValue.text must be a string.' });
-      return;
+    if (text) {
+      const literal = staticExpression(text);
+      if (literal.kind === 'composite' || (literal.kind === 'value' && typeof literal.value !== 'string')) {
+        ctx.report({ el, message: 'accessibilityValue.text must be a string.' });
+        return;
+      }
     }
 
     const missingBounds = keys.includes('now')
@@ -107,13 +67,13 @@ export const accessibilityValueValid = defineRule(
     for (const key of RANGE_KEYS) {
       const value = shape.properties.get(key);
       if (!value) continue;
-      const type = knownLiteralType(value);
-      if (type === 'other' || type === 'string') {
+      const literal = staticExpression(value);
+      if (literal.kind === 'unknown') continue;
+      if (literal.kind === 'composite' || typeof literal.value !== 'number') {
         ctx.report({ el, message: `accessibilityValue.${key} must be a number.` });
         return;
       }
-      const numeric = numericLiteral(value);
-      if (numeric !== undefined) numericValues.set(key, numeric);
+      numericValues.set(key, literal.value);
     }
 
     const max = numericValues.get('max');

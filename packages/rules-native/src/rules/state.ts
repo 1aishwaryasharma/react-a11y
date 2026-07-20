@@ -1,5 +1,5 @@
-import { objectLiteralShape, staticString } from '@aishware/react-a11y-core';
-import { ARIA_PROPS, BOOLEAN_ARIA_PROPS } from '../aria.js';
+import { objectLiteralShape, staticExpression, staticString } from '@aishware/react-a11y-core';
+import { ARIA_PROPS } from '../aria.js';
 import {
   defineRule,
   staticAccessibilityStateValueValidity,
@@ -19,19 +19,20 @@ export const accessibilityStateValid = defineRule(
     const attr = el.attrs.get('accessibilityState');
     if (!attr) return;
     const shape = objectLiteralShape(el, 'accessibilityState');
-    if (
-      attr.kind === 'static' ||
-      (attr.node &&
-        !shape &&
-        staticAccessibilityStateValueValidity('state', attr.node) === 'invalid')
-    ) {
-      ctx.report({
-        el,
-        message: 'accessibilityState must be an object.',
-      });
+    if (!shape) {
+      // Statically known but not an object literal — a scalar or an array.
+      const known =
+        attr.kind === 'static' ||
+        (attr.node !== undefined && staticExpression(attr.node).kind !== 'unknown');
+      if (known) {
+        ctx.report({
+          el,
+          message: 'accessibilityState must be an object.',
+        });
+      }
       return;
     }
-    if (!shape?.complete) return;
+    if (!shape.complete) return;
     for (const [key, value] of shape.properties) {
       if (!STATE_KEYS.has(key)) {
         ctx.report({
@@ -40,7 +41,7 @@ export const accessibilityStateValid = defineRule(
         });
         continue;
       }
-      if (value && staticAccessibilityStateValueValidity(key, value) === 'invalid') {
+      if (staticAccessibilityStateValueValidity(key, value) === 'invalid') {
         ctx.report({
           el,
           message:
@@ -67,17 +68,20 @@ export const ariaStateValid = defineRule(
     wcag: ['4.1.2'],
   },
   (el, ctx) => {
-    for (const prop of BOOLEAN_ARIA_PROPS) {
+    for (const [prop, def] of ARIA_PROPS) {
+      if (def.kind !== 'boolean' && def.kind !== 'tristate') continue;
       const value = staticString(el, prop);
       if (value === undefined) continue;
-      if (ARIA_PROPS.get(prop)!.kind === 'tristate' && value === 'mixed') continue;
+      const tristate = def.kind === 'tristate';
+      if (tristate && value === 'mixed') continue;
       const state = prop.slice('aria-'.length);
+      const message =
+        value === 'false'
+          ? `${prop}="false" is a string, and strings are truthy in React Native — screen readers read this as ${state}. Use ${prop}={false}.`
+          : `${prop}="${value}" is a string — React Native expects a boolean${tristate ? ' (or "mixed")' : ''}. Use ${prop}={${value === 'true' ? 'true' : '…'}}.`;
       ctx.report({
         el,
-        message:
-          value === 'false'
-            ? `${prop}="false" is a string, and strings are truthy in React Native — screen readers read this as ${state}. Use ${prop}={false}.`
-            : `${prop}="${value}" is a string — React Native expects a boolean${ARIA_PROPS.get(prop)!.kind === 'tristate' ? ` (or "mixed")` : ''}. Use ${prop}={${value === 'true' ? 'true' : '…'}}.`,
+        message,
         ...(value === 'true' ? { severity: 'moderate' as const } : {}),
       });
     }
