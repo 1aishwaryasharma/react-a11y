@@ -1,6 +1,6 @@
 {
   "name": "@aishware/react-a11y",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Static accessibility scanner for React and React Native — reports WCAG 2.2 issues with file:line locations.",
   "keywords": [
     "accessibility",
@@ -33,9 +33,9 @@
     "README.md"
   ],
   "dependencies": {
-    "@aishware/react-a11y-core": "^0.2.0",
-    "@aishware/react-a11y-rules-native": "^0.2.0",
-    "@aishware/react-a11y-rules-web": "^0.2.0",
+    "@aishware/react-a11y-core": "^0.3.0",
+    "@aishware/react-a11y-rules-native": "^0.3.0",
+    "@aishware/react-a11y-rules-web": "^0.3.0",
     "picocolors": "^1.1.0"
   },
   "license": "MIT",

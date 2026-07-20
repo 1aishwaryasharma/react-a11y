@@ -1,6 +1,6 @@
 {
   "name": "@aishware/react-a11y-rules-web",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "WCAG 2.2 web accessibility rules that complement eslint-plugin-jsx-a11y — the criteria, structure and focus checks it doesn't cover.",
   "keywords": [
     "accessibility",
@@ -32,7 +32,7 @@
     "README.md"
   ],
   "dependencies": {
-    "@aishware/react-a11y-core": "^0.2.0"
+    "@aishware/react-a11y-core": "^0.3.0"
   },
   "license": "MIT",
   "homepage": "https://github.com/1aishwaryasharma/react-a11y",

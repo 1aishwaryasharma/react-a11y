@@ -2,7 +2,7 @@
   "name": "react-a11y-vscode",
   "displayName": "react-a11y",
   "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "aishwaryasharma",
   "private": true,
   "license": "MIT",
@@ -70,9 +70,9 @@
     "package": "vsce package --no-dependencies"
   },
   "dependencies": {
-    "@aishware/react-a11y-core": "0.1.0",
-    "@aishware/react-a11y-rules-native": "0.1.0",
-    "@aishware/react-a11y-rules-web": "0.1.0"
+    "@aishware/react-a11y-core": "0.3.0",
+    "@aishware/react-a11y-rules-native": "0.3.0",
+    "@aishware/react-a11y-rules-web": "0.3.0"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",
