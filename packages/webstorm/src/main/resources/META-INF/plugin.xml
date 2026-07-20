@@ -1,0 +1,43 @@
+<idea-plugin>
+  <id>com.aishware.react-a11y</id>
+  <name>react-a11y</name>
+  <vendor url="https://github.com/1aishwaryasharma" email="1aishwaryasharma@proton.me">aishwaryasharma</vendor>
+
+  <description><![CDATA[
+    <p>Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native,
+    powered by <a href="https://github.com/1aishwaryasharma/react-a11y">react-a11y</a>.</p>
+    <ul>
+      <li>Live diagnostics as you type, with WCAG success criteria and severity on every issue</li>
+      <li>Quick fixes for mechanical problems (misspelled accessibility props, and more)</li>
+      <li>"Fix all" intention for everything auto-fixable in a file</li>
+      <li><b>Tools → react-a11y: Scan Project</b> runs the project-wide checks (cross-file label
+      resolution, Expo config) and lists results in a console with clickable locations</li>
+      <li>Auto-detects React Native/Expo projects and switches rule packs; respects
+      <code>react-a11y.config.json</code> ignore globs and rule settings</li>
+    </ul>
+    <p>The web rule pack covers what eslint-plugin-jsx-a11y does not (WCAG 2.2 criteria, structure,
+    focus visibility, project-wide checks) — run both for full coverage. Requires Node.js 20+ on
+    your machine; the react-a11y CLI itself ships inside the plugin, and a project-local
+    <code>@aishware/react-a11y</code> install is preferred when present.</p>
+  ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>JavaScript</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- JS dialects (TypeScript, JSX, …) inherit extensions registered on their
+         base language, so one registration covers every file the CLI parses. -->
+    <externalAnnotator language="JavaScript" implementationClass="com.aishware.reacta11y.A11yExternalAnnotator"/>
+    <projectConfigurable parentId="tools" id="com.aishware.react-a11y.settings"
+                         displayName="react-a11y" instance="com.aishware.reacta11y.A11ySettingsConfigurable"/>
+    <notificationGroup id="react-a11y" displayType="BALLOON"/>
+  </extensions>
+
+  <actions>
+    <action id="ReactA11y.ScanProject" class="com.aishware.reacta11y.ScanProjectAction"
+            text="react-a11y: Scan Project"
+            description="Run react-a11y across the project, including project-wide checks live linting cannot do">
+      <add-to-group group-id="ToolsMenu" anchor="last"/>
+    </action>
+  </actions>
+</idea-plugin>

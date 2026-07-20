@@ -77,6 +77,9 @@ npx @aishware/react-a11y . --fix
 # scan only files changed in git — fast PR checks
 npx @aishware/react-a11y . --changed
 
+# lint one buffer from stdin — editor integrations (config still read from the path)
+cat src/App.tsx | npx @aishware/react-a11y . --stdin --stdin-filename src/App.tsx --format json
+
 # every rule with severity + WCAG mapping, or the coverage report
 npx @aishware/react-a11y --list-rules
 npx @aishware/react-a11y --coverage

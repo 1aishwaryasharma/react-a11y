@@ -28,3 +28,22 @@ jobs:
           node packages/cli/dist/index.js examples/web-demo --fail-on none
           node packages/cli/dist/index.js examples/native-demo --fail-on none
           node packages/cli/dist/index.js examples/native-violations --fail-on none
+
+  webstorm-plugin:
+    runs-on: ubuntu-latest
+    name: JetBrains plugin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Build plugin distribution
+        run: ./gradlew buildPlugin --no-daemon
+        working-directory: packages/webstorm

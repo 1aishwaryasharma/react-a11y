@@ -9,8 +9,10 @@ import {
   WCAG,
   WCAG22_A_AA,
   WCAG22_TOTALS,
+  analyze,
   applyFixes,
   detectPlatform,
+  globToRegExp,
   loadConfig,
   readOwnPackageMeta,
   scanProject,
@@ -43,6 +45,8 @@ ${pc.bold('Options')}
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
   --fix                          Apply safe mechanical fixes, then report what remains
   --changed                      Scan only files changed in git (vs HEAD, incl. untracked)
+  --stdin                        Lint source read from stdin as one file (config from [path])
+  --stdin-filename <file>        Filename to attribute stdin content to (for ignore matching)
   --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
   --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
@@ -69,6 +73,8 @@ interface CliArgs {
   coverage: boolean;
   fix: boolean;
   changed: boolean;
+  stdin: boolean;
+  stdinFilename?: string;
 }
 
 function fail(msg: string): never {
@@ -79,7 +85,7 @@ function fail(msg: string): never {
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious',
-    listRules: false, coverage: false, fix: false, changed: false,
+    listRules: false, coverage: false, fix: false, changed: false, stdin: false,
   };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -126,6 +132,12 @@ function parseArgs(argv: string[]): CliArgs {
       case '--changed':
         args.changed = true;
         break;
+      case '--stdin':
+        args.stdin = true;
+        break;
+      case '--stdin-filename':
+        args.stdinFilename = next();
+        break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
         paths.push(arg);
@@ -168,6 +180,26 @@ function changedFiles(root: string): string[] {
     files.push(file.replace(/^"|"$/g, ''));
   }
   return files;
+}
+
+/**
+ * Editor integration: lint one buffer piped through stdin instead of walking
+ * the project. Config, ignore globs and platform still come from `root`, so
+ * results match what a project scan would report for that file.
+ */
+function scanStdin(args: CliArgs, rules: Rule[], platform: Platform): ScanResult {
+  const config = loadConfig(args.root);
+  const started = Date.now();
+  const filename = args.stdinFilename ?? 'stdin.tsx';
+  const rel = (path.isAbsolute(filename) ? path.relative(args.root, filename) : filename)
+    .split(path.sep)
+    .join('/');
+  const ignored = (config.ignore ?? []).some((glob) => globToRegExp(glob).test(rel));
+  const code = fs.readFileSync(0, 'utf8');
+  const diagnostics = ignored
+    ? []
+    : analyze({ code, filename: rel, platform, rules, ruleSettings: config.rules });
+  return { diagnostics, filesScanned: 1, durationMs: Date.now() - started, platform, root: args.root };
 }
 
 /** Apply autofixes to disk; returns counts. Fixes come back from a scan. */
@@ -274,6 +306,13 @@ function main(): void {
   const platform: Platform =
     args.platform !== 'auto' ? args.platform : config.platform ?? detectPlatform(args.root);
   const rules = platform === 'native' ? nativeRules : webRules;
+
+  if (args.stdin) {
+    if (args.fix || args.changed) fail('--stdin cannot be combined with --fix or --changed');
+    report(scanStdin(args, rules, platform), args, rules);
+    return;
+  }
+
   const files = args.changed ? changedFiles(args.root) : undefined;
   // Cross-file passes need the whole project; skip them on partial scans.
   // Passes are stateful, so each scan gets fresh instances.
@@ -293,18 +332,22 @@ function main(): void {
     }
   }
 
-  let report: string | null = null;
-  if (args.format === 'json') report = toJson(result);
+  report(result, args, rules);
+}
+
+function report(result: ScanResult, args: CliArgs, rules: Rule[]): void {
+  let rendered: string | null = null;
+  if (args.format === 'json') rendered = toJson(result);
   else if (args.format === 'sarif') {
-    report = toSarif(result, rules, { name: PKG.name, version: PKG.version, informationUri: PKG.homepage });
+    rendered = toSarif(result, rules, { name: PKG.name, version: PKG.version, informationUri: PKG.homepage });
   }
 
-  if (report !== null) {
+  if (rendered !== null) {
     if (args.output) {
-      fs.writeFileSync(args.output, report);
+      fs.writeFileSync(args.output, rendered);
       console.error(`report written to ${args.output}`);
     } else {
-      console.log(report);
+      console.log(rendered);
     }
   } else {
     printPretty(result, VERSION);

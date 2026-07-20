@@ -161,6 +161,28 @@ Problems panel; the CLI runs them automatically on a full scan.
 | `react-a11y.enable` | `true` | Toggle diagnostics. |
 | `react-a11y.platform` | `auto` | Force `web` or `native` instead of auto-detection. |
 
+### WebStorm / JetBrains plugin
+
+The [`packages/webstorm`](packages/webstorm) plugin brings the same rules to
+WebStorm and every other JetBrains IDE with the JavaScript plugin (IntelliJ
+IDEA Ultimate, PhpStorm, PyCharm Professional, Rider): live diagnostics with
+WCAG citations, Alt+Enter quick fixes, a fix-all-in-file intention, and
+**Tools → react-a11y: Scan Project** for the project-wide checks. It shells
+out to a bundled copy of the CLI (a project-local `@aishware/react-a11y`
+install is preferred when present), so it needs Node.js 20+ on the machine.
+
+**Install** (before the first Marketplace publication, build the zip):
+
+```sh
+npm install
+cd packages/webstorm && ./gradlew buildPlugin
+```
+
+Then in the IDE: Settings → Plugins → ⚙ → **Install Plugin from Disk** →
+`packages/webstorm/build/distributions/react-a11y-0.3.0.zip`. Configuration
+lives under **Settings → Tools → react-a11y**; see the
+[plugin README](packages/webstorm/README.md) for details.
+
 ### Expo / React Native projects
 
 No setup needed — `npx @aishware/react-a11y .` detects `react-native`/`expo` in
@@ -295,6 +317,9 @@ packages/
   cli/            react-a11y — zero-config CLI, pretty/JSON/SARIF output
   vscode/         react-a11y — VS Code extension: live diagnostics,
                   quick fixes, fix-on-save (esbuild-bundled, ships as .vsix)
+  webstorm/       react-a11y — JetBrains plugin (Kotlin): live diagnostics,
+                  quick fixes, project scan; drives the esbuild-bundled CLI
+                  over --stdin (Gradle build, ships as a plugin zip)
 ```
 
 Rules are ~30-line pure functions over a normalized `ElementNode` (attributes
@@ -351,7 +376,9 @@ npm run release                                           # build + test + publi
 flag is needed. The VS Code extension (`packages/vscode`) is `private` and
 ships as a `.vsix`, not to npm. See the
 [VS Code publishing guide](docs/publishing-vscode.md) for its separate
-Marketplace release process.
+Marketplace release process. The JetBrains plugin (`packages/webstorm`)
+likewise ships as a plugin zip built with Gradle — see the
+[JetBrains publishing guide](docs/publishing-webstorm.md).
 
 ### Staying current with upstream a11y vocabulary
 
@@ -373,12 +400,15 @@ devDependency current (e.g. with Renovate) and that test is the drift signal.
 - ~~Cross-file label resolution (`htmlFor` ↔ `id`)~~ ✓ project-wide pass
 - ~~`--changed` mode~~ ✓ scan only files changed in git
 - ~~Editor integration~~ ✓ VS Code extension with quick fixes and fix-on-save
+- ~~WebStorm/JetBrains integration~~ ✓ Kotlin plugin driving the CLI over `--stdin` (live diagnostics, quick fixes, project scan)
 - ~~Expo/native config checks~~ ✓ orientation locks in app.json, app.config.*, AndroidManifest, Info.plist
 
 Noted for later (not started):
 
 - Marketplace publishing for the VS Code extension (icon, publisher account)
-- LSP server for other editors (Neovim, JetBrains) on top of `analyze()`
+  and the JetBrains plugin (vendor account on JetBrains Marketplace)
+- LSP server for other editors (Neovim, Helix) on top of `analyze()` — the
+  CLI's `--stdin` mode already covers simple integrations
 - Rules for `experimental_accessibilityOrder` (RN 0.82+'s focus-order prop)
   once it stabilizes — e.g. referenced `nativeID`s that don't exist
 

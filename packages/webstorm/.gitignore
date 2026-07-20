@@ -1,0 +1,4 @@
+.gradle/
+build/
+.intellijPlatform/
+src/main/resources/react-a11y/cli.cjs
