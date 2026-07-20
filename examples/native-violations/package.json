@@ -1,0 +1,9 @@
+{
+  "name": "native-violations",
+  "private": true,
+  "description": "Intentionally inaccessible screens — every @aishware/react-a11y native rule fires at least once.",
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-native": "^0.79.0"
+  }
+}

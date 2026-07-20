@@ -79,6 +79,15 @@ npx @aishware/react-a11y --list-rules
 npx @aishware/react-a11y --coverage
 ```
 
+To see every native rule fire on realistic screens, scan the
+[kitchen-sink example](examples/native-violations) in this repo — each
+violation is annotated with the rule it triggers:
+
+```sh
+git clone https://github.com/1aishwaryasharma/react-a11y && cd react-a11y
+npx @aishware/react-a11y examples/native-violations
+```
+
 ### How it fits with eslint-plugin-jsx-a11y
 
 For **web**, keep running `eslint-plugin-jsx-a11y` in your ESLint config — it's
@@ -309,6 +318,7 @@ npm run build     # tsc -b across all packages
 npm test          # vitest
 node packages/cli/dist/index.js examples/web-demo
 node packages/cli/dist/index.js examples/native-demo
+node packages/cli/dist/index.js examples/native-violations   # every native rule fires
 ```
 
 ### Publishing (maintainers)
