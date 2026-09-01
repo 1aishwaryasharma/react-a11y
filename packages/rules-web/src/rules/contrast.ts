@@ -1,6 +1,6 @@
 import {
-  colorContrastFinding,
-  inlineStyleNumber,
+  contrastFindings,
+  resolvedStyleNumber,
   targetSizeTier,
   INTERACTIVE_TAGS,
   INTERACTIVE_ROLES,
@@ -10,10 +10,13 @@ import {
 import { defineRule } from '../util.js';
 
 /**
- * WCAG 1.4.3 contrast for inline styles where both colors are literal.
- * Below 3:1 fails even for large text → serious. Between 3:1 and 4.5:1 is
- * only flagged when the font size is also known to be small, so unknown-size
- * text that might be large never false-positives.
+ * WCAG 1.4.3 contrast for statically-known colors: inline literals and
+ * Tailwind classes (`text-gray-400 bg-white`, `dark:` variants, conditional
+ * class sets from cn()/clsx()). The background may come from the element or
+ * from the nearest ancestor with a known background. Below 3:1 fails even
+ * for large text → serious. Between 3:1 and 4.5:1 is only flagged when the
+ * font size is also known to be small, so unknown-size text that might be
+ * large never false-positives.
  */
 export const colorContrast = defineRule(
   {
@@ -25,14 +28,15 @@ export const colorContrast = defineRule(
   },
   (el, ctx) => {
     if (el.isComponent || !el.hasTextChild) return;
-    const finding = colorContrastFinding(el);
-    if (finding) ctx.report({ el, ...finding });
+    for (const finding of contrastFindings(el, ctx.project)) {
+      ctx.report({ el, message: finding.message, severity: finding.severity });
+    }
   },
 );
 
 /**
  * WCAG 2.5.8 (AA, new in 2.2): pointer targets need 24×24 CSS px minimum.
- * Only statically-sized inline styles are checked.
+ * Sizes come from inline literals or Tailwind classes (`h-5 w-5`, `size-6`).
  */
 export const targetSize = defineRule(
   {
@@ -51,19 +55,30 @@ export const targetSize = defineRule(
       INTERACTIVE_ROLES.has(staticString(el, 'role')?.trim() ?? '') ||
       (INTERACTIVE_TAGS.has(el.name) && hasAttr(el, 'onClick'));
     if (!interactive) return;
-    const width = inlineStyleNumber(el, 'width');
-    const height = inlineStyleNumber(el, 'height');
-    if (width === undefined || height === undefined) return;
-    const tier = targetSizeTier(width, height);
+    const project = ctx.project;
+    const dim = (prop: 'width' | 'height', min: 'minWidth' | 'minHeight'): number | undefined => {
+      const value = resolvedStyleNumber(el, prop, project);
+      const floor = resolvedStyleNumber(el, min, project);
+      if (value === undefined) return undefined;
+      return floor !== undefined ? Math.max(value, floor) : value;
+    };
+    const width = dim('width', 'minWidth');
+    const height = dim('height', 'minHeight');
+    if (width === undefined && height === undefined) return;
+    const tier = targetSizeTier(width ?? Infinity, height ?? Infinity);
+    if (!tier) return;
+    const size = width !== undefined && height !== undefined
+      ? `${width}×${height}px`
+      : width !== undefined ? `${width}px-wide` : `${height}px-tall`;
     if (tier === 'below-min') {
       ctx.report({
         el,
-        message: `${width}×${height}px target is below the 24×24px WCAG 2.5.8 (AA) minimum — hard to hit for users with motor impairments.`,
+        message: `${size} target is below the 24×24px WCAG 2.5.8 (AA) minimum — hard to hit for users with motor impairments.`,
       });
-    } else if (tier === 'below-recommended') {
+    } else {
       ctx.report({
         el,
-        message: `${width}×${height}px target is below the recommended 44×44px (WCAG 2.5.5 AAA).`,
+        message: `${size} target is below the recommended 44×44px (WCAG 2.5.5 AAA).`,
         severity: 'minor',
       });
     }

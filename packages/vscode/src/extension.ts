@@ -6,11 +6,13 @@ import {
   detectPlatform,
   globToRegExp,
   loadConfig,
+  readProjectInfo,
   scanProject,
   type A11yConfig,
   type Diagnostic as A11yDiagnostic,
   type Fix,
   type Platform,
+  type ProjectInfo,
   type Severity,
 } from '@aishware/react-a11y-core';
 import { webRules, webProjectPasses } from '@aishware/react-a11y-rules-web';
@@ -30,6 +32,7 @@ interface FolderInfo {
   platform: Platform;
   config: A11yConfig;
   ignore: RegExp[];
+  project?: ProjectInfo;
 }
 
 /** VS Code diagnostic carrying the react-a11y fix for the quick-fix provider. */
@@ -53,7 +56,7 @@ function folderInfoForRoot(root: string): FolderInfo {
       platformSetting === 'web' || platformSetting === 'native'
         ? platformSetting
         : config.platform ?? detectPlatform(root);
-    info = { platform, config, ignore: (config.ignore ?? []).map(globToRegExp) };
+    info = { platform, config, ignore: (config.ignore ?? []).map(globToRegExp), project: readProjectInfo(root, config) };
     folderCache.set(root, info);
   }
   return info;
@@ -103,6 +106,7 @@ function lint(doc: vscode.TextDocument): void {
     platform: info.platform,
     rules,
     ruleSettings: info.config.rules,
+    project: info.project,
   });
   collection.set(doc.uri, diagnostics.map(toVsDiagnostic));
 }
@@ -245,9 +249,10 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  // Project config or dependencies changing can flip platform/rule settings.
+  // Project config, dependencies, or Tailwind theme sources changing can flip
+  // platform/rule settings or the palette classes resolve against.
   const watcher = vscode.workspace.createFileSystemWatcher(
-    '**/{react-a11y.config.json,.react-a11yrc.json,package.json}',
+    '**/{react-a11y.config.json,.react-a11yrc.json,package.json,tailwind.config.js,tailwind.config.cjs,tailwind.config.mjs,tailwind.config.ts,*.css}',
   );
   const invalidate = () => {
     folderCache.clear();

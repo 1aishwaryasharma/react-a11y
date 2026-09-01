@@ -3,6 +3,57 @@
 All notable changes to this project are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Tailwind, NativeWind, Uniwind and twrnc support.** The style-dependent
+  rules (`touch-target-size`, `color-contrast`, `target-size`,
+  `no-outline-none`, and the new `text-fixed-height`) now resolve utility
+  classes: `className` strings, `cn()` / `clsx()` / `twMerge()` arguments,
+  template literals, `dark:` and other variants, and twrnc `` tw`…` ``. The
+  default palette (Tailwind v3 vs v4), the rem base (NativeWind v4 uses 14px)
+  and custom theme colors (`tailwind.config.*`, CSS `@theme`) are detected
+  from the project; a `tailwind` config key tunes or disables it. The core
+  exports the resolver (`resolveClassString`, `styleModel`,
+  `contrastFindings`, `readProjectInfo`).
+- Contrast is now checked against the nearest enclosing background, not only
+  a background on the same element, and each Tailwind variant / conditional
+  class set is checked separately (a pair that passes in light mode but fails
+  under `dark:` is reported).
+- Six React Native rules (31 native rules, 53 total) for problems no other
+  static tool covers:
+  - `text-onpress-has-role` — pressable `Text` needs a link/button role
+    (skipped on React Native 0.84+, which applies `link` automatically).
+  - `live-region-android-only` — `accessibilityLiveRegion` / `aria-live` do
+    nothing on iOS; require an `announceForAccessibility` call too.
+  - `animation-reduce-motion` — `Animated.loop` without a Reduce Motion
+    check, Reanimated `withRepeat(…, -1, …, ReduceMotion.Never)`, and
+    `<ReducedMotionConfig mode={ReduceMotion.Never}>`. Scans plain modules
+    without JSX (first source-level rule; rules can now implement
+    `sourceFile()` and report on any node).
+  - `text-fixed-height` — fixed `height` on `Text` clips enlarged system text.
+  - `accessibility-language-valid` — BCP 47 validation for `accessibilityLanguage`.
+  - `label-not-all-caps` — all-caps labels that VoiceOver may spell out.
+- `touchable-has-label` no longer accepts an unlabeled `<Image>` or an
+  icon-library glyph (`@expo/vector-icons`, `react-native-vector-icons`,
+  `lucide-react-native`, `react-native-svg`, …) as an accessible name.
+- `no-nested-touchables` also flags `Switch`, `TextInput`, `Button` and
+  pressable `Text` inside a touchable.
+- `touch-target-size` / `target-size` report when a single known dimension is
+  below the threshold, honour `minWidth` / `minHeight`, and read array styles
+  (`style={[styles.base, { height: 20 }]}`).
+- WCAG 2.3.3 (Animation from Interactions) added to the criteria table.
+
+### Changed
+
+- `analyze()` and `scanProject()` accept a `project` option (from
+  `readProjectInfo(root, config)`) carrying dependency versions and Tailwind
+  settings; the CLI (including `--stdin`) and the VS Code extension pass it
+  automatically.
+- The scanner no longer skips JSX-free modules that mention `react-native`,
+  so animation hooks are covered.
+
 ## [0.4.0] — 2026-07-21
 
 ### Added

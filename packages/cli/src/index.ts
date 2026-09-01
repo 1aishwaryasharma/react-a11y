@@ -15,6 +15,7 @@ import {
   globToRegExp,
   loadConfig,
   readOwnPackageMeta,
+  readProjectInfo,
   scanProject,
   toJson,
   toSarif,
@@ -61,6 +62,12 @@ ${pc.bold('Web a11y')}
 ${pc.bold('Config')}
   react-a11y.config.json / .react-a11yrc.json / package.json "react-a11y" key:
   { "platform": "web", "ignore": ["**/*.stories.tsx"], "rules": { "no-autofocus": "off" } }
+
+${pc.bold('Tailwind / NativeWind / Uniwind')}
+  className utilities (h-6 w-6, text-gray-400 bg-white, dark:…) are resolved for
+  touch-target, contrast, text-height and focus-ring rules when a Tailwind binding
+  is a dependency. Tune with the "tailwind" config key:
+  { "tailwind": { "rem": 14, "preset": "v3", "colors": { "brand": "#0055ff" } } }
 `;
 
 interface CliArgs {
@@ -198,7 +205,14 @@ function scanStdin(args: CliArgs, rules: Rule[], platform: Platform): ScanResult
   const code = fs.readFileSync(0, 'utf8');
   const diagnostics = ignored
     ? []
-    : analyze({ code, filename: rel, platform, rules, ruleSettings: config.rules });
+    : analyze({
+        code,
+        filename: rel,
+        platform,
+        rules,
+        ruleSettings: config.rules,
+        project: readProjectInfo(args.root, config),
+      });
   return { diagnostics, filesScanned: 1, durationMs: Date.now() - started, platform, root: args.root };
 }
 

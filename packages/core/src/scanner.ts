@@ -4,6 +4,7 @@ import { analyzeModel } from './engine.js';
 import { buildFileModel } from './element.js';
 import { parseSource } from './parse.js';
 import { globToRegExp } from './config.js';
+import { readProjectInfo, type ProjectInfo } from './project.js';
 import type { A11yConfig, Diagnostic, Platform, ProjectPass, Rule, ScanResult } from './types.js';
 
 const SCAN_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs']);
@@ -24,6 +25,8 @@ export interface ScanOptions {
   projectPasses?: ProjectPass[];
   /** Restrict the scan to these files (e.g. --changed); still extension-filtered. */
   files?: string[];
+  /** Project facts; read from `root` and `config` when omitted. */
+  project?: ProjectInfo;
 }
 
 /** Detect web vs native from package.json dependencies. */
@@ -73,6 +76,7 @@ export function collectFiles(root: string, ignore: string[] = []): string[] {
 
 export function scanProject(options: ScanOptions): ScanResult {
   const { root, rules, platform, config = {}, projectPasses = [] } = options;
+  const project = options.project ?? readProjectInfo(root, config);
   const started = performance.now();
   const files = options.files
     ? options.files
@@ -90,11 +94,12 @@ export function scanProject(options: ScanOptions): ScanResult {
     } catch {
       continue;
     }
-    // Fast pre-filter: skip files with no JSX-ish content.
-    if (!code.includes('<')) continue;
+    // Fast pre-filter: skip files with neither JSX nor React Native code
+    // (source-level rules look at animation calls in plain modules).
+    if (!code.includes('<') && !code.includes('react-native')) continue;
     const filename = path.relative(root, file).split(path.sep).join('/') || path.basename(file);
     const model = buildFileModel(parseSource(code, filename));
-    diagnostics.push(...analyzeModel(model, { filename, platform, rules, ruleSettings: config.rules }));
+    diagnostics.push(...analyzeModel(model, { filename, platform, rules, ruleSettings: config.rules, project }));
     for (const pass of projectPasses) pass.collect(model, filename);
   }
 
