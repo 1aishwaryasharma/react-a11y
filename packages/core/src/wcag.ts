@@ -33,6 +33,7 @@ export const WCAG: Record<string, WcagRef> = {
   '2.1.4': { sc: '2.1.4', name: 'Character Key Shortcuts', level: 'A', version: '2.1', url: `${U}character-key-shortcuts` },
   '2.2.1': { sc: '2.2.1', name: 'Timing Adjustable', level: 'A', version: '2.0', url: `${U}timing-adjustable` },
   '2.2.2': { sc: '2.2.2', name: 'Pause, Stop, Hide', level: 'A', version: '2.0', url: `${U}pause-stop-hide` },
+  '2.3.3': { sc: '2.3.3', name: 'Animation from Interactions', level: 'AAA', version: '2.1', url: `${U}animation-from-interactions` },
   '2.3.1': { sc: '2.3.1', name: 'Three Flashes or Below Threshold', level: 'A', version: '2.0', url: `${U}three-flashes-or-below-threshold` },
   '2.4.1': { sc: '2.4.1', name: 'Bypass Blocks', level: 'A', version: '2.0', url: `${U}bypass-blocks` },
   '2.4.2': { sc: '2.4.2', name: 'Page Titled', level: 'A', version: '2.0', url: `${U}page-titled` },

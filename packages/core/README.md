@@ -21,8 +21,10 @@ const diagnostics = analyze({
 ```
 
 It also exports `scanProject`, `applyFixes`, the WCAG 2.2 metadata
-(`WCAG22_TOTALS`, `MANUAL_CHECKS`), color/contrast helpers, and the SARIF
-reporter.
+(`WCAG22_TOTALS`, `MANUAL_CHECKS`), color/contrast helpers, a Tailwind /
+NativeWind / Uniwind class resolver (`resolveClassString`, `styleModel`,
+`contrastFindings`; pass `readProjectInfo(root)` as `project` to enable it), and
+the SARIF reporter.
 
 Full documentation: <https://github.com/1aishwaryasharma/react-a11y>
 

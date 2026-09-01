@@ -7,8 +7,12 @@ color contrast, images, text inputs, switches, modal keyboard traps, live
 regions, text scaling, hint/name pairing, accessibility state/value shape,
 role/state consistency, silent prop typos, accessibility actions,
 cross-platform hiding (iOS vs Android), focus and reading order
-(`accessible={true}` grouping), and orientation locks in project config
-(`app.json`, `app.config.*`, `AndroidManifest.xml`, `Info.plist`). Runtime and
+(`accessible={true}` grouping), Android-only live regions, Reduce Motion for
+looping animations, icon-only buttons, pressable Text, fixed-height text, and
+orientation locks in project config (`app.json`, `app.config.*`,
+`AndroidManifest.xml`, `Info.plist`). Touch-target, contrast and text-height
+rules resolve Tailwind / NativeWind / Uniwind / twrnc classes when
+`readProjectInfo(root)` is passed as `project`. Runtime and
 real-device checks remain essential; follow the
 [manual testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 

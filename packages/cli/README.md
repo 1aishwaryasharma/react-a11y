@@ -32,8 +32,14 @@ src/screens/Profile.tsx
   basics, react-a11y checks focus and reading order (`accessible={true}`
   grouping), touch-target size, text scaling, role/state consistency,
   cross-platform hiding, and project-wide config per-file linters can't see
-  (orientation locks in `app.json`, `AndroidManifest.xml`, `Info.plist`) —
-  25 rules, from the same engine as web.
+  (orientation locks in `app.json`, `AndroidManifest.xml`, `Info.plist`),
+  plus the platform asymmetries other linters miss — Android-only live
+  regions, Reduce Motion, icon-only buttons, pressable Text — 31 rules, from
+  the same engine as web.
+- **Tailwind, NativeWind and Uniwind aware.** Touch-target, contrast and
+  text-height rules resolve `className` utilities (`h-6 w-6`, `text-gray-400`,
+  `dark:` variants, `cn()` calls, twrnc `` tw`…` ``) with the right palette
+  and rem base, so utility-styled apps are not a blind spot.
 - **The WCAG 2.2 web criteria jsx-a11y lacks.** Color contrast, target size,
   label-in-name, pointer cancellation, viewport zoom and reading order — 22
   rules, each mapped to a success criterion with a link to the W3C
@@ -122,20 +128,24 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
   "rules": {
     "target-size": "off",
     "color-contrast": "critical"
-  }
+  },
+  "tailwind": { "rem": 14, "colors": { "brand": "#0055ff" } }
 }
 ```
+
+The `tailwind` key tunes Tailwind / NativeWind / Uniwind class resolution
+(auto-detected from dependencies; `false` disables it).
 
 ## Rules
 
 - **Web** — 22 rules, none of which overlap eslint-plugin-jsx-a11y.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/web.md)
-- **React Native** — 25 rules, including focus/reading order and project-config
-  checks.
+- **React Native** — 31 rules, including focus/reading order, Tailwind class
+  resolution, and project-config checks.
   [Full list →](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/native.md)
 
 `npx @aishware/react-a11y --coverage` reports WCAG 2.2 coverage: react-a11y
-automates **25 of the 55 Level A+AA criteria (45%)** on its own, and **31/55
+automates **27 of the 55 Level A+AA criteria (49%)** on its own, and **31/55
 (56%)** when run alongside eslint-plugin-jsx-a11y; the criteria a static tool
 cannot decide are listed as a manual checklist.
 

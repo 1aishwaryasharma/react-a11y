@@ -1,7 +1,10 @@
 import type { Rule } from '@aishware/react-a11y-core';
+import { liveRegionAndroidOnly } from './rules/announce.js';
 import {
   accessibilityActionsHandled,
+  accessibilityLanguageValid,
   imageHasLabel,
+  labelNotAllCaps,
   modalHasRequestClose,
   switchHasLabel,
   textInputHasLabel,
@@ -11,6 +14,7 @@ import {
 import { colorContrast } from './rules/contrast.js';
 import { noOrientationLock } from './rules/expo-config.js';
 import { accessibleGroupingHidesInteractive, labelNeedsAccessible } from './rules/focus.js';
+import { animationReduceMotion } from './rules/motion.js';
 import {
   hiddenCrossPlatform,
   noHiddenInteractive,
@@ -22,7 +26,7 @@ import {
   ariaStateValid,
   liveRegionValid,
 } from './rules/state.js';
-import { noDisableFontScaling } from './rules/text.js';
+import { noDisableFontScaling, textFixedHeight, textOnPressHasRole } from './rules/text.js';
 import {
   noNestedTouchables,
   touchableHasLabel,
@@ -33,6 +37,7 @@ import { accessibilityValueValid } from './rules/value.js';
 
 export { ARIA_PROPS, KNOWN_ARIA_PROPS } from './aria.js';
 export { RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
+export { isIconComponent } from './util.js';
 
 export {
   touchableHasLabel,
@@ -60,6 +65,12 @@ export {
   colorContrast,
   noDisableFontScaling,
   noOrientationLock,
+  textFixedHeight,
+  textOnPressHasRole,
+  liveRegionAndroidOnly,
+  animationReduceMotion,
+  accessibilityLanguageValid,
+  labelNotAllCaps,
 };
 
 /** The recommended React Native / Expo preset. */
@@ -87,7 +98,15 @@ export const nativeRules: Rule[] = [
   // focus & reading order
   accessibleGroupingHidesInteractive,
   labelNeedsAccessible,
+  // text, color, motion
   colorContrast,
   noDisableFontScaling,
+  textFixedHeight,
+  textOnPressHasRole,
+  labelNotAllCaps,
+  accessibilityLanguageValid,
+  // announcements & motion (platform asymmetries)
+  liveRegionAndroidOnly,
+  animationReduceMotion,
   noOrientationLock,
 ];

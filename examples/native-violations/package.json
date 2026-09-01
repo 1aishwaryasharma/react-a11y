@@ -3,7 +3,10 @@
   "private": true,
   "description": "Intentionally inaccessible screens — every @aishware/react-a11y native rule fires at least once.",
   "dependencies": {
+    "nativewind": "^4.1.0",
     "react": "^19.0.0",
-    "react-native": "^0.79.0"
+    "react-native": "^0.79.0",
+    "react-native-reanimated": "^3.16.0",
+    "tailwindcss": "^3.4.0"
   }
 }

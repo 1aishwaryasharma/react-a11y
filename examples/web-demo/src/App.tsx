@@ -27,6 +27,12 @@ export default function App() {
       </div>
 
       <video src="/intro.mp4" controls />
+
+      {/* Tailwind utilities are resolved too: 20×20px target, 2.5:1 text, no focus ring */}
+      <button className="h-5 w-5 outline-none" onClick={() => save()} aria-label="Save" />
+      <section className="bg-white dark:bg-gray-900">
+        <p className="text-gray-400">Last saved a moment ago</p>
+      </section>
     </main>
   );
 }

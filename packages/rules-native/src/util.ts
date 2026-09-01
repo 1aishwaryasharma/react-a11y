@@ -6,6 +6,7 @@ import {
   readOwnPackageMeta,
   staticExpression,
   staticString,
+  versionParts,
 } from '@aishware/react-a11y-core';
 import type ts from 'typescript';
 import { ARIA_LABEL_PROPS } from './aria.js';
@@ -110,19 +111,6 @@ export function hasNativeLabel(el: ElementNode): boolean {
   );
 }
 
-/**
- * Conservative accessible-name check. React Native derives names from
- * descendant Text; dynamic or component children are treated as potentially
- * named to avoid false positives in static analysis.
- */
-export function mayHaveNativeAccessibleName(el: ElementNode): boolean {
-  return (
-    hasNativeLabel(el) ||
-    el.hasExpressionChild ||
-    el.hasTextChild ||
-    el.childElements.length > 0
-  );
-}
 
 /**
  * Validity of a statically-known accessibilityState property initializer:
@@ -138,4 +126,57 @@ export function staticAccessibilityStateValueValidity(
   if (literal.kind === 'composite') return 'invalid';
   if (typeof literal.value === 'boolean') return 'valid';
   return key === 'checked' && literal.value === 'mixed' ? 'valid' : 'invalid';
+}
+
+/**
+ * Icon libraries render a glyph or vector with no text — a touchable whose
+ * only content is an unlabeled icon has no accessible name, even though it
+ * has a child. Matched by import source prefix.
+ */
+const ICON_SOURCES = [
+  '@expo/vector-icons', 'react-native-vector-icons', '@react-native-vector-icons/',
+  'lucide-react-native', '@tabler/icons-react-native', 'phosphor-react-native',
+  'react-native-heroicons', 'iconsax-react-native', 'react-native-feather',
+  'react-native-svg', '@hugeicons/react-native', 'react-native-remix-icon',
+];
+
+/** True for a component imported from a known icon library. */
+export function isIconComponent(el: ElementNode): boolean {
+  const source = el.importSource;
+  return source !== null && ICON_SOURCES.some((prefix) => source === prefix || source.startsWith(prefix));
+}
+
+const IMAGE_NAMES = new Set(['Image']);
+
+/**
+ * Whether an element's *children* could contribute to its accessible name.
+ * Text, expressions, spreads and unknown components get the benefit of the
+ * doubt; images and icons only count when they carry a label themselves.
+ */
+export function childrenMayProvideName(el: ElementNode): boolean {
+  if (el.hasTextChild || el.hasExpressionChild) return true;
+  return el.childElements.some((child) => {
+    if (child.hasSpread) return true;
+    if (isHiddenFromAT(child)) return false;
+    if (hasNativeLabel(child) || attrProvidesValue(child, 'alt')) return true;
+    if (isRNComponent(child, IMAGE_NAMES)) return false;
+    if (isIconComponent(child)) return childrenMayProvideName(child);
+    if (child.isComponent && !isRNElement(child)) return true;
+    return childrenMayProvideName(child);
+  });
+}
+
+/**
+ * Conservative accessible-name check. React Native derives names from
+ * descendant Text; dynamic or component children are treated as potentially
+ * named to avoid false positives in static analysis — except unlabeled
+ * images and icons, which are silent.
+ */
+export function mayHaveNativeAccessibleName(el: ElementNode): boolean {
+  return hasNativeLabel(el) || childrenMayProvideName(el);
+}
+
+/** `[major, minor]` of the project's react-native dependency, if known. */
+export function reactNativeVersion(ctx: RuleContext): [number, number] | undefined {
+  return versionParts(ctx.project?.dependencies['react-native']);
 }

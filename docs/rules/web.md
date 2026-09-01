@@ -101,7 +101,9 @@ landmark navigation ambiguous.
 
 Removing the focus outline via inline `outline: none` (or `0`) on an interactive
 element hides keyboard position unless a visible `:focus` style replaces it
-(WCAG 2.4.7).
+(WCAG 2.4.7). With Tailwind, `outline-none` / `outline-hidden` is flagged unless
+the element also carries a `focus:` / `focus-visible:` / `focus-within:` utility
+(`focus-visible:ring-2`, `focus:outline-2`, …).
 
 ## accessible-authentication
 
@@ -134,15 +136,24 @@ counterpart) means users cannot abort by sliding off before releasing.
 
 ## color-contrast
 
-Computes the WCAG 1.4.3 contrast ratio when `color` and `backgroundColor` are
-inline literals on the same element. `className`/theme references and dynamic
-styles are skipped — *partial* coverage by design.
+Computes the WCAG 1.4.3 contrast ratio when the text color is statically known
+— an inline literal or a Tailwind class (`text-gray-400`) — against the
+background of the element or of the nearest ancestor with a known background.
+Tailwind `dark:` variants and conditional class sets from `cn()` / `clsx()` are
+checked separately; `disabled:` and `placeholder:` text is exempt. Custom
+theme colors come from `tailwind.config.*`, CSS `@theme` blocks, or the
+`tailwind.colors` config key. Dynamic styles, translucent colors and unknown
+theme colors are skipped — *partial* coverage by design. See the
+[Tailwind section of the native rules](native.md#tailwind-nativewind-and-uniwind)
+for how classes are resolved; the same resolver runs on the web.
 
 ## target-size
 
 Statically-sized interactive targets below 24px violate WCAG 2.5.8 (AA, new in
 2.2) — reported as **serious**; between 24px and 44px is below the WCAG 2.5.5 /
-Apple HIG / Material recommendation — reported as **moderate**.
+Apple HIG / Material recommendation — reported as **minor**. Sizes come from
+inline literals and Tailwind classes (`h-5 w-5`, `size-6`, `min-h-11`); a
+single known dimension below the threshold is enough.
 
 ## meaningful-order
 

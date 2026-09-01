@@ -3,7 +3,9 @@ import {
   INTERACTIVE_TAGS,
   hasAttr,
   inlineStyleValue,
+  isFocusLayer,
   staticString,
+  styleModel,
 } from '@aishware/react-a11y-core';
 import { defineRule } from '../util.js';
 
@@ -33,11 +35,16 @@ export const pointerCancellation = defineRule(
   },
 );
 
-/** Removing the focus outline without a replacement hides keyboard position. */
+/**
+ * Removing the focus outline without a replacement hides keyboard position.
+ * Checks inline styles and Tailwind's `outline-none` / `outline-hidden`; a
+ * `focus:` / `focus-visible:` utility anywhere on the element counts as the
+ * visible replacement.
+ */
 export const noOutlineNone = defineRule(
   {
     id: 'no-outline-none',
-    description: 'Do not remove the focus outline via inline styles without a visible replacement.',
+    description: 'Do not remove the focus outline without a visible replacement.',
     severity: 'moderate',
     wcag: ['2.4.7'],
   },
@@ -59,5 +66,15 @@ export const noOutlineNone = defineRule(
         return;
       }
     }
+    if (!ctx.project?.tailwind) return;
+    const model = styleModel(el, ctx.project);
+    const removed = [...model.layers.entries()].some(([key, style]) => style.outlineNone && !isFocusLayer(key));
+    if (!removed) return;
+    const hasFocusStyle = [...model.layers.keys()].some(isFocusLayer);
+    if (hasFocusStyle) return;
+    ctx.report({
+      el,
+      message: 'outline-none removes the focus ring with no focus: / focus-visible: replacement — keyboard users cannot see where focus is. Add e.g. focus-visible:ring-2 focus-visible:ring-offset-2.',
+    });
   },
 );

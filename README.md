@@ -74,14 +74,35 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 
 Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`.
 
+## Tailwind, NativeWind and Uniwind
+
+Style-dependent rules (touch-target size, color contrast, fixed text height,
+focus-ring removal) read Tailwind utility classes as well as inline styles.
+Resolution turns on automatically when `tailwindcss`, `nativewind`, `uniwind`,
+`twrnc` or `react-native-css` is a dependency and understands `className`
+strings, `cn()` / `clsx()` calls, `dark:` and other variants, twrnc `` tw`…` ``,
+the v3 and v4 default palettes, the binding's rem base (NativeWind v4 uses
+14px), and custom theme colors from `tailwind.config.*` or CSS `@theme`
+blocks. Tune it with the `tailwind` config key:
+
+```json
+{
+  "tailwind": { "rem": 14, "preset": "v3", "colors": { "brand": "#0055ff" } }
+}
+```
+
+Set `"tailwind": false` to disable it. Details are in the
+[native rules documentation](docs/rules/native.md#tailwind-nativewind-and-uniwind).
+
 ## Rules
 
 - [Web rules](docs/rules/web.md): 22 checks for WCAG 2.2 criteria, document
   structure, focus behavior, and project-wide relationships. Continue using
   `eslint-plugin-jsx-a11y` for standard web accessibility rules.
-- [React Native rules](docs/rules/native.md): 25 checks for accessible names,
-  roles and state, focus and reading order, touch targets, text scaling, and
-  native or Expo configuration.
+- [React Native rules](docs/rules/native.md): 31 checks for accessible names,
+  roles and state, focus and reading order, touch targets, text scaling,
+  platform asymmetries (Android-only live regions, Reduce Motion), and native
+  or Expo configuration.
 
 Use `--coverage` to see which WCAG success criteria are automated and which
 still require manual verification.
