@@ -1,4 +1,14 @@
-import type { Rule, ScanResult, Severity } from '../types.js';
+import { createHash } from 'node:crypto';
+import type { Diagnostic, Rule, ScanResult, Severity } from '../types.js';
+
+/**
+ * A location-independent identity for a finding, so GitHub code scanning
+ * tracks one alert across commits instead of closing it and opening a new one
+ * every time lines move.
+ */
+function fingerprint(d: Diagnostic): string {
+  return createHash('sha256').update(`${d.ruleId}\u0000${d.file}\u0000${d.message}`).digest('hex').slice(0, 16);
+}
 
 const SARIF_LEVEL: Record<Severity, string> = {
   critical: 'error',
@@ -31,7 +41,7 @@ export function toSarif(result: ScanResult, rules: Rule[], tool: SarifToolInfo =
   const ruleIndex = new Map(ruleDescriptors.map((r, i) => [r.id, i]));
 
   const sarif = {
-    $schema: 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
+    $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
     version: '2.1.0',
     runs: [
       {
@@ -50,6 +60,7 @@ export function toSarif(result: ScanResult, rules: Rule[], tool: SarifToolInfo =
           message: {
             text: `${d.message} (WCAG ${d.wcag.map((w) => `${w.sc} ${w.name}, Level ${w.level}`).join('; ')})`,
           },
+          partialFingerprints: { reactA11yFinding: fingerprint(d) },
           locations: [
             {
               physicalLocation: {

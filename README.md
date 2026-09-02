@@ -39,8 +39,12 @@ The command exits with status 1 when it finds a serious or critical issue.
 # Apply safe mechanical fixes
 npx @aishware/react-a11y . --fix
 
-# Scan files changed in git
+# Scan files changed in the working tree
 npx @aishware/react-a11y . --changed
+
+# Gate a pull request: scan what the branch changed (a CI checkout is clean,
+# so --changed alone would find nothing there)
+npx @aishware/react-a11y . --since origin/main
 
 # Write JSON or SARIF output
 npx @aishware/react-a11y . --format json --output a11y.json
@@ -80,10 +84,34 @@ Style-dependent rules (touch-target size, color contrast, fixed text height,
 focus-ring removal) read Tailwind utility classes as well as inline styles.
 Resolution turns on automatically when `tailwindcss`, `nativewind`, `uniwind`,
 `twrnc` or `react-native-css` is a dependency and understands `className`
-strings, `cn()` / `clsx()` calls, `dark:` and other variants, twrnc `` tw`…` ``,
-the v3 and v4 default palettes, the binding's rem base (NativeWind v4 uses
-14px), and custom theme colors from `tailwind.config.*` or CSS `@theme`
-blocks. Tune it with the `tailwind` config key:
+strings, `cn()` / `clsx()` calls, `Platform.select()` branches, hoisted class
+constants, `cva()` / `tv()` variant tables, `dark:` and other variants, twrnc
+`` tw`…` `` and `tw.style()`, the v3 and v4 default palettes, and custom theme
+colors from `tailwind.config.*` (`theme.colors` / `theme.extend.colors`) or CSS
+`@theme` blocks — including shadcn-style `:root` variables behind
+`var(--primary)` / `hsl(var(--primary))`, and `oklch()` / `hsl()` values.
+
+A `cva()` size table is checked per variant: `size: { icon: 'h-10 w-10' }` on
+a `<Pressable>` is reported once, on the variant definition, however many
+elements use it.
+
+The rem base comes from the binding's own default and from your bundler config
+(`inlineRem` for NativeWind and react-native-css, `polyfills.rem` for Uniwind):
+
+| Binding | rem |
+| --- | --- |
+| NativeWind 4 and 5, react-native-css | 14px |
+| NativeWind 2, Uniwind, twrnc, tailwind-rn, web Tailwind | 16px |
+
+In a monorepo each file is resolved against its own `package.json`, so a
+workspace package's binding is picked up when you scan the repository root.
+Every run prints what it decided:
+
+```
+react-a11y v0.4.0 — platform: native — tailwind: nativewind ^4.1.0 (rem 14, palette v3) — 5011 files scanned in 2523ms
+```
+
+Tune it with the `tailwind` config key:
 
 ```json
 {

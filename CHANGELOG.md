@@ -11,12 +11,15 @@ All notable changes to this project are documented here. This project adheres to
   rules (`touch-target-size`, `color-contrast`, `target-size`,
   `no-outline-none`, and the new `text-fixed-height`) now resolve utility
   classes: `className` strings, `cn()` / `clsx()` / `twMerge()` arguments,
-  template literals, `dark:` and other variants, and twrnc `` tw`…` ``. The
-  default palette (Tailwind v3 vs v4), the rem base (NativeWind v4 uses 14px)
-  and custom theme colors (`tailwind.config.*`, CSS `@theme`) are detected
-  from the project; a `tailwind` config key tunes or disables it. The core
-  exports the resolver (`resolveClassString`, `styleModel`,
-  `contrastFindings`, `readProjectInfo`).
+  template literals, `Platform.select()` branches, hoisted class constants,
+  `dark:` and other variants, and twrnc `` tw`…` `` / `tw.style()`. The default
+  palette (Tailwind v3 vs v4), the rem base (NativeWind 4/5 and
+  react-native-css use 14px; NativeWind 2, Uniwind, twrnc and the web use 16px,
+  overridden by `inlineRem` / `polyfills.rem` in the bundler config) and custom
+  theme colors (`tailwind.config.*`, CSS `@theme`, including `oklch()` and
+  `hsl()`) are detected from the project; a `tailwind` config key tunes or
+  disables it. The core exports the resolver (`resolveClassString`,
+  `styleModel`, `contrastFindings`, `readProjectInfo`).
 - Contrast is now checked against the nearest enclosing background, not only
   a background on the same element, and each Tailwind variant / conditional
   class set is checked separately (a pair that passes in light mode but fails
@@ -45,14 +48,100 @@ All notable changes to this project are documented here. This project adheres to
   (`style={[styles.base, { height: 20 }]}`).
 - WCAG 2.3.3 (Animation from Interactions) added to the criteria table.
 
+- `--since <ref>` scans what a branch changed against a merge base. `--changed`
+  reads the working tree, which is empty in a CI checkout; `--since origin/main`
+  is what a pull-request gate needs.
+- Every run prints what it resolved — platform, binding and version, rem base,
+  palette, theme-color count, and any files it skipped — so a wrong palette or
+  a disabled resolution is visible instead of showing up as missing findings.
+- `parseColor` understands `oklch()`, `hsl()` and space-separated `rgb()`.
+- Project config is validated: `{"platform": "ios"}` and an unknown rule
+  severity are now errors naming the file instead of being silently ignored.
+
+### Fixed
+
+- **The rem base was wrong for three of four React Native bindings.** Verified
+  against the published packages: NativeWind 2 uses 16px (not 14), while
+  NativeWind 5 and react-native-css use 14px (not 16). Every rem-based length
+  was off by 14%, which flips `touch-target-size` across the 44pt line in both
+  directions. An explicit `inlineRem` (NativeWind, react-native-css) or
+  `polyfills.rem` (Uniwind) in the bundler config is now read.
+- **`--fix` could write source that does not compile.** Renaming
+  `aria-role` onto an element that already has `role` produced
+  `role="…" role="…"` — a TS17001 parse error — and the CLI reported success.
+  A colliding rename is now reported without a fix.
+- **A monorepo root under-reported silently.** Dependencies, platform and
+  Tailwind settings are resolved per file from the owning `package.json` and
+  its workspace root, so scanning a repository root, a workspace package or a
+  single file all agree. Workspaces declared in `pnpm-workspace.yaml` are read
+  as well as npm/yarn/bun `workspaces`. A repository holding a React Native app
+  beside a web app now analyses each package with the pack it needs instead of
+  forcing one over both, and the banner reports the split.
+- **Contrast between 3:1 and 4.5:1 was never reported when the font size was
+  unknown**, which is where most real AA failures live (white on `blue-500` is
+  3.68:1). An unknown size is now treated as normal text; only bold text of
+  unknown size keeps the large-text allowance.
+- `cva()` / `tv()` variant tables are read, so a `size: { icon: 'h-10 w-10' }`
+  used on a touchable is reported — once, on the variant definition. A
+  variant that only inherits the base size is not restated.
+- shadcn-style themes resolve: `@theme inline { --color-primary: var(--primary) }`
+  and `primary: 'hsl(var(--primary))'` are followed into `:root`, so contrast
+  is checked on projects that define every colour as a CSS variable. A variable
+  two `:root` blocks disagree on resolves to nothing.
+- Symlinked directories inside the project are scanned (once, by real path);
+  links leaving the tree are not followed.
+- The pretty report names a colour pair that recurs five or more times, since
+  that is one theme token to fix rather than many elements.
+- Conditional class sets (`#2`) are element-local and are no longer paired
+  across two elements, which used to fabricate impossible colour pairs such as
+  white on white. A variant still crosses elements, because `active:` means the
+  same thing on both — so a parent's `hover:bg-neutral-100` is now checked
+  against the text inside it — and each background a parent can conditionally
+  take is checked against text whose own colour is fixed.
+- Contrast abstains when the background cannot be known: a covering sibling
+  paints over it (a hero image, an `absolute inset-0` overlay — a badge pinned
+  to a corner is not treated as one), an ancestor is a component that may style
+  its own root (including one defined in the same file), or part of its class
+  string is unreadable.
+- `no-outline-none` no longer reports a missing focus ring supplied by an
+  unreadable half of the class string or by a parent (`has-focus-visible:`,
+  `group-focus:`, `peer-focus:`).
+- Size and contrast rules skip elements that are not pointer targets or
+  readable text: `sr-only`, `display:none`, `opacity: 0`, `hidden`,
+  `aria-hidden` and hidden inputs.
+- `target-size` measures a checkbox or radio by its activation area, so one
+  associated with a `<label>` (wrapping or `htmlFor`) or inside a clickable row
+  is not reported as a 16px target.
+- Theme colors are read only from `theme.colors` and `theme.extend.colors`; a
+  `colors` key elsewhere in the config (a daisyUI theme block) no longer
+  fabricates findings. A theme value that cannot be read statically, or a theme
+  that replaces the palette outright, makes the resolver abstain instead of
+  reporting a default-palette hex the app does not use. A `tailwind.config.js`
+  shim no longer shadows the real `.ts` config, and a theme may redefine
+  built-in names such as `white`.
+- `Platform.select({ ios: 'text-sm' })` contributed its platform keys as
+  classes and discarded the utilities.
+- twrnc is detected under its pre-4.x name `tailwind-react-native-classnames`.
+- `.web.tsx` / `.native.tsx` / `.ios.tsx` files are analysed with the rule pack
+  that actually loads them, instead of reporting web-valid markup as a React
+  Native mistake.
+- A file that fails to parse or analyse no longer aborts the whole scan, and
+  every skipped file is reported with its reason.
+- `src/components/ios/` is no longer skipped: `android` / `ios` / `vendor` are
+  ignored only at the top of a package.
+- The SARIF `$schema` URL no longer 404s, and results carry
+  `partialFingerprints` so GitHub code-scanning alerts survive a line move.
+
 ### Changed
 
 - `analyze()` and `scanProject()` accept a `project` option (from
   `readProjectInfo(root, config)`) carrying dependency versions and Tailwind
   settings; the CLI (including `--stdin`) and the VS Code extension pass it
-  automatically.
+  automatically. `ProjectResolver` provides the same facts per file.
 - The scanner no longer skips JSX-free modules that mention `react-native`,
   so animation hooks are covered.
+- Web `color-contrast` also checks interpolated text (`<p>{label}</p>`) in
+  text-bearing elements, matching the React Native pack.
 
 ## [0.4.0] — 2026-07-21
 

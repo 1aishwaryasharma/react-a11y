@@ -24,6 +24,17 @@ export interface TailwindOptions {
    * `brand-500`. Values are anything `parseColor` understands.
    */
   colors?: Record<string, string>;
+  /**
+   * Color keys the project's theme defines with a value we could not read
+   * (an import, a call, a CSS variable). Resolving these against the default
+   * palette would produce a confidently wrong hex, so they resolve to `null`.
+   */
+  unresolvedColors?: string[];
+  /**
+   * True when the project replaces `theme.colors` wholesale rather than
+   * extending it, so a name we do not know is not a default-palette color.
+   */
+  replacesPalette?: boolean;
 }
 
 /** `null` means the utility set the property to a value we cannot resolve. */
@@ -39,6 +50,13 @@ export interface TailwindStyle {
   fontWeight?: number | null;
   opacity?: number | null;
   display?: 'none' | 'flex';
+  /** `sr-only` — clipped to a pixel for screen readers; not a pointer target. */
+  srOnly?: boolean;
+  /** Out-of-flow positioning; an `absolute` sibling can paint over a background. */
+  position?: 'absolute' | 'fixed' | 'relative' | 'static' | 'sticky';
+  /** `inset-0` (or `inset-x-0` + `inset-y-0`) — stretched to fill its container. */
+  insetX?: boolean;
+  insetY?: boolean;
   /** `outline-none` / `outline-hidden` (web focus ring removal). */
   outlineNone?: boolean;
 }
@@ -56,6 +74,8 @@ const FONT_WEIGHTS: Record<string, number> = {
 };
 
 const DISPLAY_FLEX = new Set(['flex', 'block', 'inline', 'inline-block', 'inline-flex', 'grid', 'contents']);
+
+const POSITIONS = new Set(['absolute', 'fixed', 'relative', 'static', 'sticky'] as const);
 
 /** Split `variant:variant:utility`, ignoring colons inside `[...]`/`(...)`. */
 export function splitVariantsPublic(token: string): { variants: string[]; utility: string } {
@@ -125,20 +145,26 @@ export function resolveColor(value: string, options: TailwindOptions): string | 
     if (modifier !== '100') return null;
     value = value.slice(0, slash);
   }
+  // The project's own theme wins over every built-in name: a theme is allowed
+  // to redefine `white`, and silently resolving it to #ffffff would be wrong.
+  const custom = options.colors?.[value];
+  if (custom !== undefined) return custom;
+  const dash = value.lastIndexOf('-');
+  const family = dash > 0 ? value.slice(0, dash) : value;
+  if (options.unresolvedColors?.includes(value) || options.unresolvedColors?.includes(family)) return null;
   if (value === 'white') return '#ffffff';
   if (value === 'black') return '#000000';
   if (value === 'transparent') return 'transparent';
   if (value === 'current' || value === 'inherit') return null;
-  const custom = options.colors?.[value];
-  if (custom !== undefined) return custom;
   const arb = arbitrary(value);
   if (arb !== undefined) {
-    if (/^(#[0-9a-fA-F]{3,8}|rgba?\(.*\)|[a-zA-Z]+)$/.test(arb.trim())) return arb.trim();
-    return null; // var(--x), hsl(), oklch(), url() …
+    if (/^(#[0-9a-fA-F]{3,8}|rgba?\(.*\)|oklch\(.*\)|[a-zA-Z]+)$/.test(arb.trim())) return arb.trim();
+    return null; // var(--x), hsl(), url() …
   }
-  const dash = value.lastIndexOf('-');
+  // A project that replaced the palette has no default-palette colors left.
+  if (options.replacesPalette) return null;
   if (dash > 0) {
-    const hex = paletteHex(value.slice(0, dash), value.slice(dash + 1), options.preset);
+    const hex = paletteHex(family, value.slice(dash + 1), options.preset);
     if (hex) return hex;
   }
   return null;
@@ -162,6 +188,16 @@ const TEXT_NON_COLOR = new Set([
   'balance', 'pretty', 'ellipsis', 'clip',
 ]);
 
+/**
+ * `text-*` utilities that set something other than the colour. Treating
+ * `text-shadow-md` or `text-opacity-50` as an unresolvable colour would blank
+ * out the element's real colour and silence contrast for its whole subtree.
+ */
+const TEXT_NON_COLOR_PREFIX = /^(shadow-|opacity-|decoration-|underline|overline|line-through|indent-|wrap-)/;
+
+/** `bg-*` utilities that are not colours (position, size, gradients, blend modes). */
+const BG_NON_COLOR = /^(cover|contain|auto|none|fixed|local|scroll|repeat|no-repeat|clip-|origin-|gradient|linear|radial|conic|top|bottom|left|right|center|blend-|opacity-|size-|position-|image-|attachment-)/;
+
 /** Apply one (variant-stripped) utility to a style object. Unknown utilities are ignored. */
 export function applyUtility(style: TailwindStyle, utility: string, options: TailwindOptions): void {
   // `!w-6` (v3) / `w-6!` (v4) important markers, `-mt-2` negatives.
@@ -171,6 +207,12 @@ export function applyUtility(style: TailwindStyle, utility: string, options: Tai
   if (u.startsWith('-')) return; // negative utilities are margins/insets — irrelevant here
 
   if (u === 'hidden') { style.display = 'none'; return; }
+  if (u === 'sr-only') { style.srOnly = true; return; }
+  if (u === 'inset-0') { style.insetX = true; style.insetY = true; return; }
+  if (u === 'inset-x-0') { style.insetX = true; return; }
+  if (u === 'inset-y-0') { style.insetY = true; return; }
+  if (u === 'not-sr-only') { style.srOnly = false; return; }
+  if (POSITIONS.has(u as 'absolute')) { style.position = u as TailwindStyle['position']; return; }
   if (DISPLAY_FLEX.has(u)) { style.display = 'flex'; return; }
   if (u === 'outline-none' || u === 'outline-hidden') { style.outlineNone = true; return; }
 
@@ -197,12 +239,12 @@ export function applyUtility(style: TailwindStyle, utility: string, options: Tai
       return;
     case 'bg': {
       // bg-cover, bg-gradient-to-r, bg-none, bg-clip-* are not colors.
-      if (/^(cover|contain|auto|none|fixed|local|scroll|repeat|no-repeat|clip-|origin-|gradient|linear|radial|conic|top|bottom|left|right|center|blend-)/.test(rest)) return;
+      if (BG_NON_COLOR.test(rest)) return;
       style.backgroundColor = resolveColor(rest, options);
       return;
     }
     case 'text': {
-      if (TEXT_NON_COLOR.has(rest)) return;
+      if (TEXT_NON_COLOR.has(rest) || TEXT_NON_COLOR_PREFIX.test(rest)) return;
       const size = textSize(rest, options);
       if (size !== undefined) { style.fontSize = size; return; }
       style.color = resolveColor(rest, options);
@@ -260,7 +302,14 @@ export function isContrastExemptLayer(key: string): boolean {
   return key.split(/[:|]/).some((v) => CONTRAST_EXEMPT_VARIANTS.has(v));
 }
 
-/** `focus:`, `focus-visible:` or `focus-within:` variant present in a layer key. */
+/**
+ * A focus variant in a layer key. Covers the plain `focus:` family and the
+ * relational forms a focus ring is commonly written with — `group-focus:`,
+ * `peer-focus-visible:`, `has-focus-visible:` — since any of them means a
+ * visible focus style exists.
+ */
+const FOCUS_VARIANT = /^(group-|peer-|has-|in-)?focus(-visible|-within)?$/;
+
 export function isFocusLayer(key: string): boolean {
-  return key.split(/[:|]/).some((v) => v === 'focus' || v === 'focus-visible' || v === 'focus-within' || v === 'group-focus');
+  return key.split(/[:|]/).some((v) => FOCUS_VARIANT.test(v));
 }

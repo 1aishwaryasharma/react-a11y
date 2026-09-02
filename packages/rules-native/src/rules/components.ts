@@ -209,10 +209,13 @@ export const validAccessibilityProps = defineRule(
       if (name.startsWith('accessibility')) {
         if (KNOWN_A11Y_PROPS.has(name)) continue;
         const match = [...KNOWN_A11Y_PROPS].find((k) => k.toLowerCase() === lower);
+        const collides = match !== undefined && el.attrs.has(match);
         ctx.report({
           el,
           message: match
-            ? `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
+            ? collides
+              ? `"${name}" is miscapitalized — React Native expects "${match}", which this element already sets. The prop is silently ignored as written; remove it.`
+              : `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
             : `"${name}" is not a React Native accessibility prop and is silently ignored.`,
           ...(match ? { fix: fixRenameAttr(el, name, match) } : {}),
         });
@@ -221,7 +224,9 @@ export const validAccessibilityProps = defineRule(
         if (!target) continue; // unknown aria-* prop — may be intentional (react-native-web)
         ctx.report({
           el,
-          message: `"${name}" is not a React Native prop — did you mean "${target}"? As written it is silently ignored.`,
+          message: el.attrs.has(target)
+            ? `"${name}" is not a React Native prop and this element already sets "${target}". As written it is silently ignored; remove it.`
+            : `"${name}" is not a React Native prop — did you mean "${target}"? As written it is silently ignored.`,
           fix: fixRenameAttr(el, name, target),
         });
       }

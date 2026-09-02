@@ -418,3 +418,31 @@ describe('action and platform validation', () => {
     expect(run(`<View aria-hidden={true} accessibilityElementsHidden={true}><Text>x</Text></View>`)).not.toContain('hidden-cross-platform');
   });
 });
+
+describe('autofix does not corrupt source', () => {
+  it('reports a duplicate-attribute rename without offering it as a fix', () => {
+    // `role="dialog" aria-role="dialog"` renamed blindly becomes
+    // `role="dialog" role="dialog"` — TS17001, and the CLI used to print a
+    // checkmark over it.
+    const diagnostics = analyze({
+      code: `import { View } from 'react-native';\nconst x = <View role="dialog" aria-role="dialog" accessible />;`,
+      filename: 'App.tsx',
+      platform: 'native',
+      rules: nativeRules,
+    });
+    const dup = diagnostics.find((d) => d.message.includes('aria-role'));
+    expect(dup).toBeDefined();
+    expect(dup!.fix).toBeUndefined();
+    expect(dup!.message).toContain('already sets');
+  });
+
+  it('still fixes a rename when the destination is free', () => {
+    const diagnostics = analyze({
+      code: `import { View } from 'react-native';\nconst x = <View aria-role="dialog" accessible />;`,
+      filename: 'App.tsx',
+      platform: 'native',
+      rules: nativeRules,
+    });
+    expect(diagnostics.find((d) => d.message.includes('aria-role'))?.fix).toBeDefined();
+  });
+});

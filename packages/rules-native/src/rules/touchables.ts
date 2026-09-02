@@ -1,8 +1,8 @@
 import {
   findAncestor,
   hasAttr,
-  resolvedStyleNumber,
-  targetSizeTier,
+  isVisuallyHidden,
+  targetSizeFindings,
   type ElementNode,
 } from '@aishware/react-a11y-core';
 import {
@@ -112,32 +112,25 @@ export const touchTargetSize = defineRule(
   (el, ctx) => {
     if (!isTouchable(el)) return;
     if (hasAttr(el, 'hitSlop')) return;
-    const project = ctx.project;
-    const dim = (prop: 'width' | 'height', min: 'minWidth' | 'minHeight'): number | undefined => {
-      const value = resolvedStyleNumber(el, prop, project);
-      const floor = resolvedStyleNumber(el, min, project);
-      if (value === undefined) return undefined;
-      return floor !== undefined ? Math.max(value, floor) : value;
-    };
-    const width = dim('width', 'minWidth');
-    const height = dim('height', 'minHeight');
-    if (width === undefined && height === undefined) return;
-    const tier = targetSizeTier(width ?? Infinity, height ?? Infinity);
-    if (!tier) return;
-    const size = width !== undefined && height !== undefined
-      ? `${width}×${height}`
-      : width !== undefined ? `${width}-wide` : `${height}-tall`;
-    if (tier === 'below-min') {
-      ctx.report({
-        el,
-        message: `${size} target is below the WCAG 2.5.8 (AA) minimum of 24px. Aim for 44×44pt, or add hitSlop.`,
-        severity: 'serious',
-      });
-    } else {
-      ctx.report({
-        el,
-        message: `${size} target is below the recommended 44×44pt (WCAG 2.5.5, Apple HIG, Material). Consider enlarging or adding hitSlop.`,
-      });
+    // A hidden or fully transparent control is not a pointer target.
+    if (isVisuallyHidden(el, ctx.project)) return;
+    for (const finding of targetSizeFindings(el, ctx.project)) {
+      const via = finding.origin
+        ? ` in the \`${finding.origin.label}\` variant`
+        : finding.layer ? ' under a conditional class set' : '';
+      const unit = finding.size.includes('×') ? 'pt' : '';
+      if (finding.tier === 'below-min') {
+        ctx.report({
+          ...finding.anchor,
+          message: `${finding.size}${unit} target${via} is below the WCAG 2.5.8 (AA) minimum of 24px. Aim for 44×44pt, or add hitSlop.`,
+          severity: 'serious',
+        });
+      } else {
+        ctx.report({
+          ...finding.anchor,
+          message: `${finding.size}${unit} target${via} is below the recommended 44×44pt (WCAG 2.5.5, Apple HIG, Material). Consider enlarging or adding hitSlop.`,
+        });
+      }
     }
   },
 );

@@ -139,3 +139,78 @@ describe('animation-reduce-motion', () => {
     expect(global[0]?.severity).toBe('serious');
   });
 });
+
+describe('touch-target-size through cva() variant tables', () => {
+  const BUTTON = `
+import { cva } from 'class-variance-authority';
+const buttonVariants = cva('flex-row items-center rounded-md', {
+  variants: {
+    variant: { default: 'bg-primary', ghost: '' },
+    size: { default: 'h-10 px-4', sm: 'h-9 px-3', lg: 'h-11 px-6', icon: 'h-10 w-10' },
+  },
+  defaultVariants: { variant: 'default', size: 'default' },
+});
+`;
+  const nw16: ProjectInfo = { ...nativewind, tailwind: { preset: 'v3', rem: 16 } };
+
+  it('reports each undersized variant once, anchored on its definition', () => {
+    const diags = run(
+      `<Pressable accessibilityRole="button" accessibilityLabel="x" className={cn(buttonVariants({ variant, size, className }), className)} onPress={f} />`,
+      nw16, BUTTON,
+    ).filter((d) => d.ruleId === 'touch-target-size');
+    const labels = diags.map((d) => /in the \`([^\`]+)\` variant/.exec(d.message)?.[1]).sort();
+    // h-10 = 40pt, h-9 = 36pt: below 44. h-11 = 44 passes. w-10 h-10 icon = 40×40.
+    expect(labels).toEqual(['size.default', 'size.icon', 'size.sm']);
+    const icon = diags.find((d) => d.message.includes('size.icon'))!;
+    expect(icon.message).toContain('40×40pt');
+    expect(icon.severity).toBe('moderate');
+    // Anchored on the variant literal in the cva() call, not on the <Pressable>.
+    expect(icon.line).toBeLessThan(diags[0].line + 1);
+    expect(icon.line).toBe(7);
+  });
+
+  it('honours a literal choice at the call site', () => {
+    const lg = ids(
+      `<Pressable accessibilityRole="button" accessibilityLabel="x" className={buttonVariants({ size: 'lg' })} onPress={f} />`,
+      nw16, BUTTON,
+    );
+    expect(lg).not.toContain('touch-target-size');
+    const sm = run(
+      `<Pressable accessibilityRole="button" accessibilityLabel="x" className={buttonVariants({ size: 'sm' })} onPress={f} />`,
+      nw16, BUTTON,
+    ).filter((d) => d.ruleId === 'touch-target-size');
+    expect(sm).toHaveLength(1);
+    expect(sm[0].message).not.toContain('variant'); // unconditional: reported on the element itself
+  });
+
+  it('falls back to defaultVariants when the call omits a group', () => {
+    const diags = run(
+      `<Pressable accessibilityRole="button" accessibilityLabel="x" className={buttonVariants()} onPress={f} />`,
+      nw16, BUTTON,
+    ).filter((d) => d.ruleId === 'touch-target-size');
+    expect(diags).toHaveLength(1);
+    expect(diags[0].message).toContain('40-tallpt'.replace('pt', '')); // h-10 default
+  });
+
+  it('does not report the same variant twice in one file', () => {
+    const diags = run(
+      `<><Pressable accessibilityRole="button" accessibilityLabel="a" className={buttonVariants({ size })} onPress={f} /><Pressable accessibilityRole="button" accessibilityLabel="b" className={buttonVariants({ size })} onPress={f} /></>`,
+      nw16, BUTTON,
+    ).filter((d) => d.ruleId === 'touch-target-size');
+    expect(diags.filter((d) => d.message.includes('size.icon'))).toHaveLength(1);
+  });
+
+  it('reads a tailwind-variants tv() table too', () => {
+    const TV = `
+import { tv } from 'tailwind-variants';
+const chip = tv({ base: 'rounded-full', variants: { size: { xs: 'h-5 w-5', md: 'h-11 w-11' } } });
+`;
+    const diags = run(
+      `<Pressable accessibilityRole="button" accessibilityLabel="x" className={chip({ size })} onPress={f} />`,
+      nw16, TV,
+    ).filter((d) => d.ruleId === 'touch-target-size');
+    expect(diags).toHaveLength(1);
+    expect(diags[0].message).toContain('size.xs');
+    expect(diags[0].severity).toBe('serious'); // 20pt < 24
+  });
+});

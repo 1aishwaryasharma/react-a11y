@@ -155,6 +155,14 @@ Apple HIG / Material recommendation — reported as **minor**. Sizes come from
 inline literals and Tailwind classes (`h-5 w-5`, `size-6`, `min-h-11`); a
 single known dimension below the threshold is enough.
 
+Each conditional class set is checked on its own — `secondary ? 'h-8 w-8' :
+'size-11'` reports the 32px branch — and a `cva()` / `tv()` size table defined
+in the same file is expanded, with an undersized variant reported once on its
+definition. A set that lands in the same tier as the always-on style is not
+restated. Not counted: a checkbox or radio whose `<label>` (wrapping or
+`htmlFor`) or clickable row extends its activation area, and anything
+visually hidden (`sr-only`, `opacity: 0`, `hidden`, `type="hidden"`).
+
 ## meaningful-order
 
 Inline CSS `order` makes the visual sequence diverge from the DOM order that
