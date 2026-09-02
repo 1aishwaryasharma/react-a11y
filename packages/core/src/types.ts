@@ -148,10 +148,22 @@ export interface A11yConfig {
   tailwind?: TailwindConfig | false;
 }
 
+/** A file the scan did not analyse, and why. Reported so skips are never silent. */
+export interface SkippedFile {
+  file: string;
+  reason: string;
+}
+
 export interface ScanResult {
   diagnostics: Diagnostic[];
   filesScanned: number;
   durationMs: number;
   platform: Platform;
   root: string;
+  /** Project facts the scan resolved for the root, for the run banner. */
+  project?: ProjectInfo;
+  /** Files analysed with each rule pack; set only when a scan used both. */
+  filesByPlatform?: Record<Platform, number>;
+  /** Files skipped for a reason worth surfacing (unreadable, too large, wrong platform). */
+  skipped?: SkippedFile[];
 }

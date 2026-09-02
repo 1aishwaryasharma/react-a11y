@@ -11,7 +11,7 @@ import {
   WCAG22_TOTALS,
   analyze,
   applyFixes,
-  detectPlatform,
+  detectPlatformDetailed,
   globToRegExp,
   loadConfig,
   readOwnPackageMeta,
@@ -19,6 +19,7 @@ import {
   scanProject,
   toJson,
   toSarif,
+  type A11yConfig,
   type Fix,
   type Platform,
   type Rule,
@@ -45,7 +46,8 @@ ${pc.bold('Options')}
   --output <file>                Write report to a file instead of stdout
   --fail-on <severity|none>      Exit 1 when issues at/above this severity exist (default: serious)
   --fix                          Apply safe mechanical fixes, then report what remains
-  --changed                      Scan only files changed in git (vs HEAD, incl. untracked)
+  --changed                      Scan only files changed in the working tree (incl. untracked)
+  --since <ref>                  Scan files changed since <ref> (e.g. origin/main) — use in CI
   --stdin                        Lint source read from stdin as one file (config from [path])
   --stdin-filename <file>        Filename to attribute stdin content to (for ignore matching)
   --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
@@ -80,6 +82,7 @@ interface CliArgs {
   coverage: boolean;
   fix: boolean;
   changed: boolean;
+  since?: string;
   stdin: boolean;
   stdinFilename?: string;
 }
@@ -139,6 +142,9 @@ function parseArgs(argv: string[]): CliArgs {
       case '--changed':
         args.changed = true;
         break;
+      case '--since':
+        args.since = next();
+        break;
       case '--stdin':
         args.stdin = true;
         break;
@@ -168,14 +174,19 @@ function listRules(): void {
   print(`React Native rules (${nativeRules.length})`, nativeRules);
 }
 
-/** Files changed vs HEAD (staged, unstaged and untracked), for --changed. */
-function changedFiles(root: string): string[] {
-  let out: string;
+function git(root: string, args: string[], onError: string): string {
   try {
-    out = execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' });
+    // git's own stderr is captured rather than inherited, so a failed lookup
+    // reports through fail() instead of printing raw plumbing errors.
+    return execFileSync('git', ['-C', root, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch {
-    fail('--changed requires a git repository (git status failed)');
+    return fail(onError);
   }
+}
+
+/** Files changed in the working tree (staged, unstaged and untracked). */
+function workingTreeFiles(root: string): string[] {
+  const out = git(root, ['status', '--porcelain'], 'requires a git repository (git status failed)');
   const files: string[] = [];
   for (const line of out.split('\n')) {
     if (!line.trim()) continue;
@@ -190,12 +201,31 @@ function changedFiles(root: string): string[] {
 }
 
 /**
+ * Files to scan for --changed / --since. A CI checkout has a clean working
+ * tree, so `--changed` alone finds nothing there; `--since origin/main` diffs
+ * against the merge base, which is what a pull-request gate actually wants.
+ */
+function changedFiles(root: string, since: string | undefined): string[] {
+  const files = new Set(workingTreeFiles(root));
+  if (since !== undefined) {
+    const out = git(
+      root,
+      ['diff', '--name-only', '--diff-filter=d', `${since}...HEAD`],
+      `--since ${since}: no such git ref (fetch it first, e.g. git fetch origin main)`,
+    );
+    for (const line of out.split('\n')) {
+      if (line.trim()) files.add(line.trim());
+    }
+  }
+  return [...files];
+}
+
+/**
  * Editor integration: lint one buffer piped through stdin instead of walking
  * the project. Config, ignore globs and platform still come from `root`, so
  * results match what a project scan would report for that file.
  */
-function scanStdin(args: CliArgs, rules: Rule[], platform: Platform): ScanResult {
-  const config = loadConfig(args.root);
+function scanStdin(args: CliArgs, config: A11yConfig, rules: Rule[], platform: Platform): ScanResult {
   const started = Date.now();
   const filename = args.stdinFilename ?? 'stdin.tsx';
   const rel = (path.isAbsolute(filename) ? path.relative(args.root, filename) : filename)
@@ -316,24 +346,43 @@ function main(): void {
   }
   if (!fs.existsSync(args.root)) fail(`path does not exist: ${args.root}`);
 
-  const config = loadConfig(args.root);
-  const platform: Platform =
-    args.platform !== 'auto' ? args.platform : config.platform ?? detectPlatform(args.root);
+  let config: A11yConfig;
+  try {
+    config = loadConfig(args.root);
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+  // With no explicit platform, each file is analysed with the pack its own
+  // package needs — a monorepo holding a React Native app beside a web app
+  // gets both, instead of one pack being wrong for half the repo.
+  const chosen = args.platform !== 'auto' ? args.platform : config.platform;
+  const platform: Platform = chosen ?? detectPlatformDetailed(args.root).platform;
   const rules = platform === 'native' ? nativeRules : webRules;
+  const rulePacks = chosen === undefined ? { web: webRules, native: nativeRules } : undefined;
 
   if (args.stdin) {
-    if (args.fix || args.changed) fail('--stdin cannot be combined with --fix or --changed');
-    report(scanStdin(args, rules, platform), args, rules);
+    if (args.fix || args.changed || args.since) fail('--stdin cannot be combined with --fix, --changed or --since');
+    report(scanStdin(args, config, rules, platform), args, rules);
     return;
   }
 
-  const files = args.changed ? changedFiles(args.root) : undefined;
+  const partial = args.changed || args.since !== undefined;
+  const files = partial ? changedFiles(args.root, args.since) : undefined;
+  if (files && files.length === 0) {
+    console.error(pc.yellow(
+      args.since === undefined
+        ? 'no changed files in the working tree — in CI the checkout is clean, so use --since <ref> (e.g. --since origin/main)'
+        : `no files changed since ${sanitizeTerminalText(args.since)}`,
+    ));
+  }
   // Cross-file passes need the whole project; skip them on partial scans.
   // Passes are stateful, so each scan gets fresh instances.
   const makePasses = () =>
-    platform === 'web' && !args.changed ? webProjectPasses(config) : [];
+    platform === 'web' && !partial ? webProjectPasses(config) : [];
 
-  const scan = () => scanProject({ root: args.root, rules, platform, config, projectPasses: makePasses(), files });
+  const scan = () => scanProject({
+    root: args.root, rules, rulePacks, platform, config, projectPasses: makePasses(), files,
+  });
   let result = scan();
 
   if (args.fix) {

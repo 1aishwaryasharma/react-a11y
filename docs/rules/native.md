@@ -87,8 +87,9 @@ from Tailwind classes (`h-6 w-6`, `size-8`, `h-[20px]`, `min-h-11`); a single
 known dimension below the threshold is enough. `hitSlop` counts as
 mitigation; dynamic styles are not guessed at.
 
-Note the rem base: on NativeWind v4 `h-6` is 21pt (14px rem), on Uniwind,
-NativeWind v5 and the web it is 24px.
+Note the rem base: on NativeWind v4 and v5 `h-6` is 21pt (14px rem), on
+NativeWind v2, Uniwind, twrnc and the web it is 24px. An `inlineRem` in
+`metro.config.js` (or Uniwind's `polyfills.rem`) overrides the default.
 
 ```tsx
 // ✖ 21×21 on NativeWind v4
@@ -425,10 +426,23 @@ text-height coverage as an inline-styled one. Specifically:
 - Inline `style` literals win over classes, as at runtime. A `StyleSheet`
   reference or other dynamic style makes earlier values unknown.
 - The default palette is chosen from the installed `tailwindcss` (v3 vs v4
-  colors differ) and the rem base from the binding (NativeWind v4: 14px;
-  Uniwind, NativeWind v5, web: 16px). Custom theme colors are read statically
-  from `tailwind.config.*` (`theme.colors`, `theme.extend.colors`) and from CSS
-  `@theme { --color-*: … }` blocks.
+  colors differ) and the rem base from the binding (NativeWind 4/5 and
+  react-native-css: 14px; NativeWind 2, Uniwind, twrnc and web: 16px), or from
+  an explicit `inlineRem` / `polyfills.rem` in the bundler config. Custom theme
+  colors are read statically from `tailwind.config.*` (`theme.colors`,
+  `theme.extend.colors` only) and from CSS `@theme { --color-*: … }` blocks;
+  `oklch()` and `hsl()` values are understood, and `var(--x)` references are
+  followed into `:root { … }` (light-mode values; `.dark` overrides are not
+  modelled).
+- `cva()` (class-variance-authority) and `tv()` (tailwind-variants) tables
+  defined in the same file are expanded at the call site. A variant group the
+  call pins to a literal applies outright; a group passed dynamically
+  contributes each of its values as a separate class set; an omitted group
+  uses `defaultVariants`. `touch-target-size` reports an undersized variant
+  once, anchored on its definition.
+- A theme key the config sets to something unreadable (an import, a call) is
+  never resolved against the default palette — the check is skipped instead of
+  reporting a color the app does not use.
 - Unknown utilities and colors are never guessed: a `text-primary` the scanner
   cannot resolve simply disables the contrast check for that element.
 

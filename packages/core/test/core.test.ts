@@ -1,10 +1,18 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   analyze,
   buildFileModel,
+  filePlatform,
+  fixRenameAttr,
   globToRegExp,
+  parseColor,
   parseSource,
   staticValue,
+  scanProject,
+  validateConfig,
   type Rule,
 } from '@aishware/react-a11y-core';
 
@@ -173,5 +181,92 @@ describe('glob matcher', () => {
 
   it('rejects unreasonably large config globs', () => {
     expect(() => globToRegExp('*'.repeat(1025))).toThrow('ignore glob exceeds 1024 characters');
+  });
+});
+
+describe('modern colour syntaxes', () => {
+  it('parses oklch, hsl and slash-separated rgb', () => {
+    // Tailwind v4 writes its palette in OKLCH; blue-500 is oklch(0.623 0.214 259.815).
+    expect(parseColor('oklch(0.623 0.214 259.815)')).toEqual({ r: 43, g: 127, b: 255 });
+    expect(parseColor('oklch(1 0 0)')).toEqual({ r: 255, g: 255, b: 255 });
+    expect(parseColor('hsl(0 0% 100%)')).toEqual({ r: 255, g: 255, b: 255 });
+    // shadcn writes its theme as a bare `<h> <s>% <l>%` triple; blue-500 is 217.2 91.2% 59.8%.
+    expect(parseColor('hsl(217.2, 91.2%, 59.8%)')).toEqual({ r: 59, g: 130, b: 246 });
+    expect(parseColor('rgb(0 0 0)')).toEqual({ r: 0, g: 0, b: 0 });
+  });
+
+  it('still refuses anything translucent', () => {
+    expect(parseColor('oklch(0.6 0.2 260 / 0.5)')).toBeNull();
+    expect(parseColor('hsl(217 91% 60% / 50%)')).toBeNull();
+    expect(parseColor('rgb(0 0 0 / 0.2)')).toBeNull();
+  });
+});
+
+describe('autofix safety', () => {
+  it('refuses to rename an attribute onto one the element already has', () => {
+    const el = model(`const x = <View role="dialog" aria-role="dialog" />;`).elements[0];
+    // Renaming would emit `role="dialog" role="dialog"` — a TS17001 parse error.
+    expect(fixRenameAttr(el, 'aria-role', 'role')).toBeUndefined();
+    const clean = model(`const x = <View aria-role="dialog" />;`).elements[0];
+    expect(fixRenameAttr(clean, 'aria-role', 'role')).toBeDefined();
+  });
+});
+
+describe('config validation', () => {
+  it('rejects settings that would otherwise be silently ignored', () => {
+    expect(() => validateConfig({ platform: 'ios' }, 'test')).toThrow(/invalid platform/);
+    expect(() => validateConfig({ rules: { 'no-autofocus': 'disabled' } }, 'test')).toThrow(/invalid setting/);
+    expect(() => validateConfig({ ignore: '**/*.tsx' }, 'test')).toThrow(/array of glob strings/);
+    expect(() => validateConfig({ tailwind: { rem: 0 } }, 'test')).toThrow(/positive number/);
+    expect(() => validateConfig({ tailwnid: {} }, 'test')).toThrow(/unknown key/);
+    expect(validateConfig({ platform: 'native', tailwind: false }, 'test')).toEqual({ platform: 'native', tailwind: false });
+  });
+});
+
+describe('platform-specific file extensions', () => {
+  it('routes .web/.native/.ios files to the pack that actually loads them', () => {
+    expect(filePlatform('src/Dialog.web.tsx')).toBe('web');
+    expect(filePlatform('src/Dialog.native.tsx')).toBe('native');
+    expect(filePlatform('src/Dialog.ios.tsx')).toBe('native');
+    expect(filePlatform('src/Dialog.android.jsx')).toBe('native');
+    expect(filePlatform('src/Dialog.tsx')).toBeUndefined();
+  });
+});
+
+describe('a monorepo that holds both platforms', () => {
+  const packRule = (id: string, platform: 'web' | 'native'): Rule => ({
+    meta: { id, description: id, severity: 'moderate', platforms: [platform], wcag: ['1.1.1'] },
+    create: (ctx) => ({ element: (el) => ctx.report({ el, message: id }) }),
+  });
+
+  it('analyses each file with the pack its own package needs', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'react-a11y-packs-'));
+    fs.mkdirSync(path.join(dir, '.git'), { recursive: true });
+    const write = (rel: string, body: string) => {
+      fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+      fs.writeFileSync(path.join(dir, rel), body);
+    };
+    write('package.json', JSON.stringify({ name: 'root', devDependencies: { turbo: '^2' } }));
+    write('pnpm-workspace.yaml', 'packages:\n  - "apps/*"\n');
+    write('apps/mobile/package.json', JSON.stringify({ dependencies: { 'react-native': '0.81.0' } }));
+    write('apps/mobile/App.tsx', 'export const A = () => <View />;');
+    write('apps/web/package.json', JSON.stringify({ dependencies: { next: '^15', react: '^19' } }));
+    write('apps/web/Page.tsx', 'export const P = () => <div />;');
+    // A platform-suffixed file overrides its package: this is web code inside
+    // the React Native app.
+    write('apps/mobile/Dialog.web.tsx', 'export const D = () => <div />;');
+
+    const result = scanProject({
+      root: dir,
+      rules: [packRule('web-only', 'web')],
+      rulePacks: { web: [packRule('web-only', 'web')], native: [packRule('native-only', 'native')] },
+      platform: 'web',
+    });
+    const byFile = new Map(result.diagnostics.map((d) => [d.file, d.ruleId]));
+    expect(byFile.get('apps/mobile/App.tsx')).toBe('native-only');
+    expect(byFile.get('apps/web/Page.tsx')).toBe('web-only');
+    expect(byFile.get('apps/mobile/Dialog.web.tsx')).toBe('web-only');
+    expect(result.filesByPlatform).toEqual({ native: 1, web: 2 });
+    expect(result.skipped).toBeUndefined();
   });
 });
