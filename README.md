@@ -108,7 +108,7 @@ workspace package's binding is picked up when you scan the repository root.
 Every run prints what it decided:
 
 ```
-react-a11y v0.4.0 — platform: native — tailwind: nativewind ^4.1.0 (rem 14, palette v3) — 5011 files scanned in 2523ms
+react-a11y v0.5.0 — platform: native — tailwind: nativewind ^4.1.0 (rem 14, palette v3) — 5011 files scanned in 2523ms
 ```
 
 Tune it with the `tailwind` config key:
@@ -141,7 +141,7 @@ The repository includes a composite action:
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: 1aishwaryasharma/react-a11y@v0.4.0
+- uses: 1aishwaryasharma/react-a11y@v0.5.0
   with:
     fail-on: serious
     path: .

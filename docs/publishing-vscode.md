@@ -22,7 +22,7 @@ the npm packages. Its Marketplace identifier is
    projects:
 
    ```sh
-   code --install-extension packages/vscode/react-a11y-0.4.0.vsix
+   code --install-extension packages/vscode/react-a11y-0.5.0.vsix
    ```
 
 4. Upload that tested VSIX through the publisher portal. Manual upload is the
