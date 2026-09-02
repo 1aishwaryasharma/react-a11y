@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import path from 'node:path';
 import {
+  ProjectResolver,
   analyze,
   applyFixes,
+  clearProjectCaches,
   detectPlatform,
   globToRegExp,
   loadConfig,
@@ -11,6 +13,7 @@ import {
   type Diagnostic as A11yDiagnostic,
   type Fix,
   type Platform,
+  type ProjectInfo,
   type Severity,
 } from '@aishware/react-a11y-core';
 import { webRules, webProjectPasses } from '@aishware/react-a11y-rules-web';
@@ -30,6 +33,8 @@ interface FolderInfo {
   platform: Platform;
   config: A11yConfig;
   ignore: RegExp[];
+  /** Resolves project facts per file, so workspace packages are read correctly. */
+  projects?: ProjectResolver;
 }
 
 /** VS Code diagnostic carrying the react-a11y fix for the quick-fix provider. */
@@ -47,13 +52,27 @@ let projectCollection: vscode.DiagnosticCollection;
 function folderInfoForRoot(root: string): FolderInfo {
   let info = folderCache.get(root);
   if (!info) {
-    const config = loadConfig(root);
+    let config: A11yConfig = {};
+    try {
+      config = loadConfig(root);
+    } catch (error) {
+      // An invalid config must not take the extension down; lint with defaults
+      // and tell the user what is wrong with the file.
+      void vscode.window.showWarningMessage(
+        `react-a11y: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
     const platformSetting = vscode.workspace.getConfiguration('react-a11y').get<string>('platform', 'auto');
     const platform: Platform =
       platformSetting === 'web' || platformSetting === 'native'
         ? platformSetting
         : config.platform ?? detectPlatform(root);
-    info = { platform, config, ignore: (config.ignore ?? []).map(globToRegExp) };
+    info = {
+      platform,
+      config,
+      ignore: (config.ignore ?? []).map(globToRegExp),
+      projects: new ProjectResolver(root, config),
+    };
     folderCache.set(root, info);
   }
   return info;
@@ -103,6 +122,7 @@ function lint(doc: vscode.TextDocument): void {
     platform: info.platform,
     rules,
     ruleSettings: info.config.rules,
+    project: info.projects?.for(doc.fileName),
   });
   collection.set(doc.uri, diagnostics.map(toVsDiagnostic));
 }
@@ -232,6 +252,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration('react-a11y')) {
         folderCache.clear();
+        clearProjectCaches();
         projectCollection.clear(); // stale once platform/rules change; re-scan to refresh
         lintAllOpen();
       }
@@ -245,12 +266,14 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  // Project config or dependencies changing can flip platform/rule settings.
+  // Project config, dependencies, or Tailwind theme sources changing can flip
+  // platform/rule settings or the palette classes resolve against.
   const watcher = vscode.workspace.createFileSystemWatcher(
-    '**/{react-a11y.config.json,.react-a11yrc.json,package.json}',
+    '**/{react-a11y.config.json,.react-a11yrc.json,package.json,tailwind.config.js,tailwind.config.cjs,tailwind.config.mjs,tailwind.config.ts,metro.config.js,metro.config.cjs,metro.config.mjs,metro.config.ts,*.css}',
   );
   const invalidate = () => {
     folderCache.clear();
+    clearProjectCaches();
     projectCollection.clear(); // config/deps changed — project scan is stale
     lintAllOpen();
   };

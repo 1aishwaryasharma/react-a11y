@@ -1,3 +1,7 @@
+import type ts from 'typescript';
+import type { TailwindPreset } from './tailwind.js';
+import type { ProjectInfo } from './project.js';
+
 export type Platform = 'web' | 'native';
 
 export type Severity = 'critical' | 'serious' | 'moderate' | 'minor';
@@ -68,8 +72,13 @@ export interface RuleMeta {
   helpUrl?: string;
 }
 
+/**
+ * A finding, anchored either to a JSX element (`el`) or to any other syntax
+ * node (`node`) for rules that inspect plain code such as animation calls.
+ */
 export interface ReportDescriptor {
-  el: import('./element.js').ElementNode;
+  el?: import('./element.js').ElementNode;
+  node?: ts.Node;
   message: string;
   /** Per-report severity override (e.g. tiered touch-target sizes). */
   severity?: Severity;
@@ -89,12 +98,16 @@ export interface ProjectPass {
 export interface RuleContext {
   filename: string;
   platform: Platform;
-  sourceFile: import('typescript').SourceFile;
+  sourceFile: ts.SourceFile;
+  /** Project facts (dependencies, Tailwind resolution). Absent for bare single-file analysis. */
+  project?: ProjectInfo;
   report(descriptor: ReportDescriptor): void;
 }
 
 export interface RuleVisitor {
   element?(el: import('./element.js').ElementNode): void;
+  /** Called once per file, before elements, for rules that inspect non-JSX code. */
+  sourceFile?(sf: ts.SourceFile): void;
 }
 
 export interface Rule {
@@ -110,6 +123,20 @@ export interface Rule {
 
 export type RuleSetting = 'off' | Severity;
 
+/**
+ * Tailwind class resolution settings. Detection is automatic when a Tailwind
+ * binding (tailwindcss, nativewind, uniwind, twrnc, …) is a dependency; set
+ * this to enable it anyway, tune it, or (`false`) turn it off.
+ */
+export interface TailwindConfig {
+  /** Default palette version; auto-detected from the tailwindcss / nativewind version. */
+  preset?: TailwindPreset;
+  /** Pixels per rem (web 16, NativeWind v4 14). */
+  rem?: number;
+  /** Theme colors not in the default palette: `{ "brand": "#0055ff", "brand-500": "#0055ff" }`. */
+  colors?: Record<string, string>;
+}
+
 export interface A11yConfig {
   /** Per-rule overrides: "off" disables, a severity re-classifies. */
   rules?: Record<string, RuleSetting>;
@@ -117,6 +144,14 @@ export interface A11yConfig {
   ignore?: string[];
   /** Force a platform instead of auto-detecting from package.json. */
   platform?: Platform;
+  /** Tailwind / NativeWind / Uniwind class resolution; `false` disables it. */
+  tailwind?: TailwindConfig | false;
+}
+
+/** A file the scan did not analyse, and why. Reported so skips are never silent. */
+export interface SkippedFile {
+  file: string;
+  reason: string;
 }
 
 export interface ScanResult {
@@ -125,4 +160,10 @@ export interface ScanResult {
   durationMs: number;
   platform: Platform;
   root: string;
+  /** Project facts the scan resolved for the root, for the run banner. */
+  project?: ProjectInfo;
+  /** Files analysed with each rule pack; set only when a scan used both. */
+  filesByPlatform?: Record<Platform, number>;
+  /** Files skipped for a reason worth surfacing (unreadable, too large, wrong platform). */
+  skipped?: SkippedFile[];
 }

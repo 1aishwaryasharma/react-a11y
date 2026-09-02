@@ -1,6 +1,7 @@
 import { buildFileModel, type FileModel } from './element.js';
 import { parseSource } from './parse.js';
 import { resolveWcag } from './wcag.js';
+import type { ProjectInfo } from './project.js';
 import type { Diagnostic, Platform, Rule, RuleSetting } from './types.js';
 
 export interface AnalyzeOptions {
@@ -9,16 +10,17 @@ export interface AnalyzeOptions {
   platform: Platform;
   rules: Rule[];
   ruleSettings?: Record<string, RuleSetting>;
+  /** Project facts (dependencies, Tailwind resolution). See `readProjectInfo`. */
+  project?: ProjectInfo;
 }
 
 export type AnalyzeModelOptions = Omit<AnalyzeOptions, 'code'>;
 
 /** Run rules over an already-built file model (lets callers reuse the parse). */
 export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Diagnostic[] {
-  const { filename, platform, rules, ruleSettings = {} } = options;
-  if (model.elements.length === 0) return [];
-
+  const { filename, platform, rules, ruleSettings = {}, project } = options;
   const diagnostics: Diagnostic[] = [];
+  const sf = model.sourceFile;
 
   for (const rule of rules) {
     if (!rule.meta.platforms.includes(platform)) continue;
@@ -29,17 +31,30 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
     const visitor = rule.create({
       filename,
       platform,
-      sourceFile: model.sourceFile,
-      report({ el, message, severity, fix }) {
+      sourceFile: sf,
+      project,
+      report({ el, node, message, severity, fix }) {
+        let loc = el?.loc;
+        if (!loc && node) {
+          const start = sf.getLineAndCharacterOfPosition(node.getStart(sf));
+          const end = sf.getLineAndCharacterOfPosition(node.getEnd());
+          loc = {
+            line: start.line + 1,
+            column: start.character + 1,
+            endLine: end.line + 1,
+            endColumn: end.character + 1,
+          };
+        }
+        if (!loc) throw new Error(`rule ${rule.meta.id} reported without an element or node`);
         diagnostics.push({
           ruleId: rule.meta.id,
           message,
           severity: setting ?? severity ?? rule.meta.severity,
           file: filename,
-          line: el.loc.line,
-          column: el.loc.column,
-          endLine: el.loc.endLine,
-          endColumn: el.loc.endColumn,
+          line: loc.line,
+          column: loc.column,
+          endLine: loc.endLine,
+          endColumn: loc.endColumn,
           wcag,
           helpUrl: rule.meta.helpUrl,
           ...(fix ? { fix } : {}),
@@ -47,7 +62,8 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
       },
     });
 
-    if (visitor.element) {
+    if (visitor.sourceFile) visitor.sourceFile(sf);
+    if (visitor.element && model.elements.length > 0) {
       for (const el of model.elements) visitor.element(el);
     }
   }

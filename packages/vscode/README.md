@@ -20,7 +20,7 @@ runs locally as you type.
   overrides and ignore globs.
 - **Project-wide checks** through the `react-a11y: Scan workspace` command.
 
-The extension bundles 22 web rules and 25 React Native rules. Static analysis
+The extension bundles 22 web rules and 31 React Native rules, and resolves Tailwind / NativeWind / Uniwind classes for the style-dependent ones. Static analysis
 cannot reproduce a rendered app, assistive technology, or device settings;
 use the
 [manual accessibility testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md)

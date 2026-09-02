@@ -209,10 +209,13 @@ export const validAccessibilityProps = defineRule(
       if (name.startsWith('accessibility')) {
         if (KNOWN_A11Y_PROPS.has(name)) continue;
         const match = [...KNOWN_A11Y_PROPS].find((k) => k.toLowerCase() === lower);
+        const collides = match !== undefined && el.attrs.has(match);
         ctx.report({
           el,
           message: match
-            ? `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
+            ? collides
+              ? `"${name}" is miscapitalized — React Native expects "${match}", which this element already sets. The prop is silently ignored as written; remove it.`
+              : `"${name}" is miscapitalized — React Native expects "${match}". The prop is silently ignored as written.`
             : `"${name}" is not a React Native accessibility prop and is silently ignored.`,
           ...(match ? { fix: fixRenameAttr(el, name, match) } : {}),
         });
@@ -221,7 +224,9 @@ export const validAccessibilityProps = defineRule(
         if (!target) continue; // unknown aria-* prop — may be intentional (react-native-web)
         ctx.report({
           el,
-          message: `"${name}" is not a React Native prop — did you mean "${target}"? As written it is silently ignored.`,
+          message: el.attrs.has(target)
+            ? `"${name}" is not a React Native prop and this element already sets "${target}". As written it is silently ignored; remove it.`
+            : `"${name}" is not a React Native prop — did you mean "${target}"? As written it is silently ignored.`,
           fix: fixRenameAttr(el, name, target),
         });
       }
@@ -252,5 +257,60 @@ export const accessibilityActionsHandled = defineRule(
         ? 'accessibilityActions is set but onAccessibilityAction is missing — the declared actions are never handled.'
         : 'onAccessibilityAction is set but accessibilityActions is missing — there are no actions for the handler to receive.',
     });
+  },
+);
+
+/** BCP 47 shape: 2–3 letter language, optional 2–8 character subtags. */
+const BCP47 = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
+
+/**
+ * `accessibilityLanguage` (iOS) tells VoiceOver which voice to read the label,
+ * value and hint with. It must be a BCP 47 tag such as "fr" or "pt-BR";
+ * anything else is ignored and the text is read with the wrong pronunciation.
+ */
+export const accessibilityLanguageValid = defineRule(
+  {
+    id: 'accessibility-language-valid',
+    description: 'accessibilityLanguage must be a BCP 47 language tag.',
+    severity: 'moderate',
+    wcag: ['3.1.2'],
+  },
+  (el, ctx) => {
+    const value = staticString(el, 'accessibilityLanguage');
+    if (value === undefined) return;
+    if (BCP47.test(value.trim())) return;
+    ctx.report({
+      el,
+      message: `accessibilityLanguage="${value}" is not a BCP 47 language tag (e.g. "en", "pt-BR"). VoiceOver ignores it and reads the label with the default voice.`,
+    });
+  },
+);
+
+const LABEL_PROPS = ['accessibilityLabel', 'aria-label', 'accessibilityHint'];
+
+/**
+ * VoiceOver treats all-caps strings as abbreviations and may spell them out
+ * letter by letter ("SAVE" → "S-A-V-E"). Visible text can be uppercased with
+ * textTransform instead; the accessible label should be sentence case.
+ */
+export const labelNotAllCaps = defineRule(
+  {
+    id: 'label-not-all-caps',
+    description: 'Accessibility labels should not be written in all caps — screen readers may spell them out.',
+    severity: 'minor',
+    wcag: ['4.1.2'],
+  },
+  (el, ctx) => {
+    for (const prop of LABEL_PROPS) {
+      const value = staticString(el, prop);
+      if (value === undefined) continue;
+      const letters = value.replace(/[^\p{L}]/gu, '');
+      if (letters.length < 4 || letters !== letters.toUpperCase() || letters === letters.toLowerCase()) continue;
+      if (!/[AEIOUaeiou]/.test(letters)) continue; // consonant-only acronyms (HTML, PDF) are meant to be spelled
+      ctx.report({
+        el,
+        message: `${prop}="${value}" is all caps — VoiceOver may read it as an abbreviation and spell it out. Use sentence case (uppercase the visible text with textTransform instead).`,
+      });
+    }
   },
 );

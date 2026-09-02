@@ -31,13 +31,51 @@ function snippet(root: string, diag: Diagnostic): string | null {
   }
 }
 
+/** Bindings we resolve classes for, most specific first, for the run banner. */
+const BINDINGS = ['nativewind', 'uniwind', 'twrnc', 'tailwind-react-native-classnames', 'react-native-css', 'tailwind-rn', 'tailwindcss'];
+
+/**
+ * What the scan decided about Tailwind. Printing it makes a wrong palette, a
+ * wrong rem base or class resolution being off entirely visible in the output
+ * instead of showing up as quietly missing findings.
+ */
+function describeTailwind(result: ScanResult): string {
+  const project = result.project;
+  if (!project) return '';
+  const tailwind = project.tailwind;
+  if (!tailwind) return ` — ${pc.dim('tailwind: off')}`;
+  const name = BINDINGS.find((b) => b in project.dependencies);
+  const version = name ? project.dependencies[name] : undefined;
+  const binding = name ? `${name}${version ? ` ${version}` : ''}` : 'configured';
+  const colors = tailwind.colors ? `, ${Object.keys(tailwind.colors).length} theme colors` : '';
+  // In a monorepo the binding lives in a package under the root, so name it.
+  const scope = project.packageDir && path.resolve(project.packageDir) !== path.resolve(result.root)
+    ? ` in ${path.relative(result.root, project.packageDir).split(path.sep).join('/')}`
+    : '';
+  return ` — ${pc.dim(`tailwind: ${binding} (rem ${tailwind.rem}, palette ${tailwind.preset}${colors})${scope}`)}`;
+}
+
+/** One line per reason, so a skipped file is never silently dropped. */
+function describeSkipped(result: ScanResult): string[] {
+  if (!result.skipped?.length) return [];
+  const byReason = new Map<string, number>();
+  for (const { reason } of result.skipped) byReason.set(reason, (byReason.get(reason) ?? 0) + 1);
+  return [...byReason].map(([reason, count]) =>
+    pc.dim(`  skipped ${count} file${count === 1 ? '' : 's'}: ${sanitizeTerminalText(reason)}`));
+}
+
 export function printPretty(result: ScanResult, version: string): void {
   const { diagnostics } = result;
   const out: string[] = [];
+  const mix = result.filesByPlatform;
+  const platform = mix
+    ? `${pc.cyan('native + web')} ${pc.dim(`(${mix.native} native, ${mix.web} web)`)}`
+    : pc.cyan(result.platform);
   out.push(
-    `${pc.bold('react-a11y')} ${pc.dim(`v${version}`)} — platform: ${pc.cyan(result.platform)} — ` +
-      `${result.filesScanned} files scanned in ${result.durationMs}ms`,
+    `${pc.bold('react-a11y')} ${pc.dim(`v${version}`)} — platform: ${platform}` +
+      `${describeTailwind(result)} — ${result.filesScanned} files scanned in ${result.durationMs}ms`,
   );
+  out.push(...describeSkipped(result));
   out.push('');
 
   if (diagnostics.length === 0) {
@@ -68,6 +106,19 @@ export function printPretty(result: ScanResult, version: string): void {
       out.push(`           ${pc.dim(`WCAG ${wcag}`)}`);
     }
     out.push('');
+  }
+
+  // A design token that fails contrast fails everywhere it is used; say so
+  // once so the fix is read as "change the token", not "change 158 elements".
+  const pairs = new Map<string, number>();
+  for (const d of diagnostics) {
+    if (d.ruleId !== 'color-contrast') continue;
+    const pair = /Contrast between (\S+) and (\S+) is/.exec(d.message);
+    if (pair) pairs.set(`${pair[1]} on ${pair[2]}`, (pairs.get(`${pair[1]} on ${pair[2]}`) ?? 0) + 1);
+  }
+  for (const [pair, n] of [...pairs].sort((a, b) => b[1] - a[1]).slice(0, 3)) {
+    if (n < 5) break;
+    out.push(pc.dim(`  ${n} color-contrast findings share the pair ${sanitizeTerminalText(pair)} — likely one theme token`));
   }
 
   const counts: Record<Severity, number> = { critical: 0, serious: 0, moderate: 0, minor: 0 };

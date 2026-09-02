@@ -39,8 +39,12 @@ The command exits with status 1 when it finds a serious or critical issue.
 # Apply safe mechanical fixes
 npx @aishware/react-a11y . --fix
 
-# Scan files changed in git
+# Scan files changed in the working tree
 npx @aishware/react-a11y . --changed
+
+# Gate a pull request: scan what the branch changed (a CI checkout is clean,
+# so --changed alone would find nothing there)
+npx @aishware/react-a11y . --since origin/main
 
 # Write JSON or SARIF output
 npx @aishware/react-a11y . --format json --output a11y.json
@@ -74,14 +78,59 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 
 Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`.
 
+## Tailwind, NativeWind and Uniwind
+
+Style-dependent rules (touch-target size, color contrast, fixed text height,
+focus-ring removal) read Tailwind utility classes as well as inline styles.
+Resolution turns on automatically when `tailwindcss`, `nativewind`, `uniwind`,
+`twrnc` or `react-native-css` is a dependency and understands `className`
+strings, `cn()` / `clsx()` calls, `Platform.select()` branches, hoisted class
+constants, `cva()` / `tv()` variant tables, `dark:` and other variants, twrnc
+`` tw`…` `` and `tw.style()`, the v3 and v4 default palettes, and custom theme
+colors from `tailwind.config.*` (`theme.colors` / `theme.extend.colors`) or CSS
+`@theme` blocks — including shadcn-style `:root` variables behind
+`var(--primary)` / `hsl(var(--primary))`, and `oklch()` / `hsl()` values.
+
+A `cva()` size table is checked per variant: `size: { icon: 'h-10 w-10' }` on
+a `<Pressable>` is reported once, on the variant definition, however many
+elements use it.
+
+The rem base comes from the binding's own default and from your bundler config
+(`inlineRem` for NativeWind and react-native-css, `polyfills.rem` for Uniwind):
+
+| Binding | rem |
+| --- | --- |
+| NativeWind 4 and 5, react-native-css | 14px |
+| NativeWind 2, Uniwind, twrnc, tailwind-rn, web Tailwind | 16px |
+
+In a monorepo each file is resolved against its own `package.json`, so a
+workspace package's binding is picked up when you scan the repository root.
+Every run prints what it decided:
+
+```
+react-a11y v0.4.0 — platform: native — tailwind: nativewind ^4.1.0 (rem 14, palette v3) — 5011 files scanned in 2523ms
+```
+
+Tune it with the `tailwind` config key:
+
+```json
+{
+  "tailwind": { "rem": 14, "preset": "v3", "colors": { "brand": "#0055ff" } }
+}
+```
+
+Set `"tailwind": false` to disable it. Details are in the
+[native rules documentation](docs/rules/native.md#tailwind-nativewind-and-uniwind).
+
 ## Rules
 
 - [Web rules](docs/rules/web.md): 22 checks for WCAG 2.2 criteria, document
   structure, focus behavior, and project-wide relationships. Continue using
   `eslint-plugin-jsx-a11y` for standard web accessibility rules.
-- [React Native rules](docs/rules/native.md): 25 checks for accessible names,
-  roles and state, focus and reading order, touch targets, text scaling, and
-  native or Expo configuration.
+- [React Native rules](docs/rules/native.md): 31 checks for accessible names,
+  roles and state, focus and reading order, touch targets, text scaling,
+  platform asymmetries (Android-only live regions, Reduce Motion), and native
+  or Expo configuration.
 
 Use `--coverage` to see which WCAG success criteria are automated and which
 still require manual verification.
