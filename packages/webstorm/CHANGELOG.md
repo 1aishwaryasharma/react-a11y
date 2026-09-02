@@ -2,6 +2,11 @@
 
 All notable changes to the react-a11y JetBrains plugin are documented here.
 
+## 0.5.0 — 2026-09-02
+
+- Updated the bundled CLI to 0.5.0 (Tailwind/NativeWind/Uniwind class resolution
+  and six new React Native rules).
+
 ## 0.4.0 — 2026-07-21
 
 - Initial release, at feature parity with the VS Code extension.

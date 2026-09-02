@@ -5,6 +5,8 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-02
+
 ### Added
 
 - **Tailwind, NativeWind, Uniwind and twrnc support.** The style-dependent
@@ -252,6 +254,7 @@ Initial release. Published under the `@aishware` scope; the installed command is
 - An upstream-parity test that keeps the React Native `accessibilityRole` list
   in sync with `eslint-plugin-react-native-a11y`.
 
+[0.5.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.5.0
 [0.4.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.4.0
 [0.3.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.3.0
 [0.2.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.2.0
