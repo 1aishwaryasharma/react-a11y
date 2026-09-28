@@ -2,7 +2,7 @@
   "devDependencies": {
     "@types/node": "^26.6.2",
     "typescript": "^6.0.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   },
   "name": "react-a11y-monorepo",
   "private": true,
