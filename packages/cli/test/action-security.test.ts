@@ -9,11 +9,12 @@ describe('composite action security', () => {
     const action = fs.readFileSync(actionPath, 'utf8');
     const shellCommands = action
       .split('\n')
-      .filter((line) => line.includes('npx --yes') || line.trimStart().startsWith('--'))
+      .filter((line) => line.includes('npx --yes') || /^\s*(--|\$\{)/.test(line))
       .join('\n');
 
     expect(shellCommands).not.toContain('${{ inputs.');
     expect(shellCommands).toContain('"${REACT_A11Y_PATH}"');
+    expect(shellCommands).toContain('${REACT_A11Y_BASELINE:+--baseline "${REACT_A11Y_BASELINE}"}');
     expect(action).not.toContain('default: latest');
   });
 });

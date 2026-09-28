@@ -11,6 +11,15 @@ export { scanProject, collectFiles, detectPlatform, detectPlatformDetailed, file
 export { loadConfig, validateConfig, globToRegExp, DEFAULT_IGNORES, ignoreGlobs, ignoreMatcher } from './config.js';
 export { ruleNameWarnings } from './rule-names.js';
 export { parseSuppressions, type Suppressions } from './suppress.js';
+export {
+  applyBaseline,
+  createBaseline,
+  readBaseline,
+  writeBaseline,
+  type Baseline,
+  type BaselineEntry,
+  type BaselineSummary,
+} from './baseline.js';
 export { readPackageMeta, readOwnPackageMeta, type PackageMeta } from './pkg-meta.js';
 export {
   readProjectInfo,
