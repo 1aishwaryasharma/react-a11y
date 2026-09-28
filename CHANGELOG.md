@@ -12,6 +12,11 @@ All notable changes to this project are documented here. This project adheres to
   `"navigation"`, `"main"`, `"status"` and others were reported as invalid.
   The list now mirrors RN's `Role` type, and `accessibilityRole` accepts
   `dropdownlist`.
+- `valid-accessibility-role` and `valid-accessibility-props` no longer treat a
+  custom component's own props as React Native ones. `<Message role="admin">`
+  and a design system's `<Dialog accessibilityDescribedBy=…>` are left alone;
+  a miscapitalized RN prop or a role spelled for the other prop is still
+  reported. Stock components are checked as before.
 
 ### Changed
 

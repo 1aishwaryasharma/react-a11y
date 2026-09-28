@@ -1,6 +1,6 @@
 import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@aishware/react-a11y-core';
 import { KNOWN_ARIA_PROPS } from '../aria.js';
-import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent, isSwitch } from '../util.js';
+import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent, isStockRNElement, isSwitch } from '../util.js';
 
 const IMAGE = new Set(['Image']);
 const TEXT_INPUT = new Set(['TextInput']);
@@ -150,6 +150,11 @@ const ROLE_VOCABULARY = {
   },
 };
 
+/** True when `value` is a role in either vocabulary, or a known rename between them. */
+function isKnownRoleName(value: string): boolean {
+  return RN_ROLES.has(value) || RN_ROLE_PROP_VALUES.has(value) || ROLE_RENAMES.some(([a, r]) => a === value || r === value);
+}
+
 /** Diagnostic for an invalid role value on either prop, or undefined if valid. */
 function describeInvalidRole(prop: keyof typeof ROLE_VOCABULARY, value: string): string | undefined {
   const { valid, otherProp, rename } = ROLE_VOCABULARY[prop];
@@ -172,9 +177,14 @@ export const validAccessibilityRole = defineRule(
     wcag: ['4.1.2'],
   },
   (el, ctx) => {
+    // On a custom component, `role` is often the component's own API (a user's
+    // role, a message type). Only report there when the value is recognizably
+    // an accessibility role used with the wrong prop.
+    const custom = el.isComponent && !isStockRNElement(el);
     for (const prop of ['accessibilityRole', 'role'] as const) {
       const value = staticString(el, prop)?.trim();
       if (value === undefined) continue;
+      if (custom && prop === 'role' && !isKnownRoleName(value)) continue;
       const message = describeInvalidRole(prop, value);
       if (message) ctx.report({ el, message });
     }
@@ -212,11 +222,16 @@ export const validAccessibilityProps = defineRule(
     fixable: true,
   },
   (el, ctx) => {
+    // A custom component may define its own accessibility* props (e.g. an
+    // accessibilityDescribedBy it maps to aria-describedby on web); there only
+    // a miscapitalized React Native prop is certainly a mistake.
+    const custom = el.isComponent && !isStockRNElement(el);
     for (const name of el.attrs.keys()) {
       const lower = name.toLowerCase();
       if (name.startsWith('accessibility')) {
         if (KNOWN_A11Y_PROPS.has(name)) continue;
         const match = [...KNOWN_A11Y_PROPS].find((k) => k.toLowerCase() === lower);
+        if (custom && !match) continue;
         const collides = match !== undefined && el.attrs.has(match);
         ctx.report({
           el,
