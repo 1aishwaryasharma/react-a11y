@@ -50,9 +50,9 @@
   },
   "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
   "devDependencies": {
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.138.0",
     "@vscode/vsce": "^3.9.2",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.2"
   },
   "displayName": "react-a11y",
   "engines": {
