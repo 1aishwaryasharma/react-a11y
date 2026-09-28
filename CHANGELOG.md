@@ -20,6 +20,12 @@ All notable changes to this project are documented here. This project adheres to
 - `touchable-has-label` and `touchable-has-role` no longer report a touchable
   written with `accessible={false}`, which the author has opted out of being
   an accessibility element.
+- `color-contrast` exempts inactive controls, as WCAG 1.4.3 does: an element
+  that is always `disabled`, and the class set guarded by the same condition
+  as its `disabled` / `aria-disabled` prop. A `before:` / `after:` background
+  is paired with the element's text only when the pseudo-element covers it
+  (`inset-0`), so a strike-through hairline is no longer treated as the text's
+  background. This removed all three contrast findings on vercel/commerce.
 - `--changed` and `--since` ignored the config's `ignore` globs, so a pull
   request gate reported files the project excludes.
 

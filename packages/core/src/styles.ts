@@ -47,6 +47,12 @@ export interface StyleModel {
    * on the variant definition instead of on every element that uses it.
    */
   origins: Map<string, LayerOrigin>;
+  /**
+   * The guard a conditional set applies under, when it is one expression:
+   * `#2` → `!isAvailableForSale` for `{ 'text-neutral-500': !isAvailableForSale }`.
+   * Whitespace is removed so it compares equal to the same expression elsewhere.
+   */
+  guards: Map<string, string>;
 }
 
 export interface LayerOrigin {
@@ -67,6 +73,7 @@ interface ClassCollector {
   unknown: boolean;
   nextId: number;
   origins: Map<string, LayerOrigin>;
+  guards: Map<string, string>;
   /** File the expression came from; lets identifiers resolve to their initializer. */
   sourceFile?: ts.SourceFile;
   /** Identifiers currently being expanded, to stop a cyclic `const a = b`. */
@@ -240,6 +247,17 @@ function isSelectCall(expr: ts.CallExpression): boolean {
     && callee.expression.text === 'Platform';
 }
 
+/** Allocate a conditional-set id, remembering its guard when there is one. */
+function conditionFor(out: ClassCollector, guard?: ts.Expression, negated = false): string {
+  const id = `#${out.nextId++}`;
+  if (guard) {
+    const text = guard.getText().replace(/\s+/g, '');
+    const simple = ts.isIdentifier(guard) || ts.isPropertyAccessExpression(guard);
+    out.guards.set(id, negated ? (simple ? `!${text}` : `!(${text})`) : text);
+  }
+  return id;
+}
+
 function collectClassExpression(expr: ts.Expression, condition: string, out: ClassCollector): void {
   if (ts.isParenthesizedExpression(expr) || ts.isAsExpression(expr) || ts.isNonNullExpression(expr)
     || ts.isSatisfiesExpression(expr) || ts.isTypeAssertionExpression(expr)) {
@@ -259,14 +277,14 @@ function collectClassExpression(expr: ts.Expression, condition: string, out: Cla
     return;
   }
   if (ts.isConditionalExpression(expr)) {
-    collectClassExpression(expr.whenTrue, `#${out.nextId++}`, out);
-    collectClassExpression(expr.whenFalse, `#${out.nextId++}`, out);
+    collectClassExpression(expr.whenTrue, conditionFor(out, expr.condition), out);
+    collectClassExpression(expr.whenFalse, conditionFor(out, expr.condition, true), out);
     return;
   }
   if (ts.isBinaryExpression(expr)) {
     const op = expr.operatorToken.kind;
     if (op === ts.SyntaxKind.AmpersandAmpersandToken) {
-      collectClassExpression(expr.right, `#${out.nextId++}`, out);
+      collectClassExpression(expr.right, conditionFor(out, expr.left), out);
       return;
     }
     if (op === ts.SyntaxKind.BarBarToken || op === ts.SyntaxKind.QuestionQuestionToken) {
@@ -334,7 +352,8 @@ function collectClassExpression(expr: ts.Expression, condition: string, out: Cla
     for (const prop of expr.properties) {
       if (ts.isPropertyAssignment(prop) || ts.isShorthandPropertyAssignment(prop)) {
         const name = ts.isStringLiteral(prop.name) || ts.isIdentifier(prop.name) ? prop.name.text : undefined;
-        if (name !== undefined) out.sources.push({ text: name, condition: `#${out.nextId++}` });
+        const guard = ts.isPropertyAssignment(prop) ? prop.initializer : prop.name;
+        if (name !== undefined) out.sources.push({ text: name, condition: conditionFor(out, guard) });
         else out.unknown = true;
       } else {
         out.unknown = true;
@@ -444,8 +463,12 @@ const CLASS_ATTRS = ['className', 'class'];
  * the project has Tailwind options; otherwise only inline styles are read.
  */
 export function styleModel(el: ElementNode, project: ProjectInfo | undefined): StyleModel {
-  const model: StyleModel = { layers: new Map(), inline: {}, dynamic: false, unknownClasses: false, origins: new Map() };
-  const classes: ClassCollector = { sources: [], unknown: false, nextId: 1, expanding: new Set(), origins: model.origins };
+  const model: StyleModel = {
+    layers: new Map(), inline: {}, dynamic: false, unknownClasses: false, origins: new Map(), guards: new Map(),
+  };
+  const classes: ClassCollector = {
+    sources: [], unknown: false, nextId: 1, expanding: new Set(), origins: model.origins, guards: model.guards,
+  };
   const tailwind = project?.tailwind;
   if (tailwind) {
     for (const name of CLASS_ATTRS) classSourcesOf(el.attrs.get(name), classes);
@@ -504,7 +527,10 @@ export function effectiveStyle(model: StyleModel, key = ''): TailwindStyle {
  */
 function knownModel(model: StyleModel): StyleModel {
   return model.dynamic
-    ? { layers: new Map(), inline: model.inline, dynamic: false, unknownClasses: model.unknownClasses, origins: new Map() }
+    ? {
+        layers: new Map(), inline: model.inline, dynamic: false, unknownClasses: model.unknownClasses,
+        origins: new Map(), guards: new Map(),
+      }
     : model;
 }
 
@@ -704,6 +730,11 @@ function describeLayer(key: string): string {
  * Tailwind variant (`dark:`) and conditional class set is checked separately.
  */
 export function contrastFindings(el: ElementNode, project: ProjectInfo | undefined): ContrastFinding[] {
+  // WCAG 1.4.3 exempts inactive components. A control that is always
+  // disabled has no requirement; one disabled under a condition is exempt
+  // under the class set guarded by that same condition.
+  const inactive = inactiveGuards(el);
+  if (inactive === true) return [];
   const own = knownModel(styleModel(el, project));
 
   // Locate the background: own, else the closest ancestor that sets one.
@@ -768,6 +799,12 @@ export function contrastFindings(el: ElementNode, project: ProjectInfo | undefin
   const seenPairs = new Set<string>();
   for (const key of textKeys) {
     if (isContrastExemptLayer(key)) continue;
+    const guard = isConditional(key) ? own.guards.get(key.split('|')[0]) : undefined;
+    if (guard !== undefined && inactive.has(guard)) continue;
+    // A ::before/::after background is behind the text only when the
+    // pseudo-element covers the element; a strike-through hairline
+    // (`before:h-px before:inset-x-0`) or a corner dot is not.
+    if (isPseudoLayer(key) && !pseudoCovers(sameElement ? own : bgModel, key)) continue;
     const text = effectiveStyle(own, key);
     const fgRaw = text.color;
     if (!fgRaw || fgRaw === 'transparent') continue;
@@ -800,6 +837,41 @@ export function contrastFindings(el: ElementNode, project: ProjectInfo | undefin
     }
   }
   return findings;
+}
+
+/**
+ * `true` when the element is always disabled; otherwise the guard expressions
+ * (whitespace removed) under which it is: `disabled={!isAvailableForSale}`
+ * yields `!isAvailableForSale`.
+ */
+function inactiveGuards(el: ElementNode): true | Set<string> {
+  const guards = new Set<string>();
+  for (const name of ['disabled', 'aria-disabled']) {
+    const attr = el.attrs.get(name);
+    if (!attr) continue;
+    if (attr.kind === 'static') {
+      // A bare `disabled` attribute parses as true.
+      if (attr.value === true || attr.value === 'true') return true;
+      continue;
+    }
+    if (attr.text) guards.add(attr.text.replace(/\s+/g, ''));
+  }
+  return guards;
+}
+
+const PSEUDO_VARIANTS = new Set(['before', 'after']);
+
+/** True when a layer key styles a ::before/::after pseudo-element. */
+function isPseudoLayer(key: string): boolean {
+  return variantOf(key).split(':').some((v) => PSEUDO_VARIANTS.has(v));
+}
+
+/** True when the pseudo-element styled under `key` stretches over the whole element. */
+function pseudoCovers(model: StyleModel, key: string): boolean {
+  const style: TailwindStyle = {};
+  merge(style, model.layers.get(variantOf(key)));
+  if (key !== variantOf(key)) merge(style, model.layers.get(key));
+  return style.insetX === true && style.insetY === true;
 }
 
 /** True for a conditional-set key (`#2`, `#2|dark`) rather than a plain variant. */

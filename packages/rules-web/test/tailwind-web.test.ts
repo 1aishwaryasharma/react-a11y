@@ -121,3 +121,37 @@ describe('target-size across conditional class sets', () => {
     expect(found[0].message).not.toContain('conditional');
   });
 });
+
+describe('contrast exemptions for inactive controls and pseudo-elements', () => {
+  // vercel/commerce's variant selector: an out-of-stock option is disabled,
+  // greyed out and struck through with a 1px ::before line.
+  const outOfStock = `const x = <button
+    disabled={!isAvailableForSale}
+    aria-disabled={!isAvailableForSale}
+    className={clsx('bg-neutral-100 text-sm dark:bg-neutral-900', {
+      'text-neutral-500 ring-1 before:absolute before:inset-x-0 before:h-px before:bg-neutral-300 dark:before:bg-neutral-700': !isAvailableForSale,
+    })}>{value}</button>;`;
+
+  it('exempts the class set guarded by the same condition that disables the control', () => {
+    expect(ids(outOfStock)).not.toContain('color-contrast');
+  });
+
+  it('still checks a class set under a different condition', () => {
+    expect(ids(`const x = <button disabled={!isAvailableForSale}
+      className={clsx('bg-neutral-100', { 'text-neutral-500': isMuted })}>{value}</button>;`)).toContain('color-contrast');
+  });
+
+  it('exempts a control that is always disabled', () => {
+    expect(ids(`const x = <button disabled className="bg-white text-gray-300">Sold out</button>;`)).not.toContain('color-contrast');
+    expect(ids(`const x = <button disabled={false} className="bg-white text-gray-300">Buy</button>;`)).toContain('color-contrast');
+  });
+
+  it('pairs text with a ::before background only when the pseudo-element covers the element', () => {
+    // hairline strike-through: not behind the text
+    expect(ids(`const x = <p className="bg-white text-gray-900 before:absolute before:inset-x-0 before:h-px before:bg-gray-700">Old price</p>;`))
+      .not.toContain('color-contrast');
+    // a full-cover backdrop is
+    expect(ids(`const x = <p className="bg-white text-gray-900 before:absolute before:inset-0 before:-z-10 before:bg-gray-800">Label</p>;`))
+      .toContain('color-contrast');
+  });
+});
