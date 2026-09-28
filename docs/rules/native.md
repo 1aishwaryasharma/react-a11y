@@ -67,6 +67,12 @@ silent, which is the classic "icon button reads as nothing" bug.
 Without `accessibilityRole="button"`, VoiceOver and TalkBack announce the
 content but not that it is actionable.
 
+Neither this rule nor `touchable-has-label` reports a touchable written with
+`accessible={false}`: the author has opted it out of being an accessibility
+element (a focus placeholder, or a row whose children are focused one by one),
+so it has no name or role to announce. A dynamic value such as
+`accessible={isE2E ? false : undefined}` is still checked.
+
 ## no-nested-touchables
 
 Screen readers expose only one target when touchables nest — the inner action

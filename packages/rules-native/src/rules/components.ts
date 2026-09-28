@@ -1,6 +1,6 @@
-import { attrProvidesValue, fixRenameAttr, hasAttr, staticString, staticValue } from '@aishware/react-a11y-core';
+import { attrProvidesValue, fixRenameAttr, hasAttr, staticString } from '@aishware/react-a11y-core';
 import { KNOWN_ARIA_PROPS } from '../aria.js';
-import { defineRule, hasNativeLabel, isHiddenFromAT, isRNComponent, isStockRNElement, isSwitch } from '../util.js';
+import { defineRule, hasNativeLabel, isAccessibilityOptOut, isHiddenFromAT, isRNComponent, isStockRNElement, isSwitch } from '../util.js';
 
 const IMAGE = new Set(['Image']);
 const TEXT_INPUT = new Set(['TextInput']);
@@ -21,7 +21,7 @@ export const imageHasLabel = defineRule(
   (el, ctx) => {
     if (!isRNComponent(el, IMAGE)) return;
     if (el.hasSpread || isHiddenFromAT(el)) return;
-    if (staticValue(el, 'accessible') === false) return; // explicitly decorative
+    if (isAccessibilityOptOut(el)) return; // explicitly decorative
     if (attrProvidesValue(el, 'alt') || hasNativeLabel(el)) return;
     const alt = el.attrs.get('alt');
     if (alt?.kind === 'static' && alt.value === '') return; // alt="" marks decorative

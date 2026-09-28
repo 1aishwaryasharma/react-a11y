@@ -27,6 +27,22 @@ describe('touchable-has-label', () => {
   });
 });
 
+describe('touchables opted out with accessible={false}', () => {
+  it('are not reported as unnamed or role-less', () => {
+    // bluesky: a placeholder that captures focus while a dialog loads
+    expect(run(`<Pressable accessible={false} />`)).not.toContain('touchable-has-label');
+    expect(run(`<Pressable accessible={false} />`)).not.toContain('touchable-has-role');
+    // a row whose children are focused one by one
+    const row = run(`<TouchableOpacity accessible={false} onPress={f}><Image source={a} /></TouchableOpacity>`);
+    expect(row).not.toContain('touchable-has-label');
+    expect(row).not.toContain('touchable-has-role');
+  });
+  it('still reports a touchable whose accessible value is dynamic or true', () => {
+    expect(run(`<Pressable accessible={isE2E ? false : undefined} onPress={f} />`)).toContain('touchable-has-label');
+    expect(run(`<Pressable accessible onPress={f} />`)).toContain('touchable-has-label');
+  });
+});
+
 describe('touchable-has-role', () => {
   it('flags missing accessibilityRole', () => {
     expect(run(`<TouchableOpacity onPress={f}><Text>Go</Text></TouchableOpacity>`)).toContain('touchable-has-role');

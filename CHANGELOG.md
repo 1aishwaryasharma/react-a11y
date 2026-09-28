@@ -17,6 +17,9 @@ All notable changes to this project are documented here. This project adheres to
   and a design system's `<Dialog accessibilityDescribedBy=…>` are left alone;
   a miscapitalized RN prop or a role spelled for the other prop is still
   reported. Stock components are checked as before.
+- `touchable-has-label` and `touchable-has-role` no longer report a touchable
+  written with `accessible={false}`, which the author has opted out of being
+  an accessibility element.
 - `--changed` and `--since` ignored the config's `ignore` globs, so a pull
   request gate reported files the project excludes.
 
