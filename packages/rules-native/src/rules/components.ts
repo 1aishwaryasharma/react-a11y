@@ -103,22 +103,30 @@ export const RN_ROLES = new Set([
   'radio', 'radiogroup', 'scrollbar', 'spinbutton', 'switch', 'tab',
   'tabbar', 'tablist', 'timer', 'list', 'grid', 'pager', 'scrollview',
   'horizontalscrollview', 'viewgroup', 'webview', 'drawerlayout',
-  'slidingdrawer', 'iconmenu', 'toast', 'toolbar',
+  'slidingdrawer', 'iconmenu', 'toast', 'toolbar', 'dropdownlist',
 ]);
 
 /**
  * Valid values for the `role` prop (the recommended, ARIA-style spelling since
  * RN 0.71). Deliberately a different vocabulary from accessibilityRole — e.g.
  * `heading` not `header`, `img` not `image` — and `role` wins when both are set.
- * Both sets mirror the published RN docs verbatim (RN_ROLES is additionally
- * pinned by the upstream parity test), so they stay explicit rather than
- * derived; only the renames below relate the two.
+ * Mirrors React Native's `Role` type (Libraries/Components/View/
+ * ViewAccessibility.js, verified against 0.87). Many of these (`dialog`,
+ * `navigation`, `tabpanel`, …) have no iOS/Android mapping but are part of the
+ * API and render as ARIA on react-native-web, so they are not reported.
+ * Only the renames below relate the two vocabularies.
  */
 export const RN_ROLE_PROP_VALUES = new Set([
-  'alert', 'button', 'checkbox', 'combobox', 'grid', 'heading', 'img', 'link',
-  'list', 'listitem', 'menu', 'menubar', 'menuitem', 'none', 'presentation',
-  'progressbar', 'radio', 'radiogroup', 'scrollbar', 'searchbox', 'slider',
-  'spinbutton', 'summary', 'switch', 'tab', 'tablist', 'timer', 'toolbar',
+  'alert', 'alertdialog', 'application', 'article', 'banner', 'button', 'cell',
+  'checkbox', 'columnheader', 'combobox', 'complementary', 'contentinfo',
+  'definition', 'dialog', 'directory', 'document', 'feed', 'figure', 'form',
+  'grid', 'group', 'heading', 'img', 'link', 'list', 'listitem', 'log', 'main',
+  'marquee', 'math', 'menu', 'menubar', 'menuitem', 'meter', 'navigation',
+  'none', 'note', 'option', 'presentation', 'progressbar', 'radio',
+  'radiogroup', 'region', 'row', 'rowgroup', 'rowheader', 'scrollbar',
+  'searchbox', 'separator', 'slider', 'spinbutton', 'status', 'summary',
+  'switch', 'tab', 'table', 'tablist', 'tabpanel', 'term', 'timer', 'toolbar',
+  'tooltip', 'tree', 'treegrid', 'treeitem',
 ]);
 
 /** Role names that differ between the two vocabularies. */

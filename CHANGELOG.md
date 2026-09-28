@@ -5,6 +5,14 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+### Fixed
+
+- `valid-accessibility-role` accepted only 28 of the 65 values React Native's
+  `role` prop takes, so `role="dialog"`, `"tabpanel"`, `"group"`,
+  `"navigation"`, `"main"`, `"status"` and others were reported as invalid.
+  The list now mirrors RN's `Role` type, and `accessibilityRole` accepts
+  `dropdownlist`.
+
 ### Changed
 
 - Built and tested with TypeScript 6 and Vitest 4. The core and native rule

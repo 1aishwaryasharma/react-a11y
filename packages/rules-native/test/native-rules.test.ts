@@ -83,6 +83,17 @@ describe('component rules', () => {
     expect(run(`<View accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
     expect(run(`<View accessibilityRole="button" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
   });
+  it('valid-accessibility-role accepts every value in React Native\'s Role type', () => {
+    // Seen in bluesky-social/social-app: valid role values with no iOS/Android
+    // mapping that react-native-web renders as ARIA.
+    for (const role of ['dialog', 'tabpanel', 'group', 'navigation', 'main', 'status', 'region', 'tooltip']) {
+      expect(run(`<View role="${role}" aria-label="x" />`), role).not.toContain('valid-accessibility-role');
+    }
+    expect(run(`<View accessibilityRole="dropdownlist" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
+    // still caught: an ARIA role on the legacy prop, and a value in neither vocabulary
+    expect(run(`<View accessibilityRole="dialog" accessibilityLabel="x" />`)).toContain('valid-accessibility-role');
+    expect(run(`<View role="modal" aria-label="x" />`)).toContain('valid-accessibility-role');
+  });
   it('valid-accessibility-role validates the ARIA-style role prop', () => {
     expect(run(`<View role="pushbutton" />`)).toContain('valid-accessibility-role');
     expect(run(`<View role="button" aria-label="x" />`)).not.toContain('valid-accessibility-role');
