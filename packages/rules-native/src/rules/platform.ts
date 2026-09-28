@@ -1,5 +1,6 @@
 import { isStaticTrue, staticString } from '@aishware/react-a11y-core';
 import {
+  RN_A11Y_PLUGIN,
   androidHidesSubtree,
   defineRule,
   iosHidesSubtree,
@@ -36,6 +37,7 @@ export const validImportantForAccessibility = defineRule(
     description: 'importantForAccessibility must be a value React Native recognizes.',
     severity: 'moderate',
     wcag: ['4.1.2', '1.3.1'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-important-for-accessibility' },
   },
   (el, ctx) => {
     const v = staticString(el, 'importantForAccessibility');

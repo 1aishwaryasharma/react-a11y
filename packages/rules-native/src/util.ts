@@ -31,6 +31,12 @@ export function defineRule(
   };
 }
 
+/**
+ * The ESLint plugin whose checks some native rules repeat. When a project has
+ * it installed, those rules leave the overlap to it (see RuleMeta.overlaps).
+ */
+export const RN_A11Y_PLUGIN = 'eslint-plugin-react-native-a11y';
+
 /** Module specifiers we trust to export the stock RN components. */
 const RN_SOURCES = new Set(['react-native', 'react-native-web', 'react-native-gesture-handler']);
 

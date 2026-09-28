@@ -5,6 +5,15 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- The React Native pack defers to `eslint-plugin-react-native-a11y` when a
+  project has it installed: three rules it duplicates are skipped and four are
+  limited to what it does not check (`role`, `aria-live`, value ranges,
+  grouped non-touchable controls). The run banner and JSON report list what
+  was deferred; setting a rule's severity runs it in full. Rules declare the
+  overlap with `meta.overlaps`, and partial ones read `ctx.deferred`.
+
 ### Fixed
 
 - `valid-accessibility-role` accepted only 28 of the 65 values React Native's

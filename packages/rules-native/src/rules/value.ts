@@ -1,6 +1,6 @@
 import { objectLiteralShape, staticExpression } from '@aishware/react-a11y-core';
 import ts from 'typescript';
-import { defineRule } from '../util.js';
+import { RN_A11Y_PLUGIN, defineRule } from '../util.js';
 
 const VALUE_KEYS = new Set(['max', 'min', 'now', 'text']);
 const RANGE_KEYS = ['max', 'min', 'now'];
@@ -12,21 +12,28 @@ export const accessibilityValueValid = defineRule(
     id: 'accessibility-value-valid',
     severity: 'serious',
     wcag: ['4.1.2'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-accessibility-value', partial: true },
   },
   (el, ctx) => {
+    // has-valid-accessibility-value checks the shape — an object, known keys, a
+    // string text, min and max beside now. With it installed, report only the
+    // numeric checks it does not make: types and min ≤ now ≤ max.
+    const shapeReport: typeof ctx.report = (descriptor) => {
+      if (!ctx.deferred) ctx.report(descriptor);
+    };
     const attr = el.attrs.get('accessibilityValue');
     if (!attr) return;
     if (attr.kind === 'static') {
-      ctx.report({ el, message: 'accessibilityValue must be an object, not a scalar value.' });
+      shapeReport({ el, message: 'accessibilityValue must be an object, not a scalar value.' });
       return;
     }
     if (!attr.node) return;
     if (!ts.isObjectLiteralExpression(attr.node)) {
       const literal = staticExpression(attr.node);
       if (literal.kind === 'composite') {
-        ctx.report({ el, message: 'accessibilityValue must be an object, not an array.' });
+        shapeReport({ el, message: 'accessibilityValue must be an object, not an array.' });
       } else if (literal.kind === 'value') {
-        ctx.report({ el, message: 'accessibilityValue must be an object.' });
+        shapeReport({ el, message: 'accessibilityValue must be an object.' });
       }
       return;
     }
@@ -36,7 +43,7 @@ export const accessibilityValueValid = defineRule(
     const keys = [...shape.properties.keys()];
     const unknown = keys.filter((key) => !VALUE_KEYS.has(key));
     if (unknown.length > 0) {
-      ctx.report({
+      shapeReport({
         el,
         message: `accessibilityValue contains unsupported ${unknown.length === 1 ? 'key' : 'keys'}: ${unknown.join(', ')}.`,
       });
@@ -47,7 +54,7 @@ export const accessibilityValueValid = defineRule(
     if (text) {
       const literal = staticExpression(text);
       if (literal.kind === 'composite' || (literal.kind === 'value' && typeof literal.value !== 'string')) {
-        ctx.report({ el, message: 'accessibilityValue.text must be a string.' });
+        shapeReport({ el, message: 'accessibilityValue.text must be a string.' });
         return;
       }
     }
@@ -56,7 +63,7 @@ export const accessibilityValueValid = defineRule(
       ? ['max', 'min'].filter((key) => !keys.includes(key))
       : [];
     if (missingBounds.length > 0) {
-      ctx.report({
+      shapeReport({
         el,
         message: `accessibilityValue.now requires min and max (missing: ${missingBounds.join(', ')}).`,
       });

@@ -10,6 +10,29 @@ read inline `style` literals **and** Tailwind utility classes — NativeWind and
 Uniwind `className`, twrnc `` tw`…` `` — when a Tailwind binding is a
 dependency. See [Tailwind, NativeWind and Uniwind](#tailwind-nativewind-and-uniwind).
 
+## Alongside eslint-plugin-react-native-a11y
+
+This pack supplements
+[`eslint-plugin-react-native-a11y`](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y)
+rather than replacing it. When that plugin is a dependency of the project (or
+of its workspace root), the checks it already makes are left to it and the run
+banner says so:
+
+| This pack | eslint-plugin-react-native-a11y | With the plugin installed |
+| --- | --- | --- |
+| `accessibility-state-valid` | `has-valid-accessibility-state` | off |
+| `valid-important-for-accessibility` | `has-valid-important-for-accessibility` | off |
+| `accessibility-actions-handled` | `has-valid-accessibility-actions` | off |
+| `valid-accessibility-role` | `has-valid-accessibility-role` | checks the `role` prop only |
+| `live-region-valid` | `has-valid-accessibility-live-region` | checks `aria-live` only |
+| `accessibility-value-valid` | `has-valid-accessibility-value` | checks number types and min ≤ now ≤ max only |
+| `accessible-grouping-hides-interactive` | `no-nested-touchables` | reports a grouped `TextInput`, `Switch`, pressable `Text` or nested accessible view only |
+
+Every other rule here has no counterpart in that plugin and always runs —
+including this pack's `no-nested-touchables`, which reports a control inside a
+touchable (the plugin's rule of that name is about `accessible` containers).
+Setting a rule's severity in the config runs it in full regardless.
+
 | Rule | Severity | WCAG |
 | --- | --- | --- |
 | [touchable-has-label](#touchable-has-label) | critical | 1.1.1, 4.1.2 |
