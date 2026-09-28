@@ -17,8 +17,8 @@ export function validateConfig(value: unknown, source: string): A11yConfig {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) bad('expected a JSON object');
   const config = value as Record<string, unknown>;
   for (const key of Object.keys(config)) {
-    if (!['rules', 'ignore', 'platform', 'tailwind'].includes(key)) {
-      bad(`unknown key "${key}" (expected rules, ignore, platform or tailwind)`);
+    if (!['rules', 'ignore', 'defaultIgnores', 'platform', 'tailwind'].includes(key)) {
+      bad(`unknown key "${key}" (expected rules, ignore, defaultIgnores, platform or tailwind)`);
     }
   }
   if (config.platform !== undefined && config.platform !== 'web' && config.platform !== 'native') {
@@ -27,6 +27,9 @@ export function validateConfig(value: unknown, source: string): A11yConfig {
   if (config.ignore !== undefined
     && (!Array.isArray(config.ignore) || config.ignore.some((g) => typeof g !== 'string'))) {
     bad('"ignore" must be an array of glob strings');
+  }
+  if (config.defaultIgnores !== undefined && typeof config.defaultIgnores !== 'boolean') {
+    bad('"defaultIgnores" must be true or false');
   }
   if (config.rules !== undefined) {
     if (config.rules === null || typeof config.rules !== 'object' || Array.isArray(config.rules)) {
@@ -52,6 +55,37 @@ export function validateConfig(value: unknown, source: string): A11yConfig {
     }
   }
   return config as A11yConfig;
+}
+
+/**
+ * Files that are not shipped UI: unit and e2e tests, Storybook stories and
+ * screens, and mocks. Reports from them are noise — a test harness renders
+ * unlabeled buttons on purpose. `"defaultIgnores": false` scans them anyway.
+ * (Dot-directories such as `.storybook/` are never walked.)
+ */
+export const DEFAULT_IGNORES: readonly string[] = [
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.e2e.*',
+  '**/*.stories.*',
+  '**/*.story.*',
+  '**/__tests__/**',
+  '**/__mocks__/**',
+  '**/__fixtures__/**',
+  '**/e2e/**',
+  '**/storybook/**',
+  '**/Storybook/**',
+];
+
+/** The ignore globs in effect: the defaults (unless disabled) plus the config's own. */
+export function ignoreGlobs(config: A11yConfig): string[] {
+  return [...(config.defaultIgnores === false ? [] : DEFAULT_IGNORES), ...(config.ignore ?? [])];
+}
+
+/** A predicate over project-relative, `/`-separated paths for the ignore globs in effect. */
+export function ignoreMatcher(config: A11yConfig): (rel: string) => boolean {
+  const res = ignoreGlobs(config).map(globToRegExp);
+  return (rel) => res.some((re) => re.test(rel));
 }
 
 /** Read and validate the project config. Throws with the offending file named. */

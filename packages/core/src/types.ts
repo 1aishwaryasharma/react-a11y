@@ -140,8 +140,13 @@ export interface TailwindConfig {
 export interface A11yConfig {
   /** Per-rule overrides: "off" disables, a severity re-classifies. */
   rules?: Record<string, RuleSetting>;
-  /** Glob patterns (relative to project root) to skip. */
+  /** Glob patterns (relative to project root) to skip, on top of the defaults. */
   ignore?: string[];
+  /**
+   * Skip tests, stories, e2e harnesses and mocks (DEFAULT_IGNORES). On unless
+   * set to `false`.
+   */
+  defaultIgnores?: boolean;
   /** Force a platform instead of auto-detecting from package.json. */
   platform?: Platform;
   /** Tailwind / NativeWind / Uniwind class resolution; `false` disables it. */

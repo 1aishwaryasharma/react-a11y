@@ -17,9 +17,18 @@ All notable changes to this project are documented here. This project adheres to
   and a design system's `<Dialog accessibilityDescribedBy=…>` are left alone;
   a miscapitalized RN prop or a role spelled for the other prop is still
   reported. Stock components are checked as before.
+- `--changed` and `--since` ignored the config's `ignore` globs, so a pull
+  request gate reported files the project excludes.
 
 ### Changed
 
+- Test, story, e2e and mock files are skipped by default (`*.test.*`,
+  `*.spec.*`, `*.e2e.*`, `*.stories.*`, `*.story.*`, `__tests__/`,
+  `__mocks__/`, `__fixtures__/`, `e2e/`, `storybook/`). On
+  bluesky-social/social-app this removed 23 of 24 critical findings, all from
+  e2e controls and Storybook screens. `ignore` adds to the defaults;
+  `"defaultIgnores": false` turns them off. The CLI, `--stdin` and the VS Code
+  extension share one matcher.
 - Built and tested with TypeScript 6 and Vitest 4. The core and native rule
   packages accept `typescript` `^5.6.0 || ^6.0.0`; TypeScript 7 (the native
   compiler) is not supported yet.

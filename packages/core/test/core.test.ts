@@ -8,6 +8,7 @@ import {
   filePlatform,
   fixRenameAttr,
   globToRegExp,
+  ignoreMatcher,
   parseColor,
   parseSource,
   staticValue,
@@ -181,6 +182,49 @@ describe('glob matcher', () => {
 
   it('rejects unreasonably large config globs', () => {
     expect(() => globToRegExp('*'.repeat(1025))).toThrow('ignore glob exceeds 1024 characters');
+  });
+});
+
+describe('default ignores', () => {
+  it('skips tests, stories, e2e harnesses and mocks', () => {
+    const ignored = ignoreMatcher({});
+    for (const rel of [
+      'src/Button.test.tsx', 'Button.spec.ts', 'src/view/com/testing/TestCtrls.e2e.tsx',
+      'src/Button.stories.tsx', 'src/Button.story.jsx', 'src/__tests__/App.tsx',
+      '__mocks__/react-native.js', 'e2e/login.ts', 'src/view/screens/Storybook/Toasts.tsx',
+    ]) expect(ignored(rel), rel).toBe(true);
+    for (const rel of ['src/App.tsx', 'src/test-utils/Provider.tsx', 'src/components/Stories.tsx', 'src/latest.tsx']) {
+      expect(ignored(rel), rel).toBe(false);
+    }
+  });
+
+  it('adds the config globs to the defaults, and can turn the defaults off', () => {
+    expect(ignoreMatcher({ ignore: ['src/legacy/**'] })('src/legacy/Old.tsx')).toBe(true);
+    expect(ignoreMatcher({ ignore: ['src/legacy/**'] })('src/Button.test.tsx')).toBe(true);
+    expect(ignoreMatcher({ defaultIgnores: false })('src/Button.test.tsx')).toBe(false);
+    expect(() => validateConfig({ defaultIgnores: 'no' }, 'test')).toThrow(/true or false/);
+  });
+
+  it('applies to an explicit file list (--changed, --since) as well as a walk', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'react-a11y-ignore-'));
+    fs.writeFileSync(path.join(dir, 'App.tsx'), 'export const A = () => <img />;');
+    fs.writeFileSync(path.join(dir, 'App.test.tsx'), 'export const T = () => <img />;');
+    fs.mkdirSync(path.join(dir, 'legacy'));
+    fs.writeFileSync(path.join(dir, 'legacy', 'Old.tsx'), 'export const O = () => <img />;');
+    const rule: Rule = {
+      meta: { id: 'any-element', description: '', severity: 'moderate', platforms: ['web'], wcag: ['1.1.1'] },
+      create: (ctx) => ({ element: (el) => ctx.report({ el, message: 'x' }) }),
+    };
+    const config = { ignore: ['legacy/**'] };
+    const walked = scanProject({ root: dir, rules: [rule], platform: 'web', config });
+    const listed = scanProject({
+      root: dir, rules: [rule], platform: 'web', config,
+      files: ['App.tsx', 'App.test.tsx', 'legacy/Old.tsx'],
+    });
+    for (const result of [walked, listed]) {
+      expect(result.filesScanned).toBe(1);
+      expect(result.diagnostics.map((d) => d.file)).toEqual(['App.tsx']);
+    }
   });
 });
 

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { analyzeModel } from './engine.js';
 import { buildFileModel } from './element.js';
 import { parseSource } from './parse.js';
-import { globToRegExp } from './config.js';
+import { globToRegExp, ignoreGlobs, ignoreMatcher } from './config.js';
 import { ProjectResolver, detectPlatform, detectPlatformDetailed, type ProjectInfo } from './project.js';
 import type { A11yConfig, Diagnostic, Platform, ProjectPass, Rule, ScanResult, SkippedFile } from './types.js';
 
@@ -135,12 +135,16 @@ export function scanProject(options: ScanOptions): ScanResult {
   const resolver = options.project ? undefined : new ProjectResolver(root, config);
   const rootProject = options.project ?? resolver!.root;
   const started = performance.now();
+  // An explicit file list (--changed, --since) honours the same ignore globs
+  // as a walk; a PR gate must not report files the config excludes.
+  const ignored = ignoreMatcher(config);
   const files = options.files
     ? options.files
         .map((f) => (path.isAbsolute(f) ? f : path.resolve(root, f)))
         .filter((f) => SCAN_EXTENSIONS.has(path.extname(f)) && !f.endsWith('.d.ts') && fs.existsSync(f))
+        .filter((f) => !ignored(path.relative(root, f).split(path.sep).join('/')))
         .sort()
-    : collectFiles(root, config.ignore ?? []);
+    : collectFiles(root, ignoreGlobs(config));
   const diagnostics: Diagnostic[] = [];
   const skipped: SkippedFile[] = [];
   const rulePacks = options.rulePacks;
