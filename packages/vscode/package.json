@@ -44,9 +44,9 @@
     }
   },
   "dependencies": {
-    "@aishware/react-a11y-core": "0.4.0",
-    "@aishware/react-a11y-rules-native": "0.4.0",
-    "@aishware/react-a11y-rules-web": "0.4.0"
+    "@aishware/react-a11y-core": "0.5.0",
+    "@aishware/react-a11y-rules-native": "0.5.0",
+    "@aishware/react-a11y-rules-web": "0.5.0"
   },
   "description": "Inline WCAG 2.2 accessibility diagnostics and quick fixes for React and React Native.",
   "devDependencies": {
@@ -89,5 +89,5 @@
     "typecheck": "tsc --noEmit",
     "vscode:prepublish": "npm run typecheck && npm run build"
   },
-  "version": "0.4.0"
+  "version": "0.5.0"
 }

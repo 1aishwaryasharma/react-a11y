@@ -8,5 +8,5 @@
   "scripts": {
     "build": "esbuild ../cli/src/index.ts --bundle --minify --platform=node --format=cjs --outfile=src/main/resources/react-a11y/cli.cjs --define:import.meta.url=__importMetaUrl \"--banner:js=const __importMetaUrl = require('node:url').pathToFileURL(__filename).href;\""
   },
-  "version": "0.4.0"
+  "version": "0.5.0"
 }
