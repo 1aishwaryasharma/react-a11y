@@ -89,6 +89,26 @@ Test, story, e2e and mock files are skipped by default (`*.test.*`,
 `storybook/`). `ignore` adds to that list; set `"defaultIgnores": false` to
 scan them anyway. Ignore globs also apply to `--changed` and `--since`.
 
+### Suppressing a finding
+
+Directives are spelled like ESLint's. With no rule list they cover every rule;
+text after `--` is a reason for reviewers.
+
+```tsx
+// react-a11y-disable-next-line target-size -- hitSlop extends the target
+<Pressable hitSlop={12} className="h-6 w-6" onPress={close} />
+
+<div>
+  {/* react-a11y-disable-next-line color-contrast */}
+  <p className="text-gray-400">Fine print</p>
+  <img src={logo} alt="" /> {/* react-a11y-disable-line */}
+</div>
+
+/* react-a11y-disable heading-order */
+…
+/* react-a11y-enable */
+```
+
 ## Tailwind, NativeWind and Uniwind
 
 Style-dependent rules (touch-target size, color contrast, fixed text height,

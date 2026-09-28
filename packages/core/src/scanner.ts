@@ -3,6 +3,7 @@ import path from 'node:path';
 import { analyzeModel, isDeferred } from './engine.js';
 import { buildFileModel } from './element.js';
 import { parseSource } from './parse.js';
+import { parseSuppressions, type Suppressions } from './suppress.js';
 import { globToRegExp, ignoreGlobs, ignoreMatcher } from './config.js';
 import { ProjectResolver, detectPlatform, detectPlatformDetailed, type ProjectInfo } from './project.js';
 import type { A11yConfig, DeferredRule, Diagnostic, Platform, ProjectPass, Rule, ScanResult, SkippedFile } from './types.js';
@@ -147,6 +148,8 @@ export function scanProject(options: ScanOptions): ScanResult {
     : collectFiles(root, ignoreGlobs(config));
   const diagnostics: Diagnostic[] = [];
   const skipped: SkippedFile[] = [];
+  // Directives per file, so findings from cross-file passes honour them too.
+  const suppressionsByFile = new Map<string, Suppressions>();
   // Rules left to an installed plugin in at least one file, for the banner.
   const deferred = new Map<string, DeferredRule>();
   const rulePacks = options.rulePacks;
@@ -183,6 +186,8 @@ export function scanProject(options: ScanOptions): ScanResult {
     // One malformed file must not lose the whole report — record it and move on.
     try {
       const model = buildFileModel(parseSource(code, filename));
+      const suppressions = parseSuppressions(code);
+      if (suppressions) suppressionsByFile.set(filename, suppressions);
       const packRules = rulePacks ? rulePacks[filePack] : rules;
       diagnostics.push(...analyzeModel(model, {
         filename,
@@ -203,7 +208,11 @@ export function scanProject(options: ScanOptions): ScanResult {
     }
   }
 
-  for (const pass of projectPasses) diagnostics.push(...pass.finalize());
+  for (const pass of projectPasses) {
+    for (const diag of pass.finalize()) {
+      if (!suppressionsByFile.get(diag.file)?.covers(diag.ruleId, diag.line)) diagnostics.push(diag);
+    }
+  }
 
   for (const rule of rules) {
     if (!rule.projectCheck || !rule.meta.platforms.includes(platform)) continue;

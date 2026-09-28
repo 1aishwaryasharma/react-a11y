@@ -10,6 +10,7 @@ export { applyFixes, fixRemoveAttr, fixRenameAttr } from './fixes.js';
 export { scanProject, collectFiles, detectPlatform, detectPlatformDetailed, filePlatform, type ScanOptions } from './scanner.js';
 export { loadConfig, validateConfig, globToRegExp, DEFAULT_IGNORES, ignoreGlobs, ignoreMatcher } from './config.js';
 export { ruleNameWarnings } from './rule-names.js';
+export { parseSuppressions, type Suppressions } from './suppress.js';
 export { readPackageMeta, readOwnPackageMeta, type PackageMeta } from './pkg-meta.js';
 export {
   readProjectInfo,

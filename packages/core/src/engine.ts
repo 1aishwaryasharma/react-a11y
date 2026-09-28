@@ -1,5 +1,6 @@
 import { buildFileModel, type FileModel } from './element.js';
 import { parseSource } from './parse.js';
+import { parseSuppressions } from './suppress.js';
 import { resolveWcag } from './wcag.js';
 import type { ProjectInfo } from './project.js';
 import type { Diagnostic, Platform, Rule, RuleMeta, RuleSetting } from './types.js';
@@ -81,7 +82,8 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
   }
 
   diagnostics.sort((a, b) => a.line - b.line || a.column - b.column || a.ruleId.localeCompare(b.ruleId));
-  return diagnostics;
+  const suppressions = parseSuppressions(sf.text);
+  return suppressions ? diagnostics.filter((d) => !suppressions.covers(d.ruleId, d.line)) : diagnostics;
 }
 
 /**
