@@ -25,7 +25,7 @@ IntelliJ IDEA Ultimate, PhpStorm, PyCharm Professional, Rider, and more.
 
 The plugin uses its bundled, version-pinned react-a11y CLI, so nothing needs
 to be installed in your project. It does not start Node or any other external
-process until the IDE marks the project as trusted. Node.js 20+ must be
+process until the IDE marks the project as trusted. Node.js 22+ must be
 available on your machine.
 
 Static analysis cannot reproduce a rendered app, assistive technology, or

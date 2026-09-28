@@ -21,7 +21,7 @@ and leaves the checks that plugin makes to it when it is installed. See
 
 ## Quick start
 
-Node.js 20 or later is required.
+Node.js 22 or later is required.
 
 ```sh
 npx @aishware/react-a11y .
@@ -203,6 +203,9 @@ The repository includes a composite action:
 
 ```yaml
 - uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+  with:
+    node-version: 22
 - uses: 1aishwaryasharma/react-a11y@v0.5.0
   with:
     fail-on: serious

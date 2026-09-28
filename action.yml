@@ -45,6 +45,11 @@ runs:
         fi
         case "$REACT_A11Y_PLATFORM" in web|native|auto) ;; *) echo "error: invalid platform" >&2; exit 2 ;; esac
         case "$REACT_A11Y_FAIL_ON" in critical|serious|moderate|minor|none) ;; *) echo "error: invalid fail-on severity" >&2; exit 2 ;; esac
+        # The action runs on the runner's Node; react-a11y needs 22 or later.
+        node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
+        if [ "$node_major" -lt 22 ]; then
+          echo "::warning title=react-a11y::Node.js $(node --version 2>/dev/null || echo '(not found)') is older than the required 22. Add actions/setup-node with node-version 22 before this step."
+        fi
     - name: Write SARIF report
       if: inputs.sarif-file != ''
       shell: bash
