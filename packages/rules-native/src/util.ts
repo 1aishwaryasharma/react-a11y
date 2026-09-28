@@ -42,6 +42,16 @@ export function isRNElement(el: ElementNode): boolean {
   return el.isComponent && (el.importSource === null || RN_SOURCES.has(el.importSource));
 }
 
+/**
+ * True when the element is imported from a trusted React Native source, i.e. a
+ * stock component whose props React Native itself interprets. Unlike
+ * isRNElement, local and unresolved components do not count: their props are
+ * whatever API their author gave them (`<Message role="admin">`).
+ */
+export function isStockRNElement(el: ElementNode): boolean {
+  return el.isComponent && el.importSource !== null && RN_SOURCES.has(el.importSource);
+}
+
 /** True when `el` is a named component from a trusted React Native source. */
 export function isRNComponent(el: ElementNode, names: ReadonlySet<string>): boolean {
   return names.has(el.importName ?? el.name) && isRNElement(el);

@@ -123,6 +123,11 @@ other prop, the message names the correct equivalent.
 are part of the API and render as ARIA on react-native-web, so they are not
 reported.
 
+On a custom component (anything not imported from `react-native`), `role` is
+often the component's own prop — `<Message role="admin">` — so only a value
+that is recognizably an accessibility role used with the wrong prop is
+reported there.
+
 ## valid-accessibility-props
 
 Misspelled props (`accessibilitylabel`, `aria-labeledby`, `aria-Label`, …)
@@ -130,6 +135,10 @@ fail silently at runtime. Catches casing mistakes and misspellings in both the
 `accessibility*` and `aria-*` prop families, with a rename fix when the
 intended prop is clear. Unknown `aria-*` props with no close match are left
 alone — react-native-web forwards them, so they may be intentional.
+
+On a custom component, an unknown `accessibility*` prop may be part of that
+component's API (a design system's `accessibilityDescribedBy`, say), so only a
+miscapitalized React Native prop is reported there.
 
 ## switch-has-label
 

@@ -171,6 +171,31 @@ describe('component rules', () => {
     });
     expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
   });
+  it('valid-accessibility-role leaves a custom component\'s own role prop alone', () => {
+    // Rocket.Chat: a local story component whose `role` is the user's role
+    const local = `const Message = (p) => null;\nconst x = <Message msg="hi" role="admin" />;`;
+    expect(analyze({ code: RN_IMPORT + local, filename: 'App.tsx', platform: 'native', rules: nativeRules }).map((d) => d.ruleId))
+      .not.toContain('valid-accessibility-role');
+    const imported = (jsx: string) =>
+      analyze({ code: `import { Card } from './Card';\nconst x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules })
+        .map((d) => d.ruleId);
+    expect(imported(`<Card role="owner" />`)).not.toContain('valid-accessibility-role');
+    // a real role spelled for the other prop is still an accessibility mistake
+    expect(imported(`<Card role="header" />`)).toContain('valid-accessibility-role');
+    expect(imported(`<Card accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
+    // stock components are still checked in full
+    expect(run(`<View role="admin" />`)).toContain('valid-accessibility-role');
+  });
+  it('valid-accessibility-props leaves a custom component\'s own accessibility* props alone', () => {
+    // bluesky: Dialog.ScrollableInner maps accessibilityDescribedBy to aria-describedby on web
+    const imported = (jsx: string) =>
+      analyze({ code: `import * as Dialog from '#/components/Dialog';\nconst x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules })
+        .map((d) => d.ruleId);
+    expect(imported(`<Dialog.Inner accessibilityDescribedBy="desc" />`)).not.toContain('valid-accessibility-props');
+    // a miscapitalized RN prop is a mistake whoever receives it
+    expect(imported(`<Dialog.Inner accessibilitylabel="Close" />`)).toContain('valid-accessibility-props');
+    expect(run(`<View accessibilityDescribedBy="desc" />`)).toContain('valid-accessibility-props');
+  });
   it('valid-accessibility-props catches aria-* typos but leaves unknown aria props alone', () => {
     const misspelled = analyze({
       code: `${RN_IMPORT}const x = <View accessible={true} aria-labeledby="title" />;`,
