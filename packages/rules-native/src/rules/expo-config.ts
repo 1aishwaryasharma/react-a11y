@@ -6,7 +6,9 @@ import { helpUrlFor } from '../util.js';
 const RULE_META = {
   id: 'no-orientation-lock',
   description: 'Do not lock the app to a single orientation in project config.',
-  severity: 'moderate',
+  // Advisory: WCAG 1.3.4 allows a lock that is essential, and Expo's app
+  // template writes orientation: "portrait", so most Expo apps start with one.
+  severity: 'minor',
   platforms: ['native'],
   wcag: ['1.3.4'],
   partial: true,
@@ -48,6 +50,9 @@ function makeDiagnostic(file: string, text: string, index: number, matchLength: 
 const REMEDY =
   'WCAG 1.3.4 (AA) requires content to work in both portrait and landscape — users with mounted devices cannot rotate. Lock only if a single orientation is truly essential.';
 
+/** Expo's app template sets `orientation: "portrait"`; say so, since many teams never chose it. */
+const EXPO_TEMPLATE = 'Expo\'s app template sets this by default, so check it was a deliberate choice.';
+
 function checkExpoJson(root: string): Diagnostic[] {
   const file = 'app.json';
   const text = read(path.join(root, file));
@@ -64,7 +69,7 @@ function checkExpoJson(root: string): Diagnostic[] {
   const index = Math.max(text.indexOf('"orientation"'), 0);
   return [
     makeDiagnostic(file, text, index, '"orientation"'.length,
-      `Expo config locks orientation to "${orientation}". ${REMEDY} Use "default" to allow rotation.`),
+      `Expo config locks orientation to "${orientation}". ${REMEDY} ${EXPO_TEMPLATE} Use "default" to allow rotation.`),
   ];
 }
 
@@ -76,7 +81,7 @@ function checkExpoConfigScript(root: string): Diagnostic[] {
     if (!match) continue;
     return [
       makeDiagnostic(name, text, match.index, match[0].length,
-        `Expo config locks orientation to "${match[1]}". ${REMEDY} Use 'default' to allow rotation.`),
+        `Expo config locks orientation to "${match[1]}". ${REMEDY} ${EXPO_TEMPLATE} Use 'default' to allow rotation.`),
     ];
   }
   return [];

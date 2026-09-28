@@ -54,6 +54,10 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Changed
 
+- `no-orientation-lock` is `minor` (was `moderate`), and its Expo message notes
+  that Expo's app template sets `orientation: "portrait"`. WCAG 1.3.4 allows an
+  essential lock, and the rule fired on nearly every Expo app. Set its
+  severity in the config to enforce it.
 - The README's new "Alongside ESLint" section shows how each pack relates to
   eslint-plugin-jsx-a11y and eslint-plugin-react-native-a11y. The CLI README
   no longer advises choosing between react-a11y and
