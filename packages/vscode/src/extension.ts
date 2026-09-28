@@ -8,6 +8,7 @@ import {
   detectPlatform,
   ignoreMatcher,
   loadConfig,
+  ruleNameWarnings,
   scanProject,
   type A11yConfig,
   type Diagnostic as A11yDiagnostic,
@@ -61,6 +62,9 @@ function folderInfoForRoot(root: string): FolderInfo {
       void vscode.window.showWarningMessage(
         `react-a11y: ${error instanceof Error ? error.message : String(error)}`,
       );
+    }
+    for (const warning of ruleNameWarnings(config, [...webRules, ...nativeRules].map((r) => r.meta.id))) {
+      void vscode.window.showWarningMessage(`react-a11y: ${warning}`);
     }
     const platformSetting = vscode.workspace.getConfiguration('react-a11y').get<string>('platform', 'auto');
     const platform: Platform =

@@ -13,6 +13,10 @@ All notable changes to this project are documented here. This project adheres to
   grouped non-touchable controls). The run banner and JSON report list what
   was deferred; setting a rule's severity runs it in full. Rules declare the
   overlap with `meta.overlaps`, and partial ones read `ctx.deferred`.
+- A `rules` key in the config that names no react-a11y rule prints a warning
+  (CLI and VS Code) instead of being silently ignored: a jsx-a11y or
+  react-native-a11y rule is pointed at its ESLint plugin, and a typo gets the
+  nearest rule id.
 
 ### Fixed
 

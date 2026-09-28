@@ -76,7 +76,9 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 }
 ```
 
-Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`.
+Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`. A
+rule id react-a11y does not know prints a warning — with the nearest id for a
+typo, or the plugin to configure it in for a jsx-a11y or react-native-a11y rule.
 
 Test, story, e2e and mock files are skipped by default (`*.test.*`,
 `*.spec.*`, `*.e2e.*`, `*.stories.*`, `__tests__/`, `__mocks__/`, `e2e/`,
