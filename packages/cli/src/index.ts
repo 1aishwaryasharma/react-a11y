@@ -16,6 +16,7 @@ import {
   loadConfig,
   readOwnPackageMeta,
   readProjectInfo,
+  ruleNameWarnings,
   scanProject,
   toJson,
   toSarif,
@@ -352,6 +353,9 @@ function main(): void {
     config = loadConfig(args.root);
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
+  }
+  for (const warning of ruleNameWarnings(config, [...webRules, ...nativeRules].map((r) => r.meta.id))) {
+    console.error(pc.yellow(`warning: ${sanitizeTerminalText(warning)}`));
   }
   // With no explicit platform, each file is analysed with the pack its own
   // package needs — a monorepo holding a React Native app beside a web app

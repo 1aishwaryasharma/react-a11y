@@ -11,6 +11,7 @@ import {
   ignoreMatcher,
   parseColor,
   parseSource,
+  ruleNameWarnings,
   staticValue,
   scanProject,
   validateConfig,
@@ -264,6 +265,27 @@ describe('config validation', () => {
     expect(() => validateConfig({ tailwind: { rem: 0 } }, 'test')).toThrow(/positive number/);
     expect(() => validateConfig({ tailwnid: {} }, 'test')).toThrow(/unknown key/);
     expect(validateConfig({ platform: 'native', tailwind: false }, 'test')).toEqual({ platform: 'native', tailwind: false });
+  });
+});
+
+describe('rule names in the config', () => {
+  const known = ['target-size', 'color-contrast', 'no-nested-touchables'];
+  const warn = (rules: Record<string, 'off'>) => ruleNameWarnings({ rules }, known);
+
+  it('accepts react-a11y rule ids, including one that shares a name with a plugin rule', () => {
+    expect(warn({ 'target-size': 'off', 'no-nested-touchables': 'off' })).toEqual([]);
+  });
+
+  it('points a supplemented plugin\'s rule at that plugin', () => {
+    expect(warn({ 'no-autofocus': 'off' })[0]).toContain('eslint-plugin-jsx-a11y rule');
+    expect(warn({ 'jsx-a11y/alt-text': 'off' })[0]).toContain('eslint-plugin-jsx-a11y rule');
+    expect(warn({ 'has-valid-accessibility-role': 'off' })[0]).toContain('eslint-plugin-react-native-a11y rule');
+    expect(warn({ 'react-native-a11y/has-accessibility-hint': 'off' })[0]).toContain('eslint-plugin-react-native-a11y rule');
+  });
+
+  it('suggests the nearest id for a typo and says so plainly otherwise', () => {
+    expect(warn({ 'traget-size': 'off' })).toEqual(['unknown rule "traget-size" — did you mean "target-size"?']);
+    expect(warn({ 'made-up': 'off' })[0]).toContain('--list-rules');
   });
 });
 
