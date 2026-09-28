@@ -59,6 +59,9 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Changed
 
+- **Node.js 22 or later is required** (`engines` `>=22`). Node 20 reached end
+  of life in April 2026. CI now tests Node 22 and 24, and the GitHub Action
+  warns when the runner's Node is older than 22.
 - `no-orientation-lock` is `minor` (was `moderate`), and its Expo message notes
   that Expo's app template sets `orientation: "portrait"`. WCAG 1.3.4 allows an
   essential lock, and the rule fired on nearly every Expo app. Set its
