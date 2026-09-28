@@ -5,6 +5,18 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+- Built and tested with TypeScript 6 and Vitest 4. The core and native rule
+  packages accept `typescript` `^5.6.0 || ^6.0.0`; TypeScript 7 (the native
+  compiler) is not supported yet.
+- Dependabot keeps npm, GitHub Actions and Gradle dependencies current.
+
+### Security
+
+- Dev-only advisories in `vitest`, `brace-expansion` and `fast-uri` resolved.
+  The published packages were not affected.
+
 ## [0.5.0] — 2026-09-02
 
 ### Added
