@@ -34,7 +34,7 @@
     "README.md"
   ],
   "dependencies": {
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0 || ^6.0.0"
   },
   "license": "MIT",
   "homepage": "https://github.com/1aishwaryasharma/react-a11y",

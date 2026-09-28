@@ -19,7 +19,7 @@ function upstreamRoles(): string[] {
 }
 
 // Drift detector: when React Native (mirrored by the plugin) adds an
-// accessibilityRole, this fails so we know to add it to RN_ROLES. Renovate keeps
+// accessibilityRole, this fails so we know to add it to RN_ROLES. Dependabot keeps
 // the eslint-plugin-react-native-a11y devDependency current, which trips this.
 describe('upstream parity: React Native accessibilityRole', () => {
   it('RN_ROLES covers every role eslint-plugin-react-native-a11y accepts', () => {

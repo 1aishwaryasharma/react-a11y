@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # One PR a week for everything that should be a drop-in update.
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 is the native (Go) compiler; core parses source with the
+      # JavaScript compiler API, so a major bump needs deliberate porting.
+      - dependency-name: typescript
+        versions: [">=7"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /packages/webstorm
+    schedule:
+      interval: monthly
