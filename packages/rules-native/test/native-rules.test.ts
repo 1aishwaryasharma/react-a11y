@@ -498,3 +498,63 @@ describe('autofix does not corrupt source', () => {
     expect(diagnostics.find((d) => d.message.includes('aria-role'))?.fix).toBeDefined();
   });
 });
+
+describe('deferring to eslint-plugin-react-native-a11y', () => {
+  const withPlugin = { dependencies: { 'react-native': '0.81.0', 'eslint-plugin-react-native-a11y': '^3.5.1' }, platform: 'native' as const };
+  const without = { dependencies: { 'react-native': '0.81.0' }, platform: 'native' as const };
+  const lint = (jsx: string, project: typeof without, ruleSettings = {}) =>
+    analyze({ code: `${RN_IMPORT}const x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules, project, ruleSettings })
+      .map((d) => `${d.ruleId}: ${d.message}`);
+
+  it('leaves wholly overlapping rules to the plugin', () => {
+    for (const [rule, jsx] of [
+      ['accessibility-state-valid', `<View accessible accessibilityState={{ chekced: true }} />`],
+      ['valid-important-for-accessibility', `<View importantForAccessibility="nope" />`],
+      ['accessibility-actions-handled', `<View accessibilityActions={[{ name: 'activate' }]} />`],
+    ]) {
+      expect(lint(jsx, without).join(), jsx).toContain(rule);
+      expect(lint(jsx, withPlugin).join(), jsx).not.toContain(rule);
+    }
+  });
+
+  it('keeps the part of a rule the plugin does not check', () => {
+    // accessibilityRole is the plugin's; the role prop is ours
+    expect(lint(`<View accessibilityRole="pushbutton" />`, withPlugin).join()).not.toContain('valid-accessibility-role');
+    expect(lint(`<View role="pushbutton" />`, withPlugin).join()).toContain('valid-accessibility-role');
+    // accessibilityLiveRegion is the plugin's; aria-live is ours
+    expect(lint(`<View accessibilityLiveRegion="loud" />`, withPlugin).join()).not.toContain('live-region-valid');
+    expect(lint(`<View aria-live="loud" />`, withPlugin).join()).toContain('live-region-valid');
+    // the shape of accessibilityValue is the plugin's; min ≤ now ≤ max is ours
+    expect(lint(`<View accessibilityValue={{ now: 5 }} />`, withPlugin).join()).not.toContain('accessibility-value-valid');
+    expect(lint(`<View accessibilityValue={{ min: 10, max: 0, now: 5 }} />`, withPlugin).join()).toContain('min must not exceed max');
+    // a grouped touchable is the plugin's; a grouped TextInput is ours
+    expect(lint(`<View accessible><Pressable accessibilityRole="button" accessibilityLabel="Go" onPress={f} /></View>`, withPlugin).join())
+      .not.toContain('accessible-grouping-hides-interactive');
+    expect(lint(`<View accessible><TextInput accessibilityLabel="Name" /></View>`, withPlugin).join())
+      .toContain('accessible-grouping-hides-interactive');
+  });
+
+  it('runs a rule in full when the user sets its severity', () => {
+    expect(lint(`<View importantForAccessibility="nope" />`, withPlugin, { 'valid-important-for-accessibility': 'serious' }).join())
+      .toContain('valid-important-for-accessibility');
+    expect(lint(`<View accessibilityRole="pushbutton" />`, withPlugin, { 'valid-accessibility-role': 'serious' }).join())
+      .toContain('valid-accessibility-role');
+  });
+
+  it('lists what it deferred in the scan result', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ra11y-defer-'));
+    fs.mkdirSync(path.join(root, '.git'));
+    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+      dependencies: { 'react-native': '0.81.0' }, devDependencies: { 'eslint-plugin-react-native-a11y': '^3.5.1' },
+    }));
+    fs.writeFileSync(path.join(root, 'App.tsx'), `${RN_IMPORT}export const A = () => <View />;`);
+    const result = scanProject({ root, rules: nativeRules, platform: 'native' });
+    expect(result.deferred?.map((d) => d.ruleId)).toEqual([
+      'accessibility-actions-handled', 'accessibility-state-valid', 'accessibility-value-valid',
+      'accessible-grouping-hides-interactive', 'live-region-valid', 'valid-accessibility-role',
+      'valid-important-for-accessibility',
+    ]);
+    const plain = scanProject({ root, rules: nativeRules, platform: 'native', config: { rules: {} }, project: without });
+    expect(plain.deferred).toBeUndefined();
+  });
+});

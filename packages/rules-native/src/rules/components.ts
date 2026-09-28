@@ -1,6 +1,15 @@
 import { attrProvidesValue, fixRenameAttr, hasAttr, staticString } from '@aishware/react-a11y-core';
 import { KNOWN_ARIA_PROPS } from '../aria.js';
-import { defineRule, hasNativeLabel, isAccessibilityOptOut, isHiddenFromAT, isRNComponent, isStockRNElement, isSwitch } from '../util.js';
+import {
+  RN_A11Y_PLUGIN,
+  defineRule,
+  hasNativeLabel,
+  isAccessibilityOptOut,
+  isHiddenFromAT,
+  isRNComponent,
+  isStockRNElement,
+  isSwitch,
+} from '../util.js';
 
 const IMAGE = new Set(['Image']);
 const TEXT_INPUT = new Set(['TextInput']);
@@ -175,6 +184,7 @@ export const validAccessibilityRole = defineRule(
     description: 'accessibilityRole / role must be a value React Native recognizes.',
     severity: 'serious',
     wcag: ['4.1.2'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-accessibility-role', partial: true },
   },
   (el, ctx) => {
     // On a custom component, `role` is often the component's own API (a user's
@@ -185,6 +195,8 @@ export const validAccessibilityRole = defineRule(
       const value = staticString(el, prop)?.trim();
       if (value === undefined) continue;
       if (custom && prop === 'role' && !isKnownRoleName(value)) continue;
+      // has-valid-accessibility-role validates accessibilityRole; `role` is ours alone.
+      if (ctx.deferred && prop === 'accessibilityRole') continue;
       const message = describeInvalidRole(prop, value);
       if (message) ctx.report({ el, message });
     }
@@ -268,6 +280,7 @@ export const accessibilityActionsHandled = defineRule(
     description: 'accessibilityActions and onAccessibilityAction must be used together.',
     severity: 'serious',
     wcag: ['4.1.2'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-accessibility-actions' },
   },
   (el, ctx) => {
     if (el.hasSpread) return;

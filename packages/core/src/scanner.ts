@@ -1,11 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { analyzeModel } from './engine.js';
+import { analyzeModel, isDeferred } from './engine.js';
 import { buildFileModel } from './element.js';
 import { parseSource } from './parse.js';
 import { globToRegExp, ignoreGlobs, ignoreMatcher } from './config.js';
 import { ProjectResolver, detectPlatform, detectPlatformDetailed, type ProjectInfo } from './project.js';
-import type { A11yConfig, Diagnostic, Platform, ProjectPass, Rule, ScanResult, SkippedFile } from './types.js';
+import type { A11yConfig, DeferredRule, Diagnostic, Platform, ProjectPass, Rule, ScanResult, SkippedFile } from './types.js';
 
 export { detectPlatform, detectPlatformDetailed };
 
@@ -147,6 +147,8 @@ export function scanProject(options: ScanOptions): ScanResult {
     : collectFiles(root, ignoreGlobs(config));
   const diagnostics: Diagnostic[] = [];
   const skipped: SkippedFile[] = [];
+  // Rules left to an installed plugin in at least one file, for the banner.
+  const deferred = new Map<string, DeferredRule>();
   const rulePacks = options.rulePacks;
   const filesByPlatform: Record<Platform, number> = { web: 0, native: 0 };
 
@@ -181,13 +183,20 @@ export function scanProject(options: ScanOptions): ScanResult {
     // One malformed file must not lose the whole report — record it and move on.
     try {
       const model = buildFileModel(parseSource(code, filename));
+      const packRules = rulePacks ? rulePacks[filePack] : rules;
       diagnostics.push(...analyzeModel(model, {
         filename,
         platform: filePack,
-        rules: rulePacks ? rulePacks[filePack] : rules,
+        rules: packRules,
         ruleSettings: config.rules,
         project,
       }));
+      for (const rule of packRules) {
+        if (!deferred.has(rule.meta.id) && rule.meta.platforms.includes(filePack)
+          && isDeferred(rule.meta, config.rules?.[rule.meta.id], project)) {
+          deferred.set(rule.meta.id, { ruleId: rule.meta.id, overlaps: rule.meta.overlaps! });
+        }
+      }
       if (filePack === 'web') for (const pass of projectPasses) pass.collect(model, filename);
     } catch (error) {
       skipped.push({ file: filename, reason: `analysis failed (${errorText(error)})` });
@@ -216,6 +225,7 @@ export function scanProject(options: ScanOptions): ScanResult {
     project: resolver ? resolver.banner() : rootProject,
     ...(rulePacks && filesByPlatform.web > 0 && filesByPlatform.native > 0 ? { filesByPlatform } : {}),
     ...(skipped.length > 0 ? { skipped } : {}),
+    ...(deferred.size > 0 ? { deferred: [...deferred.values()].sort((a, b) => a.ruleId.localeCompare(b.ruleId)) } : {}),
   };
 }
 
