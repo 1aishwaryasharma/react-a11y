@@ -40,6 +40,8 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Changed
 
+- `input-button-has-name` no longer checks `<input type="image">`, which
+  jsx-a11y's `alt-text` (in its recommended set) checks the same way.
 - Test, story, e2e and mock files are skipped by default (`*.test.*`,
   `*.spec.*`, `*.e2e.*`, `*.stories.*`, `*.story.*`, `__tests__/`,
   `__mocks__/`, `__fixtures__/`, `e2e/`, `storybook/`). On

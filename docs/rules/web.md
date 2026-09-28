@@ -13,7 +13,7 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | Rule | Severity | WCAG |
 | --- | --- | --- |
 | [button-has-accessible-name](#button-has-accessible-name) | critical | 4.1.2 |
-| [input-button-has-name](#input-button-has-name) | serious | 4.1.2, 1.1.1 |
+| [input-button-has-name](#input-button-has-name) | serious | 4.1.2 |
 | [title-has-content](#title-has-content) | serious | 2.4.2 |
 | [meta-viewport-zoomable](#meta-viewport-zoomable) | serious | 1.4.4 |
 | [no-meta-refresh](#no-meta-refresh) | serious | 2.2.1 |
@@ -42,8 +42,9 @@ child is announced as an unnamed button. Icon-only buttons need `aria-label`.
 
 ## input-button-has-name
 
-`<input type="button">` needs a `value` or `aria-label`; `<input type="image">`
-needs `alt`. Without them the control is announced as unnamed.
+`<input type="button">` needs a `value` or `aria-label`; without one it is
+announced as an unnamed button. (`<input type="image">` is covered by
+jsx-a11y's `alt-text`.)
 
 ## title-has-content
 

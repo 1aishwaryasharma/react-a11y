@@ -5,20 +5,16 @@ import { defineRule, isDomTag } from '../util.js';
 export const inputButtonHasName = defineRule(
   {
     id: 'input-button-has-name',
-    description: '<input type="button"> needs a value; <input type="image"> needs alt.',
+    description: '<input type="button"> needs a value or aria-label.',
     severity: 'serious',
-    wcag: ['4.1.2', '1.1.1'],
+    wcag: ['4.1.2'],
   },
   (el, ctx) => {
+    // <input type="image"> is left to jsx-a11y's alt-text, which checks it the same way.
     if (!isDomTag(el, 'input') || el.hasSpread) return;
-    const type = staticString(el, 'type')?.trim().toLowerCase();
-    if (type === 'button') {
-      if (attrProvidesValue(el, 'value') || attrProvidesValue(el, 'aria-label') || attrProvidesValue(el, 'aria-labelledby')) return;
-      ctx.report({ el, message: '<input type="button"> has no value or aria-label — it is announced as an unnamed button.' });
-    } else if (type === 'image') {
-      if (attrProvidesValue(el, 'alt') || attrProvidesValue(el, 'aria-label') || attrProvidesValue(el, 'aria-labelledby')) return;
-      ctx.report({ el, message: '<input type="image"> has no alt text — the button\'s purpose is invisible to screen readers.' });
-    }
+    if (staticString(el, 'type')?.trim().toLowerCase() !== 'button') return;
+    if (attrProvidesValue(el, 'value') || attrProvidesValue(el, 'aria-label') || attrProvidesValue(el, 'aria-labelledby')) return;
+    ctx.report({ el, message: '<input type="button"> has no value or aria-label — it is announced as an unnamed button.' });
   },
 );
 
