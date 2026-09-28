@@ -20,6 +20,11 @@ inputs:
   sarif-file:
     description: If set, also write a SARIF report to this path (upload it with github/codeql-action/upload-sarif).
     default: ''
+  baseline:
+    description: >-
+      Baseline file (from --update-baseline) whose recorded findings are hidden, so only new
+      ones fail the step or reach the SARIF report. Empty to report everything.
+    default: ''
   version:
     description: "@aishware/react-a11y version to run."
     default: 0.5.0
@@ -48,10 +53,12 @@ runs:
         REACT_A11Y_PATH: ${{ inputs.path }}
         REACT_A11Y_PLATFORM: ${{ inputs.platform }}
         REACT_A11Y_SARIF_FILE: ${{ inputs.sarif-file }}
+        REACT_A11Y_BASELINE: ${{ inputs.baseline }}
       run: >-
         npx --yes "@aishware/react-a11y@${REACT_A11Y_VERSION}" "${REACT_A11Y_PATH}"
         --platform "${REACT_A11Y_PLATFORM}"
         --format sarif --output "${REACT_A11Y_SARIF_FILE}"
+        ${REACT_A11Y_BASELINE:+--baseline "${REACT_A11Y_BASELINE}"}
         --fail-on none
     - name: Scan
       shell: bash
@@ -60,7 +67,9 @@ runs:
         REACT_A11Y_PATH: ${{ inputs.path }}
         REACT_A11Y_PLATFORM: ${{ inputs.platform }}
         REACT_A11Y_FAIL_ON: ${{ inputs.fail-on }}
+        REACT_A11Y_BASELINE: ${{ inputs.baseline }}
       run: >-
         npx --yes "@aishware/react-a11y@${REACT_A11Y_VERSION}" "${REACT_A11Y_PATH}"
         --platform "${REACT_A11Y_PLATFORM}"
+        ${REACT_A11Y_BASELINE:+--baseline "${REACT_A11Y_BASELINE}"}
         --fail-on "${REACT_A11Y_FAIL_ON}"

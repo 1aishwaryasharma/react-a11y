@@ -13,6 +13,12 @@ All notable changes to this project are documented here. This project adheres to
   grouped non-touchable controls). The run banner and JSON report list what
   was deferred; setting a rule's severity runs it in full. Rules declare the
   overlap with `meta.overlaps`, and partial ones read `ctx.deferred`.
+- `--baseline <file>` hides the findings recorded in a baseline file and fails
+  only on new ones; `--update-baseline` writes it. Findings match by rule,
+  message and source line, not line number, and repeated identical findings
+  are counted. Stale entries are reported, a missing file is an error, and a
+  partial scan (`--changed`, `--since`) cannot rewrite it. The GitHub Action
+  takes a `baseline` input (it needs a `version` that includes this flag).
 - Inline suppression, spelled like ESLint's: `react-a11y-disable-next-line`,
   `react-a11y-disable-line`, and `react-a11y-disable` / `react-a11y-enable`
   regions, each with an optional rule list and `-- reason`. They work in `//`,

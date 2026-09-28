@@ -86,6 +86,15 @@ function describeDeferred(result: ScanResult): string[] {
   });
 }
 
+/** How many known findings a baseline hid, and how many of its entries are gone. */
+function describeBaseline(result: ScanResult): string[] {
+  const b = result.baseline;
+  if (!b) return [];
+  const name = sanitizeTerminalText(path.relative(process.cwd(), b.file) || b.file);
+  const stale = b.stale ? `; ${b.stale} no longer found — run with --update-baseline to prune` : '';
+  return [pc.dim(`  baseline: ${b.suppressed} known issue${b.suppressed === 1 ? '' : 's'} hidden (${name})${stale}`)];
+}
+
 export function printPretty(result: ScanResult, version: string): void {
   const { diagnostics } = result;
   const out: string[] = [];
@@ -99,6 +108,7 @@ export function printPretty(result: ScanResult, version: string): void {
   );
   out.push(...describeSkipped(result));
   out.push(...describeDeferred(result));
+  out.push(...describeBaseline(result));
   out.push('');
 
   if (diagnostics.length === 0) {

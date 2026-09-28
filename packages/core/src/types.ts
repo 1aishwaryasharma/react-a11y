@@ -194,6 +194,8 @@ export interface ScanResult {
   skipped?: SkippedFile[];
   /** Rules left, wholly or in part, to an installed plugin that checks the same thing. */
   deferred?: DeferredRule[];
+  /** Set when a baseline hid known findings (see applyBaseline). */
+  baseline?: import('./baseline.js').BaselineSummary;
 }
 
 export interface DeferredRule {

@@ -57,6 +57,11 @@ npx @aishware/react-a11y . --format sarif --output a11y.sarif
 # Set the CI failure threshold
 npx @aishware/react-a11y . --fail-on moderate
 
+# Adopt on an existing codebase: record today's findings once, commit the
+# file, then fail only on new ones
+npx @aishware/react-a11y . --baseline a11y-baseline.json --update-baseline
+npx @aishware/react-a11y . --baseline a11y-baseline.json
+
 # Inspect rules and WCAG coverage
 npx @aishware/react-a11y --list-rules
 npx @aishware/react-a11y --coverage
@@ -205,7 +210,13 @@ The repository includes a composite action:
 ```
 
 Set the optional `sarif-file` input to generate a report for GitHub code
-scanning.
+scanning, and `baseline` to a committed baseline file to fail only on new
+findings.
+
+A baseline matches findings by rule, message and source line rather than line
+number, so moving code does not bring a known finding back. The run reports
+how many entries are no longer found; `--update-baseline` prunes them. A
+missing baseline file is an error, never an empty baseline.
 
 ## Editor integrations
 
