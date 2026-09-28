@@ -240,7 +240,8 @@ describe('component rules', () => {
       project({ 'app.json': JSON.stringify({ expo: { name: 'x', orientation: 'portrait' } }, null, 2) }),
     );
     expect(locked).toHaveLength(1);
-    expect(locked[0]).toMatchObject({ ruleId: 'no-orientation-lock', file: 'app.json' });
+    expect(locked[0]).toMatchObject({ ruleId: 'no-orientation-lock', file: 'app.json', severity: 'minor' });
+    expect(locked[0].message).toContain("Expo's app template");
     expect(locked[0].line).toBeGreaterThan(1); // points at the "orientation" key, not the file start
 
     expect(noOrientationLock.projectCheck!(

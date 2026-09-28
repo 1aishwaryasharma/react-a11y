@@ -65,7 +65,7 @@ Setting a rule's severity in the config runs it in full regardless.
 | [accessibility-language-valid](#accessibility-language-valid) | moderate | 3.1.2 |
 | [live-region-android-only](#live-region-android-only) | moderate | 4.1.3 |
 | [animation-reduce-motion](#animation-reduce-motion) | moderate/serious | 2.2.2, 2.3.3 |
-| [no-orientation-lock](#no-orientation-lock) | moderate | 1.3.4 |
+| [no-orientation-lock](#no-orientation-lock) | minor | 1.3.4 |
 
 ## touchable-has-label
 
@@ -376,6 +376,11 @@ are declared — Expo `app.json` / `app.config.{js,ts}` (`orientation:
 WCAG 1.3.4 (AA) requires both orientations unless one is essential — users
 with wheelchair-mounted devices cannot rotate. Runtime locks via
 `expo-screen-orientation` are out of static reach, hence *partial*.
+
+Reported as **minor**: 1.3.4 allows a lock that is essential, and Expo's app
+template sets `orientation: "portrait"`, so most Expo apps start with one.
+Treat it as a prompt to confirm the lock is deliberate; raise it with
+`"rules": { "no-orientation-lock": "serious" }` to enforce it.
 
 ## text-fixed-height
 
