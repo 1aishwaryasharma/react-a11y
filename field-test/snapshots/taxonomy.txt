@@ -1,0 +1,5 @@
+# taxonomy @ 298a8857c7128a0d121e7f699dfd729f23b3966d (Next.js + Tailwind (shadcn))
+# platform: web; files scanned: 129; findings: 3
+components/ui/button.tsx:22:18 minor target-size 40px-tall target in the `size.default` variant is below the recommended 44×44px (WCAG 2.5.5 AAA).
+components/ui/button.tsx:23:13 minor target-size 36px-tall target in the `size.sm` variant is below the recommended 44×44px (WCAG 2.5.5 AAA).
+components/ui/input.tsx:11:7 minor target-size 40px-tall target is below the recommended 44×44px (WCAG 2.5.5 AAA).

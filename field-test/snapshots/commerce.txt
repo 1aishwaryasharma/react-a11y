@@ -1,0 +1,4 @@
+# commerce @ 3761e52e60df9c6a316e067dbfd7032e494d3634 (Next.js + Tailwind)
+# platform: web; files scanned: 66; findings: 2
+components/cart/delete-item-button.tsx:26:7 minor target-size 24×24px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+components/layout/footer.tsx:45:11 minor target-size 32px-tall target is below the recommended 44×44px (WCAG 2.5.5 AAA).
