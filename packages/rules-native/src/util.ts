@@ -6,6 +6,7 @@ import {
   readOwnPackageMeta,
   staticExpression,
   staticString,
+  staticValue,
   versionParts,
 } from '@aishware/react-a11y-core';
 import type ts from 'typescript';
@@ -105,6 +106,16 @@ function hidesDescendantsFromAT(el: ElementNode): boolean {
     iosHidesSubtree(el) ||
     androidHidesSubtree(el)
   );
+}
+
+/**
+ * `accessible={false}` written out: the author opted the element out of being
+ * an accessibility element — a focus placeholder, or a container whose
+ * children are meant to be focused one by one — so its own name and role are
+ * never announced. A dynamic value is not an opt-out.
+ */
+export function isAccessibilityOptOut(el: ElementNode): boolean {
+  return staticValue(el, 'accessible') === false;
 }
 
 /** Element is hidden directly or by an ancestor that hides its whole subtree. */
