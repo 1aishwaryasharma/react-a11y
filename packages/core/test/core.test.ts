@@ -11,6 +11,7 @@ import {
   ignoreMatcher,
   parseColor,
   parseSource,
+  parseSuppressions,
   ruleNameWarnings,
   staticValue,
   scanProject,
@@ -265,6 +266,67 @@ describe('config validation', () => {
     expect(() => validateConfig({ tailwind: { rem: 0 } }, 'test')).toThrow(/positive number/);
     expect(() => validateConfig({ tailwnid: {} }, 'test')).toThrow(/unknown key/);
     expect(validateConfig({ platform: 'native', tailwind: false }, 'test')).toEqual({ platform: 'native', tailwind: false });
+  });
+});
+
+describe('inline suppression', () => {
+  const flagEvery = (id: string): Rule => ({
+    meta: { id, description: '', severity: 'moderate', platforms: ['web'], wcag: ['1.1.1'] },
+    create: (ctx) => ({ element: (el) => ctx.report({ el, message: id }) }),
+  });
+  const lint = (code: string) =>
+    analyze({ code, filename: 'a.tsx', platform: 'web', rules: [flagEvery('rule-a'), flagEvery('rule-b')] })
+      .map((d) => `${d.line}:${d.ruleId}`);
+
+  it('disables the next line, for every rule or the ones listed', () => {
+    expect(lint(`// react-a11y-disable-next-line\nconst x = <img />;`)).toEqual([]);
+    expect(lint(`// react-a11y-disable-next-line rule-a -- decorative\nconst x = <img />;`)).toEqual(['2:rule-b']);
+    expect(lint(`// react-a11y-disable-next-line rule-a, rule-b\nconst x = <img />;`)).toEqual([]);
+  });
+
+  it('reads JSX comments and same-line directives', () => {
+    const jsx = [
+      'const x = (<div>',
+      '  {/* react-a11y-disable-next-line rule-a */}',
+      '  <img />',
+      '  <img /> {/* react-a11y-disable-line */}',
+      '</div>);',
+    ].join('\n');
+    expect(lint(jsx)).toEqual(['1:rule-a', '1:rule-b', '3:rule-b']);
+  });
+
+  it('disables a region until re-enabled, or to the end of the file', () => {
+    const code = [
+      'const a = <img />;',
+      '/* react-a11y-disable rule-b */',
+      'const b = <img />;',
+      '/* react-a11y-enable */',
+      'const c = <img />;',
+      '/* react-a11y-disable */',
+      'const d = <img />;',
+    ].join('\n');
+    expect(lint(code)).toEqual(['1:rule-a', '1:rule-b', '3:rule-a', '5:rule-a', '5:rule-b']);
+  });
+
+  it('is undefined for a file with no directives', () => {
+    expect(parseSuppressions('const x = <img />;')).toBeUndefined();
+  });
+
+  it('applies to findings from cross-file passes', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'react-a11y-suppress-'));
+    fs.writeFileSync(path.join(dir, 'A.tsx'), 'export const A = () => <div />;\n// react-a11y-disable-next-line cross\nexport const B = () => <div />;');
+    const pass = {
+      seen: [] as string[],
+      collect(_model: unknown, filename: string) { this.seen.push(filename); },
+      finalize() {
+        return [1, 3].map((line) => ({
+          ruleId: 'cross', message: 'x', severity: 'moderate' as const, file: 'A.tsx',
+          line, column: 1, endLine: line, endColumn: 2, wcag: [],
+        }));
+      },
+    };
+    const result = scanProject({ root: dir, rules: [], platform: 'web', projectPasses: [pass] });
+    expect(result.diagnostics.map((d) => d.line)).toEqual([1]);
   });
 });
 

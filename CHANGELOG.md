@@ -13,6 +13,10 @@ All notable changes to this project are documented here. This project adheres to
   grouped non-touchable controls). The run banner and JSON report list what
   was deferred; setting a rule's severity runs it in full. Rules declare the
   overlap with `meta.overlaps`, and partial ones read `ctx.deferred`.
+- Inline suppression, spelled like ESLint's: `react-a11y-disable-next-line`,
+  `react-a11y-disable-line`, and `react-a11y-disable` / `react-a11y-enable`
+  regions, each with an optional rule list and `-- reason`. They work in `//`,
+  `/* */` and JSX `{/* */}` comments and apply to cross-file findings too.
 - A `rules` key in the config that names no react-a11y rule prints a warning
   (CLI and VS Code) instead of being silently ignored: a jsx-a11y or
   react-native-a11y rule is pointed at its ESLint plugin, and a typo gets the

@@ -67,6 +67,11 @@ ${pc.bold('Config')}
   { "platform": "web", "ignore": ["src/legacy/**"], "rules": { "target-size": "off" } }
   Tests, stories, e2e and mocks are skipped by default ("defaultIgnores": false to scan them).
 
+Suppress
+  // react-a11y-disable-next-line <rule, …> -- reason      (or {/* … */} in JSX)
+  // react-a11y-disable-line <rule, …>
+  /* react-a11y-disable <rule, …> */ … /* react-a11y-enable */
+
 ${pc.bold('Tailwind / NativeWind / Uniwind')}
   className utilities (h-6 w-6, text-gray-400 bg-white, dark:…) are resolved for
   touch-target, contrast, text-height and focus-ring rules when a Tailwind binding
