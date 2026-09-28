@@ -7,6 +7,11 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Added
 
+- A precision regression suite: `npm run field-test` scans eight open-source
+  React and React Native apps at pinned commits and diffs every finding
+  against committed snapshots, in CI on any rule or engine change.
+  `npm run rn-drift` checks the native allowlists against the latest React
+  Native types weekly. `KNOWN_A11Y_PROPS` is exported for it.
 - The React Native pack defers to `eslint-plugin-react-native-a11y` when a
   project has it installed: three rules it duplicates are skipped and four are
   limited to what it does not check (`role`, `aria-live`, value ranges,

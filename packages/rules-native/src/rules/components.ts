@@ -204,7 +204,7 @@ export const validAccessibilityRole = defineRule(
 );
 
 /** Every accessibility prop React Native supports; anything else is a typo. */
-const KNOWN_A11Y_PROPS = new Set([
+export const KNOWN_A11Y_PROPS = new Set([
   'accessibilityLabel', 'accessibilityHint', 'accessibilityRole',
   'accessibilityState', 'accessibilityValue', 'accessibilityActions',
   'accessibilityElementsHidden', 'accessibilityViewIsModal',
