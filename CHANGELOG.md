@@ -44,6 +44,10 @@ All notable changes to this project are documented here. This project adheres to
 
 ### Changed
 
+- The README's new "Alongside ESLint" section shows how each pack relates to
+  eslint-plugin-jsx-a11y and eslint-plugin-react-native-a11y. The CLI README
+  no longer advises choosing between react-a11y and
+  eslint-plugin-react-native-a11y.
 - `input-button-has-name` no longer checks `<input type="image">`, which
   jsx-a11y's `alt-text` (in its recommended set) checks the same way.
 - Test, story, e2e and mock files are skipped by default (`*.test.*`,
