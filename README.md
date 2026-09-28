@@ -253,6 +253,14 @@ npm run build
 npm test
 ```
 
+`npm run field-test` scans the open-source apps pinned in
+[`field-test/corpus.json`](field-test/corpus.json) and compares every finding
+with the committed snapshots; CI runs it on any change to rule or engine
+source. When a change is meant to add or remove findings, run
+`npm run field-test -- --update` and commit the snapshot diff with it.
+`npm run rn-drift` checks the role and prop allowlists against the latest
+React Native release (weekly in CI).
+
 ## License
 
 [MIT](LICENSE)

@@ -1,0 +1,8 @@
+# excalidraw @ 438d89861f53d8a90ad566113ecac1b83761098f (React + SCSS)
+# platform: web; files scanned: 540; findings: 6
+dev-docs/src/components/Highlight.js:4:5 moderate color-contrast Contrast between #fff and #7874e8 is 3.84:1 — below the 4.5:1 required by WCAG 1.4.3.
+packages/excalidraw/actions/actionProperties.tsx:1685:7 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+packages/excalidraw/components/ButtonIconCycle.tsx:26:7 serious input-button-has-name <input type="button"> has no value or aria-label — it is announced as an unnamed button.
+packages/excalidraw/components/ColorPicker/ColorInput.tsx:86:9 moderate error-identification <input> is marked aria-invalid but has no aria-describedby/aria-errormessage — screen reader users hear "invalid" with no explanation of what is wrong.
+packages/excalidraw/components/ColorPicker/ShadeList.tsx:113:7 critical button-has-accessible-name <button> has no accessible name. Icon-only buttons need aria-label.
+packages/excalidraw/components/ContextMenu.tsx:79:22 moderate list-structure <hr> is a direct child of <ul> — screen readers expect only <li> there and may misreport list size.
