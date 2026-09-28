@@ -118,6 +118,11 @@ silently ignored on device. The two props use different vocabularies — `role`
 `accessibilityRole="image"`. When a value from one vocabulary is used with the
 other prop, the message names the correct equivalent.
 
+`role` accepts every value in React Native's `Role` type. Several of them
+(`dialog`, `navigation`, `tabpanel`, …) have no iOS or Android equivalent but
+are part of the API and render as ARIA on react-native-web, so they are not
+reported.
+
 ## valid-accessibility-props
 
 Misspelled props (`accessibilitylabel`, `aria-labeledby`, `aria-Label`, …)
