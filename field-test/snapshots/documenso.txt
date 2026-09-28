@@ -1,0 +1,37 @@
+# documenso @ a1d4bec1430a937395db9a4aae28979cd71c2831 (Remix + shadcn monorepo)
+# platform: web; files scanned: 1999; findings: 35
+apps/docs/src/app/og/docs/[...slug]/route.tsx:129:9 serious color-contrast Contrast between #A1A1AA and white is 2.56:1 — below the 4.5:1 required by WCAG 1.4.3 (background from the enclosing <div>).
+apps/docs/src/app/og/docs/[...slug]/route.tsx:72:9 serious color-contrast Contrast between #D4D4D8 and white is 1.48:1 — below the 4.5:1 required by WCAG 1.4.3 (background from the enclosing <div>).
+apps/remix/app/components/dialogs/ai-recipient-detection-dialog.tsx:271:25 minor target-size 32×32px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/dialogs/organisation-member-invite-dialog.tsx:370:27 minor target-size 40×40px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/embed/authoring/configure-fields-view.tsx:576:15 minor target-size 40×40px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/embed/multisign/multi-sign-document-signing-view.tsx:271:27 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/components/forms/editor/editor-field-checkbox-form.tsx:322:19 minor target-size 40×40px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/forms/editor/editor-field-dropdown-form.tsx:224:19 minor target-size 40×40px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/forms/editor/editor-field-radio-form.tsx:213:19 minor target-size 40×40px target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/forms/editor/editor-field-signature-form.tsx:64:9 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/admin-monthly-active-user-charts.tsx:19:9 serious color-contrast Contrast between hsl(95.08, 71.08%, 67.45%) and #ffffff is 1.48:1 — below the 4.5:1 required by WCAG 1.4.3 (background from the enclosing <div>).
+apps/remix/app/components/general/admin-stats-users-with-documents.tsx:25:9 serious color-contrast Contrast between hsl(95.08, 71.08%, 67.45%) and #ffffff is 1.48:1 — below the 4.5:1 required by WCAG 1.4.3 (background from the enclosing <div>).
+apps/remix/app/components/general/app-command-menu.tsx:631:5 minor target-size 28px-tall target is below the recommended 44×44px (WCAG 2.5.5 AAA).
+apps/remix/app/components/general/document-signing/document-signing-auth-2fa.tsx:149:9 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/document-signing/document-signing-auth-passkey.tsx:252:9 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/document-signing/document-signing-auth-password.tsx:108:9 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/document-signing/document-signing-field-container.tsx:122:9 critical button-has-accessible-name <button> has no accessible name. Icon-only buttons need aria-label.
+apps/remix/app/components/general/document-signing/document-signing-field-container.tsx:143:13 critical button-has-accessible-name <button> has no accessible name. Icon-only buttons need aria-label.
+apps/remix/app/components/general/document-signing/document-signing-form.tsx:232:15 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/document-signing/document-signing-page-view-v1.tsx:295:17 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/components/general/document/document-page-view-recent-activity.tsx:91:15 moderate list-structure <div> is a direct child of <ul> — screen readers expect only <li> there and may misreport list size.
+apps/remix/app/components/general/envelope-signing/envelope-signer-form.tsx:92:5 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+apps/remix/app/components/general/template/template-page-view-recent-activity.tsx:92:15 moderate list-structure <div> is a direct child of <ul> — screen readers expect only <li> there and may misreport list size.
+apps/remix/app/components/general/webhook-logs-sheet.tsx:73:15 moderate heading-order Heading level skips from h2 to h4. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/admin+/documents.$id.tsx:174:19 moderate heading-order Heading level skips from h2 to h4. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/o.$orgUrl._index.tsx:156:25 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/t.$teamUrl+/documents.$id._index.tsx:216:17 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/t.$teamUrl+/documents.$id.logs.tsx:174:15 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/t.$teamUrl+/settings.general.tsx:250:19 moderate list-structure <span> is a direct child of <ul> — screen readers expect only <li> there and may misreport list size.
+apps/remix/app/routes/_authenticated+/t.$teamUrl+/templates.$id._index.tsx:229:17 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/_authenticated+/t.$teamUrl+/templates._index.tsx:146:19 moderate heading-order Heading level skips from h1 to h3. Screen reader users navigating by heading lose the document structure.
+apps/remix/app/routes/embed+/playground.tsx:669:39 serious color-contrast Contrast between #999 and #f9f9f9 is 2.71:1 — below the 4.5:1 required by WCAG 1.4.3 (background from the enclosing <div>).
+packages/ui/primitives/color-picker.tsx:53:9 critical button-has-accessible-name <button> has no accessible name. Icon-only buttons need aria-label.
+packages/ui/primitives/document-flow/add-fields.tsx:665:19 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.
+packages/ui/primitives/template-flow/add-template-fields.tsx:679:19 moderate fieldset-has-legend <fieldset> has no <legend> — screen readers announce the controls without their group name.

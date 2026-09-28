@@ -7,6 +7,7 @@ import {
 } from '@aishware/react-a11y-core';
 import {
   defineRule,
+  isAccessibilityOptOut,
   isHiddenFromAT,
   isNativeInteractive,
   isRNComponent,
@@ -30,7 +31,7 @@ export const touchableHasLabel = defineRule(
   },
   (el, ctx) => {
     if (!isTouchable(el)) return;
-    if (el.hasSpread || isHiddenFromAT(el)) return;
+    if (el.hasSpread || isHiddenFromAT(el) || isAccessibilityOptOut(el)) return;
     if (mayHaveNativeAccessibleName(el)) return;
     const iconOnly = el.childElements.length > 0;
     ctx.report({
@@ -52,7 +53,7 @@ export const touchableHasRole = defineRule(
   },
   (el, ctx) => {
     if (!isTouchable(el)) return;
-    if (el.hasSpread || isHiddenFromAT(el)) return;
+    if (el.hasSpread || isHiddenFromAT(el) || isAccessibilityOptOut(el)) return;
     if (hasAttr(el, 'accessibilityRole') || hasAttr(el, 'role')) return;
     ctx.report({
       el,

@@ -5,8 +5,77 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- A precision regression suite: `npm run field-test` scans eight open-source
+  React and React Native apps at pinned commits and diffs every finding
+  against committed snapshots, in CI on any rule or engine change.
+  `npm run rn-drift` checks the native allowlists against the latest React
+  Native types weekly. `KNOWN_A11Y_PROPS` is exported for it.
+- The React Native pack defers to `eslint-plugin-react-native-a11y` when a
+  project has it installed: three rules it duplicates are skipped and four are
+  limited to what it does not check (`role`, `aria-live`, value ranges,
+  grouped non-touchable controls). The run banner and JSON report list what
+  was deferred; setting a rule's severity runs it in full. Rules declare the
+  overlap with `meta.overlaps`, and partial ones read `ctx.deferred`.
+- `--baseline <file>` hides the findings recorded in a baseline file and fails
+  only on new ones; `--update-baseline` writes it. Findings match by rule,
+  message and source line, not line number, and repeated identical findings
+  are counted. Stale entries are reported, a missing file is an error, and a
+  partial scan (`--changed`, `--since`) cannot rewrite it. The GitHub Action
+  takes a `baseline` input (it needs a `version` that includes this flag).
+- Inline suppression, spelled like ESLint's: `react-a11y-disable-next-line`,
+  `react-a11y-disable-line`, and `react-a11y-disable` / `react-a11y-enable`
+  regions, each with an optional rule list and `-- reason`. They work in `//`,
+  `/* */` and JSX `{/* */}` comments and apply to cross-file findings too.
+- A `rules` key in the config that names no react-a11y rule prints a warning
+  (CLI and VS Code) instead of being silently ignored: a jsx-a11y or
+  react-native-a11y rule is pointed at its ESLint plugin, and a typo gets the
+  nearest rule id.
+
+### Fixed
+
+- `valid-accessibility-role` accepted only 28 of the 65 values React Native's
+  `role` prop takes, so `role="dialog"`, `"tabpanel"`, `"group"`,
+  `"navigation"`, `"main"`, `"status"` and others were reported as invalid.
+  The list now mirrors RN's `Role` type, and `accessibilityRole` accepts
+  `dropdownlist`.
+- `valid-accessibility-role` and `valid-accessibility-props` no longer treat a
+  custom component's own props as React Native ones. `<Message role="admin">`
+  and a design system's `<Dialog accessibilityDescribedBy=…>` are left alone;
+  a miscapitalized RN prop or a role spelled for the other prop is still
+  reported. Stock components are checked as before.
+- `touchable-has-label` and `touchable-has-role` no longer report a touchable
+  written with `accessible={false}`, which the author has opted out of being
+  an accessibility element.
+- `color-contrast` exempts inactive controls, as WCAG 1.4.3 does: an element
+  that is always `disabled`, and the class set guarded by the same condition
+  as its `disabled` / `aria-disabled` prop. A `before:` / `after:` background
+  is paired with the element's text only when the pseudo-element covers it
+  (`inset-0`), so a strike-through hairline is no longer treated as the text's
+  background. This removed all three contrast findings on vercel/commerce.
+- `--changed` and `--since` ignored the config's `ignore` globs, so a pull
+  request gate reported files the project excludes.
+
 ### Changed
 
+- `no-orientation-lock` is `minor` (was `moderate`), and its Expo message notes
+  that Expo's app template sets `orientation: "portrait"`. WCAG 1.3.4 allows an
+  essential lock, and the rule fired on nearly every Expo app. Set its
+  severity in the config to enforce it.
+- The README's new "Alongside ESLint" section shows how each pack relates to
+  eslint-plugin-jsx-a11y and eslint-plugin-react-native-a11y. The CLI README
+  no longer advises choosing between react-a11y and
+  eslint-plugin-react-native-a11y.
+- `input-button-has-name` no longer checks `<input type="image">`, which
+  jsx-a11y's `alt-text` (in its recommended set) checks the same way.
+- Test, story, e2e and mock files are skipped by default (`*.test.*`,
+  `*.spec.*`, `*.e2e.*`, `*.stories.*`, `*.story.*`, `__tests__/`,
+  `__mocks__/`, `__fixtures__/`, `e2e/`, `storybook/`). On
+  bluesky-social/social-app this removed 23 of 24 critical findings, all from
+  e2e controls and Storybook screens. `ignore` adds to the defaults;
+  `"defaultIgnores": false` turns them off. The CLI, `--stdin` and the VS Code
+  extension share one matcher.
 - Built and tested with TypeScript 6 and Vitest 4. The core and native rule
   packages accept `typescript` `^5.6.0 || ^6.0.0`; TypeScript 7 (the native
   compiler) is not supported yet.

@@ -27,6 +27,22 @@ describe('touchable-has-label', () => {
   });
 });
 
+describe('touchables opted out with accessible={false}', () => {
+  it('are not reported as unnamed or role-less', () => {
+    // bluesky: a placeholder that captures focus while a dialog loads
+    expect(run(`<Pressable accessible={false} />`)).not.toContain('touchable-has-label');
+    expect(run(`<Pressable accessible={false} />`)).not.toContain('touchable-has-role');
+    // a row whose children are focused one by one
+    const row = run(`<TouchableOpacity accessible={false} onPress={f}><Image source={a} /></TouchableOpacity>`);
+    expect(row).not.toContain('touchable-has-label');
+    expect(row).not.toContain('touchable-has-role');
+  });
+  it('still reports a touchable whose accessible value is dynamic or true', () => {
+    expect(run(`<Pressable accessible={isE2E ? false : undefined} onPress={f} />`)).toContain('touchable-has-label');
+    expect(run(`<Pressable accessible onPress={f} />`)).toContain('touchable-has-label');
+  });
+});
+
 describe('touchable-has-role', () => {
   it('flags missing accessibilityRole', () => {
     expect(run(`<TouchableOpacity onPress={f}><Text>Go</Text></TouchableOpacity>`)).toContain('touchable-has-role');
@@ -82,6 +98,17 @@ describe('component rules', () => {
   it('valid-accessibility-role', () => {
     expect(run(`<View accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
     expect(run(`<View accessibilityRole="button" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
+  });
+  it('valid-accessibility-role accepts every value in React Native\'s Role type', () => {
+    // Seen in bluesky-social/social-app: valid role values with no iOS/Android
+    // mapping that react-native-web renders as ARIA.
+    for (const role of ['dialog', 'tabpanel', 'group', 'navigation', 'main', 'status', 'region', 'tooltip']) {
+      expect(run(`<View role="${role}" aria-label="x" />`), role).not.toContain('valid-accessibility-role');
+    }
+    expect(run(`<View accessibilityRole="dropdownlist" accessibilityLabel="x" />`)).not.toContain('valid-accessibility-role');
+    // still caught: an ARIA role on the legacy prop, and a value in neither vocabulary
+    expect(run(`<View accessibilityRole="dialog" accessibilityLabel="x" />`)).toContain('valid-accessibility-role');
+    expect(run(`<View role="modal" aria-label="x" />`)).toContain('valid-accessibility-role');
   });
   it('valid-accessibility-role validates the ARIA-style role prop', () => {
     expect(run(`<View role="pushbutton" />`)).toContain('valid-accessibility-role');
@@ -160,6 +187,31 @@ describe('component rules', () => {
     });
     expect(diags.some((d) => d.ruleId === 'valid-accessibility-props' && d.message.includes('accessibilityLabel'))).toBe(true);
   });
+  it('valid-accessibility-role leaves a custom component\'s own role prop alone', () => {
+    // Rocket.Chat: a local story component whose `role` is the user's role
+    const local = `const Message = (p) => null;\nconst x = <Message msg="hi" role="admin" />;`;
+    expect(analyze({ code: RN_IMPORT + local, filename: 'App.tsx', platform: 'native', rules: nativeRules }).map((d) => d.ruleId))
+      .not.toContain('valid-accessibility-role');
+    const imported = (jsx: string) =>
+      analyze({ code: `import { Card } from './Card';\nconst x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules })
+        .map((d) => d.ruleId);
+    expect(imported(`<Card role="owner" />`)).not.toContain('valid-accessibility-role');
+    // a real role spelled for the other prop is still an accessibility mistake
+    expect(imported(`<Card role="header" />`)).toContain('valid-accessibility-role');
+    expect(imported(`<Card accessibilityRole="pushbutton" />`)).toContain('valid-accessibility-role');
+    // stock components are still checked in full
+    expect(run(`<View role="admin" />`)).toContain('valid-accessibility-role');
+  });
+  it('valid-accessibility-props leaves a custom component\'s own accessibility* props alone', () => {
+    // bluesky: Dialog.ScrollableInner maps accessibilityDescribedBy to aria-describedby on web
+    const imported = (jsx: string) =>
+      analyze({ code: `import * as Dialog from '#/components/Dialog';\nconst x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules })
+        .map((d) => d.ruleId);
+    expect(imported(`<Dialog.Inner accessibilityDescribedBy="desc" />`)).not.toContain('valid-accessibility-props');
+    // a miscapitalized RN prop is a mistake whoever receives it
+    expect(imported(`<Dialog.Inner accessibilitylabel="Close" />`)).toContain('valid-accessibility-props');
+    expect(run(`<View accessibilityDescribedBy="desc" />`)).toContain('valid-accessibility-props');
+  });
   it('valid-accessibility-props catches aria-* typos but leaves unknown aria props alone', () => {
     const misspelled = analyze({
       code: `${RN_IMPORT}const x = <View accessible={true} aria-labeledby="title" />;`,
@@ -188,7 +240,8 @@ describe('component rules', () => {
       project({ 'app.json': JSON.stringify({ expo: { name: 'x', orientation: 'portrait' } }, null, 2) }),
     );
     expect(locked).toHaveLength(1);
-    expect(locked[0]).toMatchObject({ ruleId: 'no-orientation-lock', file: 'app.json' });
+    expect(locked[0]).toMatchObject({ ruleId: 'no-orientation-lock', file: 'app.json', severity: 'minor' });
+    expect(locked[0].message).toContain("Expo's app template");
     expect(locked[0].line).toBeGreaterThan(1); // points at the "orientation" key, not the file start
 
     expect(noOrientationLock.projectCheck!(
@@ -444,5 +497,65 @@ describe('autofix does not corrupt source', () => {
       rules: nativeRules,
     });
     expect(diagnostics.find((d) => d.message.includes('aria-role'))?.fix).toBeDefined();
+  });
+});
+
+describe('deferring to eslint-plugin-react-native-a11y', () => {
+  const withPlugin = { dependencies: { 'react-native': '0.81.0', 'eslint-plugin-react-native-a11y': '^3.5.1' }, platform: 'native' as const };
+  const without = { dependencies: { 'react-native': '0.81.0' }, platform: 'native' as const };
+  const lint = (jsx: string, project: typeof without, ruleSettings = {}) =>
+    analyze({ code: `${RN_IMPORT}const x = ${jsx};`, filename: 'App.tsx', platform: 'native', rules: nativeRules, project, ruleSettings })
+      .map((d) => `${d.ruleId}: ${d.message}`);
+
+  it('leaves wholly overlapping rules to the plugin', () => {
+    for (const [rule, jsx] of [
+      ['accessibility-state-valid', `<View accessible accessibilityState={{ chekced: true }} />`],
+      ['valid-important-for-accessibility', `<View importantForAccessibility="nope" />`],
+      ['accessibility-actions-handled', `<View accessibilityActions={[{ name: 'activate' }]} />`],
+    ]) {
+      expect(lint(jsx, without).join(), jsx).toContain(rule);
+      expect(lint(jsx, withPlugin).join(), jsx).not.toContain(rule);
+    }
+  });
+
+  it('keeps the part of a rule the plugin does not check', () => {
+    // accessibilityRole is the plugin's; the role prop is ours
+    expect(lint(`<View accessibilityRole="pushbutton" />`, withPlugin).join()).not.toContain('valid-accessibility-role');
+    expect(lint(`<View role="pushbutton" />`, withPlugin).join()).toContain('valid-accessibility-role');
+    // accessibilityLiveRegion is the plugin's; aria-live is ours
+    expect(lint(`<View accessibilityLiveRegion="loud" />`, withPlugin).join()).not.toContain('live-region-valid');
+    expect(lint(`<View aria-live="loud" />`, withPlugin).join()).toContain('live-region-valid');
+    // the shape of accessibilityValue is the plugin's; min ≤ now ≤ max is ours
+    expect(lint(`<View accessibilityValue={{ now: 5 }} />`, withPlugin).join()).not.toContain('accessibility-value-valid');
+    expect(lint(`<View accessibilityValue={{ min: 10, max: 0, now: 5 }} />`, withPlugin).join()).toContain('min must not exceed max');
+    // a grouped touchable is the plugin's; a grouped TextInput is ours
+    expect(lint(`<View accessible><Pressable accessibilityRole="button" accessibilityLabel="Go" onPress={f} /></View>`, withPlugin).join())
+      .not.toContain('accessible-grouping-hides-interactive');
+    expect(lint(`<View accessible><TextInput accessibilityLabel="Name" /></View>`, withPlugin).join())
+      .toContain('accessible-grouping-hides-interactive');
+  });
+
+  it('runs a rule in full when the user sets its severity', () => {
+    expect(lint(`<View importantForAccessibility="nope" />`, withPlugin, { 'valid-important-for-accessibility': 'serious' }).join())
+      .toContain('valid-important-for-accessibility');
+    expect(lint(`<View accessibilityRole="pushbutton" />`, withPlugin, { 'valid-accessibility-role': 'serious' }).join())
+      .toContain('valid-accessibility-role');
+  });
+
+  it('lists what it deferred in the scan result', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ra11y-defer-'));
+    fs.mkdirSync(path.join(root, '.git'));
+    fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({
+      dependencies: { 'react-native': '0.81.0' }, devDependencies: { 'eslint-plugin-react-native-a11y': '^3.5.1' },
+    }));
+    fs.writeFileSync(path.join(root, 'App.tsx'), `${RN_IMPORT}export const A = () => <View />;`);
+    const result = scanProject({ root, rules: nativeRules, platform: 'native' });
+    expect(result.deferred?.map((d) => d.ruleId)).toEqual([
+      'accessibility-actions-handled', 'accessibility-state-valid', 'accessibility-value-valid',
+      'accessible-grouping-hides-interactive', 'live-region-valid', 'valid-accessibility-role',
+      'valid-important-for-accessibility',
+    ]);
+    const plain = scanProject({ root, rules: nativeRules, platform: 'native', config: { rules: {} }, project: without });
+    expect(plain.deferred).toBeUndefined();
   });
 });

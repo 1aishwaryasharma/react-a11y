@@ -64,6 +64,37 @@ function describeSkipped(result: ScanResult): string[] {
     pc.dim(`  skipped ${count} file${count === 1 ? '' : 's'}: ${sanitizeTerminalText(reason)}`));
 }
 
+/**
+ * Which rules were left to an installed plugin that checks the same thing, so
+ * a missing finding reads as "the other plugin owns it", not as a gap.
+ */
+function describeDeferred(result: ScanResult): string[] {
+  if (!result.deferred?.length) return [];
+  const byPlugin = new Map<string, { off: number; partial: number }>();
+  for (const { overlaps } of result.deferred) {
+    const entry = byPlugin.get(overlaps.plugin) ?? { off: 0, partial: 0 };
+    if (overlaps.partial) entry.partial++;
+    else entry.off++;
+    byPlugin.set(overlaps.plugin, entry);
+  }
+  return [...byPlugin].map(([plugin, { off, partial }]) => {
+    const parts = [
+      off > 0 ? `${off} rule${off === 1 ? '' : 's'} off` : '',
+      partial > 0 ? `${partial} limited to what it does not check` : '',
+    ].filter(Boolean).join(', ');
+    return pc.dim(`  deferring to ${plugin} (installed): ${parts} — set a rule's severity to run it in full`);
+  });
+}
+
+/** How many known findings a baseline hid, and how many of its entries are gone. */
+function describeBaseline(result: ScanResult): string[] {
+  const b = result.baseline;
+  if (!b) return [];
+  const name = sanitizeTerminalText(path.relative(process.cwd(), b.file) || b.file);
+  const stale = b.stale ? `; ${b.stale} no longer found — run with --update-baseline to prune` : '';
+  return [pc.dim(`  baseline: ${b.suppressed} known issue${b.suppressed === 1 ? '' : 's'} hidden (${name})${stale}`)];
+}
+
 export function printPretty(result: ScanResult, version: string): void {
   const { diagnostics } = result;
   const out: string[] = [];
@@ -76,6 +107,8 @@ export function printPretty(result: ScanResult, version: string): void {
       `${describeTailwind(result)} — ${result.filesScanned} files scanned in ${result.durationMs}ms`,
   );
   out.push(...describeSkipped(result));
+  out.push(...describeDeferred(result));
+  out.push(...describeBaseline(result));
   out.push('');
 
   if (diagnostics.length === 0) {

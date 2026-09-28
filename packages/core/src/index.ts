@@ -5,10 +5,21 @@ export * from './aria.js';
 export { WCAG, WCAG22_TOTALS, WCAG22_A_AA, MANUAL_CHECKS, resolveWcag } from './wcag.js';
 export { parseColor, contrastRatio, relativeLuminance, isLargeText, type Rgb } from './color.js';
 export { parseSource } from './parse.js';
-export { analyze, analyzeModel, type AnalyzeOptions, type AnalyzeModelOptions } from './engine.js';
+export { analyze, analyzeModel, isDeferred, type AnalyzeOptions, type AnalyzeModelOptions } from './engine.js';
 export { applyFixes, fixRemoveAttr, fixRenameAttr } from './fixes.js';
 export { scanProject, collectFiles, detectPlatform, detectPlatformDetailed, filePlatform, type ScanOptions } from './scanner.js';
-export { loadConfig, validateConfig, globToRegExp } from './config.js';
+export { loadConfig, validateConfig, globToRegExp, DEFAULT_IGNORES, ignoreGlobs, ignoreMatcher } from './config.js';
+export { ruleNameWarnings } from './rule-names.js';
+export { parseSuppressions, type Suppressions } from './suppress.js';
+export {
+  applyBaseline,
+  createBaseline,
+  readBaseline,
+  writeBaseline,
+  type Baseline,
+  type BaselineEntry,
+  type BaselineSummary,
+} from './baseline.js';
 export { readPackageMeta, readOwnPackageMeta, type PackageMeta } from './pkg-meta.js';
 export {
   readProjectInfo,

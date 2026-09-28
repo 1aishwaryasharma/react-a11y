@@ -1,8 +1,9 @@
 import { buildFileModel, type FileModel } from './element.js';
 import { parseSource } from './parse.js';
+import { parseSuppressions } from './suppress.js';
 import { resolveWcag } from './wcag.js';
 import type { ProjectInfo } from './project.js';
-import type { Diagnostic, Platform, Rule, RuleSetting } from './types.js';
+import type { Diagnostic, Platform, Rule, RuleMeta, RuleSetting } from './types.js';
 
 export interface AnalyzeOptions {
   code: string;
@@ -16,6 +17,15 @@ export interface AnalyzeOptions {
 
 export type AnalyzeModelOptions = Omit<AnalyzeOptions, 'code'>;
 
+/**
+ * True when a rule's overlap is left to another plugin: that plugin is a
+ * dependency of the file's project and the user has not configured the rule
+ * (setting a severity keeps it running in full).
+ */
+export function isDeferred(meta: RuleMeta, setting: RuleSetting | undefined, project: ProjectInfo | undefined): boolean {
+  return meta.overlaps !== undefined && setting === undefined && project?.dependencies[meta.overlaps.plugin] !== undefined;
+}
+
 /** Run rules over an already-built file model (lets callers reuse the parse). */
 export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Diagnostic[] {
   const { filename, platform, rules, ruleSettings = {}, project } = options;
@@ -26,6 +36,8 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
     if (!rule.meta.platforms.includes(platform)) continue;
     const setting = ruleSettings[rule.meta.id];
     if (setting === 'off') continue;
+    const deferred = isDeferred(rule.meta, setting, project);
+    if (deferred && !rule.meta.overlaps!.partial) continue;
 
     const wcag = resolveWcag(rule.meta.wcag);
     const visitor = rule.create({
@@ -33,6 +45,7 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
       platform,
       sourceFile: sf,
       project,
+      deferred,
       report({ el, node, message, severity, fix }) {
         let loc = el?.loc;
         if (!loc && node) {
@@ -69,7 +82,8 @@ export function analyzeModel(model: FileModel, options: AnalyzeModelOptions): Di
   }
 
   diagnostics.sort((a, b) => a.line - b.line || a.column - b.column || a.ruleId.localeCompare(b.ruleId));
-  return diagnostics;
+  const suppressions = parseSuppressions(sf.text);
+  return suppressions ? diagnostics.filter((d) => !suppressions.covers(d.ruleId, d.line)) : diagnostics;
 }
 
 /**

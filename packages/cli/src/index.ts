@@ -10,15 +10,20 @@ import {
   WCAG22_A_AA,
   WCAG22_TOTALS,
   analyze,
+  applyBaseline,
   applyFixes,
+  createBaseline,
   detectPlatformDetailed,
-  globToRegExp,
+  ignoreMatcher,
   loadConfig,
+  readBaseline,
   readOwnPackageMeta,
   readProjectInfo,
+  ruleNameWarnings,
   scanProject,
   toJson,
   toSarif,
+  writeBaseline,
   type A11yConfig,
   type Fix,
   type Platform,
@@ -50,6 +55,8 @@ ${pc.bold('Options')}
   --since <ref>                  Scan files changed since <ref> (e.g. origin/main) — use in CI
   --stdin                        Lint source read from stdin as one file (config from [path])
   --stdin-filename <file>        Filename to attribute stdin content to (for ignore matching)
+  --baseline <file>              Hide findings recorded in <file>; fail only on new ones
+  --update-baseline              Write every current finding to the --baseline file
   --list-rules                   Print every rule with severity and WCAG mapping (🔧 = fixable)
   --coverage                     Show which WCAG 2.2 success criteria the rules cover
   --version                      Print version
@@ -63,7 +70,13 @@ ${pc.bold('Web a11y')}
 
 ${pc.bold('Config')}
   react-a11y.config.json / .react-a11yrc.json / package.json "react-a11y" key:
-  { "platform": "web", "ignore": ["**/*.stories.tsx"], "rules": { "no-autofocus": "off" } }
+  { "platform": "web", "ignore": ["src/legacy/**"], "rules": { "target-size": "off" } }
+  Tests, stories, e2e and mocks are skipped by default ("defaultIgnores": false to scan them).
+
+Suppress
+  // react-a11y-disable-next-line <rule, …> -- reason      (or {/* … */} in JSX)
+  // react-a11y-disable-line <rule, …>
+  /* react-a11y-disable <rule, …> */ … /* react-a11y-enable */
 
 ${pc.bold('Tailwind / NativeWind / Uniwind')}
   className utilities (h-6 w-6, text-gray-400 bg-white, dark:…) are resolved for
@@ -85,6 +98,8 @@ interface CliArgs {
   since?: string;
   stdin: boolean;
   stdinFilename?: string;
+  baseline?: string;
+  updateBaseline: boolean;
 }
 
 function fail(msg: string): never {
@@ -95,7 +110,7 @@ function fail(msg: string): never {
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     root: process.cwd(), platform: 'auto', format: 'pretty', failOn: 'serious',
-    listRules: false, coverage: false, fix: false, changed: false, stdin: false,
+    listRules: false, coverage: false, fix: false, changed: false, stdin: false, updateBaseline: false,
   };
   const paths: string[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -150,6 +165,12 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case '--stdin-filename':
         args.stdinFilename = next();
+        break;
+      case '--baseline':
+        args.baseline = path.resolve(next());
+        break;
+      case '--update-baseline':
+        args.updateBaseline = true;
         break;
       default:
         if (arg.startsWith('-')) fail(`unknown option "${arg}" (try --help)`);
@@ -231,7 +252,7 @@ function scanStdin(args: CliArgs, config: A11yConfig, rules: Rule[], platform: P
   const rel = (path.isAbsolute(filename) ? path.relative(args.root, filename) : filename)
     .split(path.sep)
     .join('/');
-  const ignored = (config.ignore ?? []).some((glob) => globToRegExp(glob).test(rel));
+  const ignored = ignoreMatcher(config)(rel);
   const code = fs.readFileSync(0, 'utf8');
   const diagnostics = ignored
     ? []
@@ -352,6 +373,9 @@ function main(): void {
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
+  for (const warning of ruleNameWarnings(config, [...webRules, ...nativeRules].map((r) => r.meta.id))) {
+    console.error(pc.yellow(`warning: ${sanitizeTerminalText(warning)}`));
+  }
   // With no explicit platform, each file is analysed with the pack its own
   // package needs — a monorepo holding a React Native app beside a web app
   // gets both, instead of one pack being wrong for half the repo.
@@ -360,13 +384,30 @@ function main(): void {
   const rules = platform === 'native' ? nativeRules : webRules;
   const rulePacks = chosen === undefined ? { web: webRules, native: nativeRules } : undefined;
 
+  if (args.updateBaseline && !args.baseline) fail('--update-baseline needs --baseline <file>');
   if (args.stdin) {
-    if (args.fix || args.changed || args.since) fail('--stdin cannot be combined with --fix, --changed or --since');
+    if (args.fix || args.changed || args.since || args.baseline) {
+      fail('--stdin cannot be combined with --fix, --changed, --since or --baseline');
+    }
     report(scanStdin(args, config, rules, platform), args, rules);
     return;
   }
 
   const partial = args.changed || args.since !== undefined;
+  // A partial scan would record only the changed files and drop every other entry.
+  if (args.updateBaseline && partial) fail('--update-baseline needs a full scan; drop --changed / --since');
+  // Read the baseline before scanning so a missing or malformed file fails fast.
+  let baseline: ReturnType<typeof readBaseline> | undefined;
+  if (args.baseline && !args.updateBaseline) {
+    if (!fs.existsSync(args.baseline)) {
+      fail(`baseline ${args.baseline} not found — create it with --baseline <file> --update-baseline`);
+    }
+    try {
+      baseline = readBaseline(args.baseline);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : String(error));
+    }
+  }
   const files = partial ? changedFiles(args.root, args.since) : undefined;
   if (files && files.length === 0) {
     console.error(pc.yellow(
@@ -393,6 +434,16 @@ function main(): void {
     } else {
       console.error(pc.dim('no autofixable issues found'));
     }
+  }
+
+  if (args.baseline && args.updateBaseline) {
+    const created = createBaseline(result);
+    writeBaseline(args.baseline, created);
+    const count = result.diagnostics.length;
+    console.error(pc.green(`✔ baseline written to ${sanitizeTerminalText(path.relative(process.cwd(), args.baseline) || args.baseline)} (${count} finding${count === 1 ? '' : 's'})`));
+    result = applyBaseline(result, created, args.baseline);
+  } else if (baseline && args.baseline) {
+    result = applyBaseline(result, baseline, args.baseline, { partial });
   }
 
   report(result, args, rules);

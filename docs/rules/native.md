@@ -10,6 +10,29 @@ read inline `style` literals **and** Tailwind utility classes — NativeWind and
 Uniwind `className`, twrnc `` tw`…` `` — when a Tailwind binding is a
 dependency. See [Tailwind, NativeWind and Uniwind](#tailwind-nativewind-and-uniwind).
 
+## Alongside eslint-plugin-react-native-a11y
+
+This pack supplements
+[`eslint-plugin-react-native-a11y`](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y)
+rather than replacing it. When that plugin is a dependency of the project (or
+of its workspace root), the checks it already makes are left to it and the run
+banner says so:
+
+| This pack | eslint-plugin-react-native-a11y | With the plugin installed |
+| --- | --- | --- |
+| `accessibility-state-valid` | `has-valid-accessibility-state` | off |
+| `valid-important-for-accessibility` | `has-valid-important-for-accessibility` | off |
+| `accessibility-actions-handled` | `has-valid-accessibility-actions` | off |
+| `valid-accessibility-role` | `has-valid-accessibility-role` | checks the `role` prop only |
+| `live-region-valid` | `has-valid-accessibility-live-region` | checks `aria-live` only |
+| `accessibility-value-valid` | `has-valid-accessibility-value` | checks number types and min ≤ now ≤ max only |
+| `accessible-grouping-hides-interactive` | `no-nested-touchables` | reports a grouped `TextInput`, `Switch`, pressable `Text` or nested accessible view only |
+
+Every other rule here has no counterpart in that plugin and always runs —
+including this pack's `no-nested-touchables`, which reports a control inside a
+touchable (the plugin's rule of that name is about `accessible` containers).
+Setting a rule's severity in the config runs it in full regardless.
+
 | Rule | Severity | WCAG |
 | --- | --- | --- |
 | [touchable-has-label](#touchable-has-label) | critical | 1.1.1, 4.1.2 |
@@ -42,7 +65,7 @@ dependency. See [Tailwind, NativeWind and Uniwind](#tailwind-nativewind-and-uniw
 | [accessibility-language-valid](#accessibility-language-valid) | moderate | 3.1.2 |
 | [live-region-android-only](#live-region-android-only) | moderate | 4.1.3 |
 | [animation-reduce-motion](#animation-reduce-motion) | moderate/serious | 2.2.2, 2.3.3 |
-| [no-orientation-lock](#no-orientation-lock) | moderate | 1.3.4 |
+| [no-orientation-lock](#no-orientation-lock) | minor | 1.3.4 |
 
 ## touchable-has-label
 
@@ -66,6 +89,12 @@ silent, which is the classic "icon button reads as nothing" bug.
 
 Without `accessibilityRole="button"`, VoiceOver and TalkBack announce the
 content but not that it is actionable.
+
+Neither this rule nor `touchable-has-label` reports a touchable written with
+`accessible={false}`: the author has opted it out of being an accessibility
+element (a focus placeholder, or a row whose children are focused one by one),
+so it has no name or role to announce. A dynamic value such as
+`accessible={isE2E ? false : undefined}` is still checked.
 
 ## no-nested-touchables
 
@@ -118,6 +147,16 @@ silently ignored on device. The two props use different vocabularies — `role`
 `accessibilityRole="image"`. When a value from one vocabulary is used with the
 other prop, the message names the correct equivalent.
 
+`role` accepts every value in React Native's `Role` type. Several of them
+(`dialog`, `navigation`, `tabpanel`, …) have no iOS or Android equivalent but
+are part of the API and render as ARIA on react-native-web, so they are not
+reported.
+
+On a custom component (anything not imported from `react-native`), `role` is
+often the component's own prop — `<Message role="admin">` — so only a value
+that is recognizably an accessibility role used with the wrong prop is
+reported there.
+
 ## valid-accessibility-props
 
 Misspelled props (`accessibilitylabel`, `aria-labeledby`, `aria-Label`, …)
@@ -125,6 +164,10 @@ fail silently at runtime. Catches casing mistakes and misspellings in both the
 `accessibility*` and `aria-*` prop families, with a rename fix when the
 intended prop is clear. Unknown `aria-*` props with no close match are left
 alone — react-native-web forwards them, so they may be intentional.
+
+On a custom component, an unknown `accessibility*` prop may be part of that
+component's API (a design system's `accessibilityDescribedBy`, say), so only a
+miscapitalized React Native prop is reported there.
 
 ## switch-has-label
 
@@ -333,6 +376,11 @@ are declared — Expo `app.json` / `app.config.{js,ts}` (`orientation:
 WCAG 1.3.4 (AA) requires both orientations unless one is essential — users
 with wheelchair-mounted devices cannot rotate. Runtime locks via
 `expo-screen-orientation` are out of static reach, hence *partial*.
+
+Reported as **minor**: 1.3.4 allows a lock that is essential, and Expo's app
+template sets `orientation: "portrait"`, so most Expo apps start with one.
+Treat it as a prompt to confirm the lock is deliberate; raise it with
+`"rules": { "no-orientation-lock": "serious" }` to enforce it.
 
 ## text-fixed-height
 
