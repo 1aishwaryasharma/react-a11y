@@ -140,7 +140,12 @@ Computes the WCAG 1.4.3 contrast ratio when the text color is statically known
 — an inline literal or a Tailwind class (`text-gray-400`) — against the
 background of the element or of the nearest ancestor with a known background.
 Tailwind `dark:` variants and conditional class sets from `cn()` / `clsx()` are
-checked separately; `disabled:` and `placeholder:` text is exempt. Custom
+checked separately; `disabled:` and `placeholder:` text is exempt, and so is an
+inactive control — one that is always `disabled`, or the class set guarded by
+the same condition as its `disabled` / `aria-disabled` (`disabled={!inStock}`
+with `{ 'text-neutral-500': !inStock }`). A `before:` / `after:` background is
+paired with the text only when the pseudo-element covers the element
+(`inset-0`), not for a strike-through hairline. Custom
 theme colors come from `tailwind.config.*`, CSS `@theme` blocks, or the
 `tailwind.colors` config key. Dynamic styles, translucent colors and unknown
 theme colors are skipped — *partial* coverage by design. See the
