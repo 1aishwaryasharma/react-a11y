@@ -124,7 +124,7 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 ```json
 {
   "platform": "web",
-  "ignore": ["**/*.stories.tsx", "src/legacy/**"],
+  "ignore": ["src/legacy/**"],
   "rules": {
     "target-size": "off",
     "color-contrast": "critical"
@@ -135,6 +135,11 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 
 The `tailwind` key tunes Tailwind / NativeWind / Uniwind class resolution
 (auto-detected from dependencies; `false` disables it).
+
+Test, story, e2e and mock files are skipped by default (`*.test.*`,
+`*.spec.*`, `*.e2e.*`, `*.stories.*`, `__tests__/`, `__mocks__/`, `e2e/`,
+`storybook/`). `ignore` adds to that list; set `"defaultIgnores": false` to
+scan them anyway. Ignore globs also apply to `--changed` and `--since`.
 
 ## Rules
 

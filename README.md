@@ -67,7 +67,7 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 
 ```json
 {
-  "ignore": ["**/*.stories.tsx", "src/legacy/**"],
+  "ignore": ["src/legacy/**"],
   "platform": "web",
   "rules": {
     "color-contrast": "critical",
@@ -77,6 +77,11 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 ```
 
 Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`.
+
+Test, story, e2e and mock files are skipped by default (`*.test.*`,
+`*.spec.*`, `*.e2e.*`, `*.stories.*`, `__tests__/`, `__mocks__/`, `e2e/`,
+`storybook/`). `ignore` adds to that list; set `"defaultIgnores": false` to
+scan them anyway. Ignore globs also apply to `--changed` and `--since`.
 
 ## Tailwind, NativeWind and Uniwind
 

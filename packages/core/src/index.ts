@@ -8,7 +8,7 @@ export { parseSource } from './parse.js';
 export { analyze, analyzeModel, type AnalyzeOptions, type AnalyzeModelOptions } from './engine.js';
 export { applyFixes, fixRemoveAttr, fixRenameAttr } from './fixes.js';
 export { scanProject, collectFiles, detectPlatform, detectPlatformDetailed, filePlatform, type ScanOptions } from './scanner.js';
-export { loadConfig, validateConfig, globToRegExp } from './config.js';
+export { loadConfig, validateConfig, globToRegExp, DEFAULT_IGNORES, ignoreGlobs, ignoreMatcher } from './config.js';
 export { readPackageMeta, readOwnPackageMeta, type PackageMeta } from './pkg-meta.js';
 export {
   readProjectInfo,

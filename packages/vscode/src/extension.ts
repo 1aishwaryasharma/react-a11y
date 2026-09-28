@@ -6,7 +6,7 @@ import {
   applyFixes,
   clearProjectCaches,
   detectPlatform,
-  globToRegExp,
+  ignoreMatcher,
   loadConfig,
   scanProject,
   type A11yConfig,
@@ -32,7 +32,7 @@ const SEVERITY_MAP: Record<Severity, vscode.DiagnosticSeverity> = {
 interface FolderInfo {
   platform: Platform;
   config: A11yConfig;
-  ignore: RegExp[];
+  ignored: (rel: string) => boolean;
   /** Resolves project facts per file, so workspace packages are read correctly. */
   projects?: ProjectResolver;
 }
@@ -70,7 +70,7 @@ function folderInfoForRoot(root: string): FolderInfo {
     info = {
       platform,
       config,
-      ignore: (config.ignore ?? []).map(globToRegExp),
+      ignored: ignoreMatcher(config),
       projects: new ProjectResolver(root, config),
     };
     folderCache.set(root, info);
@@ -82,7 +82,7 @@ function folderInfo(doc: vscode.TextDocument): FolderInfo | null {
   const folder = vscode.workspace.getWorkspaceFolder(doc.uri);
   if (!folder) {
     // Standalone file: lint as web with defaults.
-    return { platform: 'web', config: {}, ignore: [] };
+    return { platform: 'web', config: {}, ignored: ignoreMatcher({}) };
   }
   return folderInfoForRoot(folder.uri.fsPath);
 }
@@ -109,7 +109,7 @@ function lint(doc: vscode.TextDocument): void {
   const folder = vscode.workspace.getWorkspaceFolder(doc.uri);
   if (folder) {
     const rel = path.relative(folder.uri.fsPath, doc.uri.fsPath).split(path.sep).join('/');
-    if (info.ignore.some((re) => re.test(rel))) {
+    if (info.ignored(rel)) {
       collection.delete(doc.uri);
       return;
     }

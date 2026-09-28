@@ -12,7 +12,7 @@ import {
   analyze,
   applyFixes,
   detectPlatformDetailed,
-  globToRegExp,
+  ignoreMatcher,
   loadConfig,
   readOwnPackageMeta,
   readProjectInfo,
@@ -63,7 +63,8 @@ ${pc.bold('Web a11y')}
 
 ${pc.bold('Config')}
   react-a11y.config.json / .react-a11yrc.json / package.json "react-a11y" key:
-  { "platform": "web", "ignore": ["**/*.stories.tsx"], "rules": { "no-autofocus": "off" } }
+  { "platform": "web", "ignore": ["src/legacy/**"], "rules": { "target-size": "off" } }
+  Tests, stories, e2e and mocks are skipped by default ("defaultIgnores": false to scan them).
 
 ${pc.bold('Tailwind / NativeWind / Uniwind')}
   className utilities (h-6 w-6, text-gray-400 bg-white, dark:…) are resolved for
@@ -231,7 +232,7 @@ function scanStdin(args: CliArgs, config: A11yConfig, rules: Rule[], platform: P
   const rel = (path.isAbsolute(filename) ? path.relative(args.root, filename) : filename)
     .split(path.sep)
     .join('/');
-  const ignored = (config.ignore ?? []).some((glob) => globToRegExp(glob).test(rel));
+  const ignored = ignoreMatcher(config)(rel);
   const code = fs.readFileSync(0, 'utf8');
   const diagnostics = ignored
     ? []
