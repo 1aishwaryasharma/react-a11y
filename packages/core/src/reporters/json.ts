@@ -8,6 +8,8 @@ export function toJson(result: ScanResult): string {
       durationMs: result.durationMs,
       issueCount: result.diagnostics.length,
       issues: result.diagnostics,
+      ...(result.deferred ? { deferred: result.deferred } : {}),
+      ...(result.baseline ? { baseline: result.baseline } : {}),
     },
     null,
     2,

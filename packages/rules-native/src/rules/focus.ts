@@ -1,7 +1,7 @@
 import { attrProvidesValue, hasAttr, isStaticTrue, staticValue, walkDescendants } from '@aishware/react-a11y-core';
 import type { ElementNode } from '@aishware/react-a11y-core';
 import { ARIA_DESCRIPTOR_PROPS } from '../aria.js';
-import { defineRule, isHiddenFromAT, isNativeInteractive, isRNComponent } from '../util.js';
+import { RN_A11Y_PLUGIN, defineRule, isHiddenFromAT, isNativeInteractive, isRNComponent } from '../util.js';
 
 /** Containers whose `accessible` prop groups (or fails to group) their subtree. */
 const GROUPING_CONTAINERS = new Set(['View', 'SafeAreaView']);
@@ -13,6 +13,15 @@ const TAPPABLE = new Set(['Text', 'View', 'Image', 'Pressable']);
  * interactive control, an element explicitly marked accessible, or a tappable
  * RN element with onPress.
  */
+/**
+ * What eslint-plugin-react-native-a11y's no-nested-touchables finds inside an
+ * `accessible` element, matched by name as it does: touchables and Button.
+ */
+const UPSTREAM_CLICKABLES = new Set([
+  'Touchable', 'TouchableOpacity', 'TouchableHighlight', 'TouchableWithoutFeedback',
+  'TouchableNativeFeedback', 'TouchableBounce', 'Pressable', 'Button',
+]);
+
 function isInteractiveDescendant(el: ElementNode): boolean {
   if (isNativeInteractive(el)) return true;
   if (isStaticTrue(el, 'accessible')) return true;
@@ -33,15 +42,22 @@ export const accessibleGroupingHidesInteractive = defineRule(
     description: 'accessible={true} containers must not wrap interactive children.',
     severity: 'serious',
     wcag: ['2.4.3', '4.1.2'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'no-nested-touchables', partial: true },
   },
   (el, ctx) => {
     if (!isRNComponent(el, GROUPING_CONTAINERS) || el.hasSpread) return;
     if (!isStaticTrue(el, 'accessible')) return;
     let found: ElementNode | undefined;
+    let upstreamReports = false;
     walkDescendants(el, (child) => {
+      if (UPSTREAM_CLICKABLES.has(child.name)) upstreamReports = true;
       if (!found && isInteractiveDescendant(child)) found = child;
     });
     if (!found) return;
+    // With the upstream plugin installed it reports this container whenever a
+    // touchable or Button is inside; a group holding only a TextInput, Switch,
+    // pressable Text or nested accessible view is ours alone.
+    if (ctx.deferred && upstreamReports) return;
     ctx.report({
       el,
       message: `<${el.name} accessible> groups its whole subtree into one focus stop, so the <${found.name}> inside is no longer separately focusable and the reading order changes. Remove accessible from the container, or move the grouping off the interactive content.`,

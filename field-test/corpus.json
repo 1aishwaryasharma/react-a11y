@@ -1,0 +1,50 @@
+[
+  {
+    "name": "commerce",
+    "repo": "https://github.com/vercel/commerce.git",
+    "commit": "3761e52e60df9c6a316e067dbfd7032e494d3634",
+    "stack": "Next.js + Tailwind"
+  },
+  {
+    "name": "taxonomy",
+    "repo": "https://github.com/shadcn-ui/taxonomy.git",
+    "commit": "298a8857c7128a0d121e7f699dfd729f23b3966d",
+    "stack": "Next.js + Tailwind (shadcn)"
+  },
+  {
+    "name": "documenso",
+    "repo": "https://github.com/documenso/documenso.git",
+    "commit": "a1d4bec1430a937395db9a4aae28979cd71c2831",
+    "stack": "Remix + shadcn monorepo"
+  },
+  {
+    "name": "excalidraw",
+    "repo": "https://github.com/excalidraw/excalidraw.git",
+    "commit": "438d89861f53d8a90ad566113ecac1b83761098f",
+    "stack": "React + SCSS"
+  },
+  {
+    "name": "social-app",
+    "repo": "https://github.com/bluesky-social/social-app.git",
+    "commit": "0f0f523a2926354c4bd96ef88d4a90a3d25eed8e",
+    "stack": "Expo universal, eslint-plugin-react-native-a11y installed"
+  },
+  {
+    "name": "mattermost-mobile",
+    "repo": "https://github.com/mattermost/mattermost-mobile.git",
+    "commit": "bc03c18f88581bde36dd82a84321b2ddde40d12c",
+    "stack": "bare React Native"
+  },
+  {
+    "name": "react-native-template-obytes",
+    "repo": "https://github.com/obytes/react-native-template-obytes.git",
+    "commit": "fd9b358ed11913d2a49fd9ffa6582fe03ba130e7",
+    "stack": "Expo + Uniwind"
+  },
+  {
+    "name": "Rocket.Chat.ReactNative",
+    "repo": "https://github.com/RocketChat/Rocket.Chat.ReactNative.git",
+    "commit": "94b6363608b26c224f239b1ed8688b65788b3b3b",
+    "stack": "bare React Native"
+  }
+]

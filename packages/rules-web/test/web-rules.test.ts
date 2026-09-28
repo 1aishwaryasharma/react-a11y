@@ -54,7 +54,8 @@ describe('names', () => {
   });
   it('input-button-has-name', () => {
     expect(run(`<input type="button" onClick={f} />`)).toContain('input-button-has-name');
-    expect(run(`<input type="image" src="/go.png" />`)).toContain('input-button-has-name');
+    // jsx-a11y's alt-text owns <input type="image">
+    expect(run(`<input type="image" src="/go.png" />`)).not.toContain('input-button-has-name');
     expect(run(`<input type="button" value="Save" />`)).not.toContain('input-button-has-name');
     expect(run(`<input type="submit" />`)).not.toContain('input-button-has-name');
   });

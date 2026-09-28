@@ -8,8 +8,11 @@ import {
   filePlatform,
   fixRenameAttr,
   globToRegExp,
+  ignoreMatcher,
   parseColor,
   parseSource,
+  parseSuppressions,
+  ruleNameWarnings,
   staticValue,
   scanProject,
   validateConfig,
@@ -184,6 +187,49 @@ describe('glob matcher', () => {
   });
 });
 
+describe('default ignores', () => {
+  it('skips tests, stories, e2e harnesses and mocks', () => {
+    const ignored = ignoreMatcher({});
+    for (const rel of [
+      'src/Button.test.tsx', 'Button.spec.ts', 'src/view/com/testing/TestCtrls.e2e.tsx',
+      'src/Button.stories.tsx', 'src/Button.story.jsx', 'src/__tests__/App.tsx',
+      '__mocks__/react-native.js', 'e2e/login.ts', 'src/view/screens/Storybook/Toasts.tsx',
+    ]) expect(ignored(rel), rel).toBe(true);
+    for (const rel of ['src/App.tsx', 'src/test-utils/Provider.tsx', 'src/components/Stories.tsx', 'src/latest.tsx']) {
+      expect(ignored(rel), rel).toBe(false);
+    }
+  });
+
+  it('adds the config globs to the defaults, and can turn the defaults off', () => {
+    expect(ignoreMatcher({ ignore: ['src/legacy/**'] })('src/legacy/Old.tsx')).toBe(true);
+    expect(ignoreMatcher({ ignore: ['src/legacy/**'] })('src/Button.test.tsx')).toBe(true);
+    expect(ignoreMatcher({ defaultIgnores: false })('src/Button.test.tsx')).toBe(false);
+    expect(() => validateConfig({ defaultIgnores: 'no' }, 'test')).toThrow(/true or false/);
+  });
+
+  it('applies to an explicit file list (--changed, --since) as well as a walk', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'react-a11y-ignore-'));
+    fs.writeFileSync(path.join(dir, 'App.tsx'), 'export const A = () => <img />;');
+    fs.writeFileSync(path.join(dir, 'App.test.tsx'), 'export const T = () => <img />;');
+    fs.mkdirSync(path.join(dir, 'legacy'));
+    fs.writeFileSync(path.join(dir, 'legacy', 'Old.tsx'), 'export const O = () => <img />;');
+    const rule: Rule = {
+      meta: { id: 'any-element', description: '', severity: 'moderate', platforms: ['web'], wcag: ['1.1.1'] },
+      create: (ctx) => ({ element: (el) => ctx.report({ el, message: 'x' }) }),
+    };
+    const config = { ignore: ['legacy/**'] };
+    const walked = scanProject({ root: dir, rules: [rule], platform: 'web', config });
+    const listed = scanProject({
+      root: dir, rules: [rule], platform: 'web', config,
+      files: ['App.tsx', 'App.test.tsx', 'legacy/Old.tsx'],
+    });
+    for (const result of [walked, listed]) {
+      expect(result.filesScanned).toBe(1);
+      expect(result.diagnostics.map((d) => d.file)).toEqual(['App.tsx']);
+    }
+  });
+});
+
 describe('modern colour syntaxes', () => {
   it('parses oklch, hsl and slash-separated rgb', () => {
     // Tailwind v4 writes its palette in OKLCH; blue-500 is oklch(0.623 0.214 259.815).
@@ -220,6 +266,88 @@ describe('config validation', () => {
     expect(() => validateConfig({ tailwind: { rem: 0 } }, 'test')).toThrow(/positive number/);
     expect(() => validateConfig({ tailwnid: {} }, 'test')).toThrow(/unknown key/);
     expect(validateConfig({ platform: 'native', tailwind: false }, 'test')).toEqual({ platform: 'native', tailwind: false });
+  });
+});
+
+describe('inline suppression', () => {
+  const flagEvery = (id: string): Rule => ({
+    meta: { id, description: '', severity: 'moderate', platforms: ['web'], wcag: ['1.1.1'] },
+    create: (ctx) => ({ element: (el) => ctx.report({ el, message: id }) }),
+  });
+  const lint = (code: string) =>
+    analyze({ code, filename: 'a.tsx', platform: 'web', rules: [flagEvery('rule-a'), flagEvery('rule-b')] })
+      .map((d) => `${d.line}:${d.ruleId}`);
+
+  it('disables the next line, for every rule or the ones listed', () => {
+    expect(lint(`// react-a11y-disable-next-line\nconst x = <img />;`)).toEqual([]);
+    expect(lint(`// react-a11y-disable-next-line rule-a -- decorative\nconst x = <img />;`)).toEqual(['2:rule-b']);
+    expect(lint(`// react-a11y-disable-next-line rule-a, rule-b\nconst x = <img />;`)).toEqual([]);
+  });
+
+  it('reads JSX comments and same-line directives', () => {
+    const jsx = [
+      'const x = (<div>',
+      '  {/* react-a11y-disable-next-line rule-a */}',
+      '  <img />',
+      '  <img /> {/* react-a11y-disable-line */}',
+      '</div>);',
+    ].join('\n');
+    expect(lint(jsx)).toEqual(['1:rule-a', '1:rule-b', '3:rule-b']);
+  });
+
+  it('disables a region until re-enabled, or to the end of the file', () => {
+    const code = [
+      'const a = <img />;',
+      '/* react-a11y-disable rule-b */',
+      'const b = <img />;',
+      '/* react-a11y-enable */',
+      'const c = <img />;',
+      '/* react-a11y-disable */',
+      'const d = <img />;',
+    ].join('\n');
+    expect(lint(code)).toEqual(['1:rule-a', '1:rule-b', '3:rule-a', '5:rule-a', '5:rule-b']);
+  });
+
+  it('is undefined for a file with no directives', () => {
+    expect(parseSuppressions('const x = <img />;')).toBeUndefined();
+  });
+
+  it('applies to findings from cross-file passes', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'react-a11y-suppress-'));
+    fs.writeFileSync(path.join(dir, 'A.tsx'), 'export const A = () => <div />;\n// react-a11y-disable-next-line cross\nexport const B = () => <div />;');
+    const pass = {
+      seen: [] as string[],
+      collect(_model: unknown, filename: string) { this.seen.push(filename); },
+      finalize() {
+        return [1, 3].map((line) => ({
+          ruleId: 'cross', message: 'x', severity: 'moderate' as const, file: 'A.tsx',
+          line, column: 1, endLine: line, endColumn: 2, wcag: [],
+        }));
+      },
+    };
+    const result = scanProject({ root: dir, rules: [], platform: 'web', projectPasses: [pass] });
+    expect(result.diagnostics.map((d) => d.line)).toEqual([1]);
+  });
+});
+
+describe('rule names in the config', () => {
+  const known = ['target-size', 'color-contrast', 'no-nested-touchables'];
+  const warn = (rules: Record<string, 'off'>) => ruleNameWarnings({ rules }, known);
+
+  it('accepts react-a11y rule ids, including one that shares a name with a plugin rule', () => {
+    expect(warn({ 'target-size': 'off', 'no-nested-touchables': 'off' })).toEqual([]);
+  });
+
+  it('points a supplemented plugin\'s rule at that plugin', () => {
+    expect(warn({ 'no-autofocus': 'off' })[0]).toContain('eslint-plugin-jsx-a11y rule');
+    expect(warn({ 'jsx-a11y/alt-text': 'off' })[0]).toContain('eslint-plugin-jsx-a11y rule');
+    expect(warn({ 'has-valid-accessibility-role': 'off' })[0]).toContain('eslint-plugin-react-native-a11y rule');
+    expect(warn({ 'react-native-a11y/has-accessibility-hint': 'off' })[0]).toContain('eslint-plugin-react-native-a11y rule');
+  });
+
+  it('suggests the nearest id for a typo and says so plainly otherwise', () => {
+    expect(warn({ 'traget-size': 'off' })).toEqual(['unknown rule "traget-size" — did you mean "target-size"?']);
+    expect(warn({ 'made-up': 'off' })[0]).toContain('--list-rules');
   });
 });
 

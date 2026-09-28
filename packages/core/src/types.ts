@@ -69,7 +69,23 @@ export interface RuleMeta {
    * these to a project-scan surface instead of live per-file linting.
    */
   project?: boolean;
+  /**
+   * A rule in another ESLint plugin that checks the same thing. When that
+   * plugin is a project dependency and the user has not set this rule's
+   * severity, the overlap is left to it: the whole rule is skipped, or — for a
+   * `partial` overlap — `ctx.deferred` tells the rule to skip only that part.
+   */
+  overlaps?: RuleOverlap;
   helpUrl?: string;
+}
+
+export interface RuleOverlap {
+  /** npm package of the other plugin, e.g. `eslint-plugin-react-native-a11y`. */
+  plugin: string;
+  /** The overlapping rule in that plugin. */
+  rule: string;
+  /** True when this rule also checks things the other one does not. */
+  partial?: boolean;
 }
 
 /**
@@ -101,6 +117,11 @@ export interface RuleContext {
   sourceFile: ts.SourceFile;
   /** Project facts (dependencies, Tailwind resolution). Absent for bare single-file analysis. */
   project?: ProjectInfo;
+  /**
+   * True when a partially overlapping plugin (`meta.overlaps`) is installed:
+   * skip the checks it already makes and keep the rest.
+   */
+  deferred?: boolean;
   report(descriptor: ReportDescriptor): void;
 }
 
@@ -140,8 +161,13 @@ export interface TailwindConfig {
 export interface A11yConfig {
   /** Per-rule overrides: "off" disables, a severity re-classifies. */
   rules?: Record<string, RuleSetting>;
-  /** Glob patterns (relative to project root) to skip. */
+  /** Glob patterns (relative to project root) to skip, on top of the defaults. */
   ignore?: string[];
+  /**
+   * Skip tests, stories, e2e harnesses and mocks (DEFAULT_IGNORES). On unless
+   * set to `false`.
+   */
+  defaultIgnores?: boolean;
   /** Force a platform instead of auto-detecting from package.json. */
   platform?: Platform;
   /** Tailwind / NativeWind / Uniwind class resolution; `false` disables it. */
@@ -166,4 +192,13 @@ export interface ScanResult {
   filesByPlatform?: Record<Platform, number>;
   /** Files skipped for a reason worth surfacing (unreadable, too large, wrong platform). */
   skipped?: SkippedFile[];
+  /** Rules left, wholly or in part, to an installed plugin that checks the same thing. */
+  deferred?: DeferredRule[];
+  /** Set when a baseline hid known findings (see applyBaseline). */
+  baseline?: import('./baseline.js').BaselineSummary;
+}
+
+export interface DeferredRule {
+  ruleId: string;
+  overlaps: RuleOverlap;
 }

@@ -9,11 +9,15 @@ Static WCAG 2.2 accessibility analysis for React, Next.js, React Native, and
 Expo. It reports issues with file and line locations without requiring a
 browser, application build, or rendered UI.
 
-For web projects, react-a11y complements
+react-a11y supplements the ESLint accessibility plugins rather than replacing
+them. For web projects it adds WCAG 2.2, structural, focus, and project-wide
+checks to
 [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
-with WCAG 2.2, structural, focus, and project-wide checks that do not overlap
-its standard rules. For React Native, it checks component usage, focus and
-reading order, touch targets, text scaling, and project configuration.
+without repeating its rules. For React Native it adds focus and reading order,
+touch targets, text scaling, platform asymmetries and project configuration to
+[`eslint-plugin-react-native-a11y`](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y),
+and leaves the checks that plugin makes to it when it is installed. See
+[Alongside ESLint](#alongside-eslint).
 
 ## Quick start
 
@@ -53,6 +57,11 @@ npx @aishware/react-a11y . --format sarif --output a11y.sarif
 # Set the CI failure threshold
 npx @aishware/react-a11y . --fail-on moderate
 
+# Adopt on an existing codebase: record today's findings once, commit the
+# file, then fail only on new ones
+npx @aishware/react-a11y . --baseline a11y-baseline.json --update-baseline
+npx @aishware/react-a11y . --baseline a11y-baseline.json
+
 # Inspect rules and WCAG coverage
 npx @aishware/react-a11y --list-rules
 npx @aishware/react-a11y --coverage
@@ -67,7 +76,7 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 
 ```json
 {
-  "ignore": ["**/*.stories.tsx", "src/legacy/**"],
+  "ignore": ["src/legacy/**"],
   "platform": "web",
   "rules": {
     "color-contrast": "critical",
@@ -76,7 +85,34 @@ Create `react-a11y.config.json` or `.react-a11yrc.json`, or add a
 }
 ```
 
-Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`.
+Rule values can be `critical`, `serious`, `moderate`, `minor`, or `off`. A
+rule id react-a11y does not know prints a warning — with the nearest id for a
+typo, or the plugin to configure it in for a jsx-a11y or react-native-a11y rule.
+
+Test, story, e2e and mock files are skipped by default (`*.test.*`,
+`*.spec.*`, `*.e2e.*`, `*.stories.*`, `__tests__/`, `__mocks__/`, `e2e/`,
+`storybook/`). `ignore` adds to that list; set `"defaultIgnores": false` to
+scan them anyway. Ignore globs also apply to `--changed` and `--since`.
+
+### Suppressing a finding
+
+Directives are spelled like ESLint's. With no rule list they cover every rule;
+text after `--` is a reason for reviewers.
+
+```tsx
+// react-a11y-disable-next-line target-size -- hitSlop extends the target
+<Pressable hitSlop={12} className="h-6 w-6" onPress={close} />
+
+<div>
+  {/* react-a11y-disable-next-line color-contrast */}
+  <p className="text-gray-400">Fine print</p>
+  <img src={logo} alt="" /> {/* react-a11y-disable-line */}
+</div>
+
+/* react-a11y-disable heading-order */
+…
+/* react-a11y-enable */
+```
 
 ## Tailwind, NativeWind and Uniwind
 
@@ -122,6 +158,32 @@ Tune it with the `tailwind` config key:
 Set `"tailwind": false` to disable it. Details are in the
 [native rules documentation](docs/rules/native.md#tailwind-nativewind-and-uniwind).
 
+## Alongside ESLint
+
+Keep your ESLint accessibility plugin; react-a11y covers what it does not.
+
+**Web, with eslint-plugin-jsx-a11y.** No web rule repeats a rule in jsx-a11y's
+recommended config. Where a rule sounds like a jsx-a11y one, it checks
+something else:
+
+| react-a11y | Closest jsx-a11y rule | Difference |
+| --- | --- | --- |
+| `button-has-accessible-name` | `control-has-associated-label` | off in jsx-a11y's recommended and strict configs |
+| `form-control-has-label` | `label-has-associated-control` | jsx-a11y checks each `<label>` has a control; react-a11y checks each control has a label, resolving `htmlFor` ↔ `id` across files |
+| `no-autocomplete-off` | `autocomplete-valid` | jsx-a11y validates `autoComplete` tokens; react-a11y flags `autoComplete="off"` on personal-data fields (WCAG 3.3.7) |
+| `heading-order` | `heading-has-content` | jsx-a11y checks a heading has text; react-a11y checks levels do not skip |
+
+**React Native, with eslint-plugin-react-native-a11y.** When that plugin is a
+dependency of the project or its workspace root, react-a11y leaves the checks
+it makes to it: 3 rules are skipped, 4 are narrowed to what the plugin does not
+check, and the other 24 always run. The run banner says so, and setting a
+rule's severity runs it in full. The
+[rule-by-rule table](docs/rules/native.md#alongside-eslint-plugin-react-native-a11y)
+lists each one.
+
+A rule id from either plugin in a react-a11y config prints a warning naming the
+plugin to configure it in.
+
 ## Rules
 
 - [Web rules](docs/rules/web.md): 22 checks for WCAG 2.2 criteria, document
@@ -148,7 +210,13 @@ The repository includes a composite action:
 ```
 
 Set the optional `sarif-file` input to generate a report for GitHub code
-scanning.
+scanning, and `baseline` to a committed baseline file to fail only on new
+findings.
+
+A baseline matches findings by rule, message and source line rather than line
+number, so moving code does not bring a known finding back. The run reports
+how many entries are no longer found; `--update-baseline` prunes them. A
+missing baseline file is an error, never an empty baseline.
 
 ## Editor integrations
 
@@ -184,6 +252,14 @@ npm install
 npm run build
 npm test
 ```
+
+`npm run field-test` scans the open-source apps pinned in
+[`field-test/corpus.json`](field-test/corpus.json) and compares every finding
+with the committed snapshots; CI runs it on any change to rule or engine
+source. When a change is meant to add or remove findings, run
+`npm run field-test -- --update` and commit the snapshot diff with it.
+`npm run rn-drift` checks the role and prop allowlists against the latest
+React Native release (weekly in CI).
 
 ## License
 

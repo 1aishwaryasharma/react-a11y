@@ -48,11 +48,12 @@ src/screens/Profile.tsx
   The web pack contains none of the rules jsx-a11y already does, so the two run
   together with no double-reporting — run both for broader automated coverage,
   then use the manual checklist for the remaining criteria. For React Native,
-  react-a11y supplies a 25-rule static pack that overlaps
-  [eslint-plugin-react-native-a11y](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y)
-  on per-line basics and adds structural and project-wide analysis — you
-  generally don't need both native packs; if you run both, disable the
-  overlapping rules on one side. Rendered and real-device behavior still needs
+  react-a11y's 31 rules add focus and reading order, touch targets, text
+  scaling, platform asymmetries and project-config checks to
+  [eslint-plugin-react-native-a11y](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y).
+  When that plugin is installed, react-a11y leaves the checks it already makes
+  to it (3 rules skipped, 4 narrowed), so the two run together without
+  double-reporting. Rendered and real-device behavior still needs
   [manual testing](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 - **Project-wide and conformance-aware.** A WCAG 2.2 coverage report plus
   cross-file label resolution and project-config checks that per-file
@@ -124,7 +125,7 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 ```json
 {
   "platform": "web",
-  "ignore": ["**/*.stories.tsx", "src/legacy/**"],
+  "ignore": ["src/legacy/**"],
   "rules": {
     "target-size": "off",
     "color-contrast": "critical"
@@ -135,6 +136,11 @@ Or plain npx, next to your existing jsx-a11y ESLint step:
 
 The `tailwind` key tunes Tailwind / NativeWind / Uniwind class resolution
 (auto-detected from dependencies; `false` disables it).
+
+Test, story, e2e and mock files are skipped by default (`*.test.*`,
+`*.spec.*`, `*.e2e.*`, `*.stories.*`, `__tests__/`, `__mocks__/`, `e2e/`,
+`storybook/`). `ignore` adds to that list; set `"defaultIgnores": false` to
+scan them anyway. Ignore globs also apply to `--changed` and `--since`.
 
 ## Rules
 

@@ -6,6 +6,7 @@ import {
   readOwnPackageMeta,
   staticExpression,
   staticString,
+  staticValue,
   versionParts,
 } from '@aishware/react-a11y-core';
 import type ts from 'typescript';
@@ -30,6 +31,12 @@ export function defineRule(
   };
 }
 
+/**
+ * The ESLint plugin whose checks some native rules repeat. When a project has
+ * it installed, those rules leave the overlap to it (see RuleMeta.overlaps).
+ */
+export const RN_A11Y_PLUGIN = 'eslint-plugin-react-native-a11y';
+
 /** Module specifiers we trust to export the stock RN components. */
 const RN_SOURCES = new Set(['react-native', 'react-native-web', 'react-native-gesture-handler']);
 
@@ -40,6 +47,16 @@ const RN_SOURCES = new Set(['react-native', 'react-native-web', 'react-native-ge
  */
 export function isRNElement(el: ElementNode): boolean {
   return el.isComponent && (el.importSource === null || RN_SOURCES.has(el.importSource));
+}
+
+/**
+ * True when the element is imported from a trusted React Native source, i.e. a
+ * stock component whose props React Native itself interprets. Unlike
+ * isRNElement, local and unresolved components do not count: their props are
+ * whatever API their author gave them (`<Message role="admin">`).
+ */
+export function isStockRNElement(el: ElementNode): boolean {
+  return el.isComponent && el.importSource !== null && RN_SOURCES.has(el.importSource);
 }
 
 /** True when `el` is a named component from a trusted React Native source. */
@@ -95,6 +112,16 @@ function hidesDescendantsFromAT(el: ElementNode): boolean {
     iosHidesSubtree(el) ||
     androidHidesSubtree(el)
   );
+}
+
+/**
+ * `accessible={false}` written out: the author opted the element out of being
+ * an accessibility element — a focus placeholder, or a container whose
+ * children are meant to be focused one by one — so its own name and role are
+ * never announced. A dynamic value is not an opt-out.
+ */
+export function isAccessibilityOptOut(el: ElementNode): boolean {
+  return staticValue(el, 'accessible') === false;
 }
 
 /** Element is hidden directly or by an ancestor that hides its whole subtree. */

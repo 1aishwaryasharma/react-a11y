@@ -13,7 +13,7 @@ Every rule maps to one or more [WCAG 2.2](https://www.w3.org/TR/WCAG22/) success
 | Rule | Severity | WCAG |
 | --- | --- | --- |
 | [button-has-accessible-name](#button-has-accessible-name) | critical | 4.1.2 |
-| [input-button-has-name](#input-button-has-name) | serious | 4.1.2, 1.1.1 |
+| [input-button-has-name](#input-button-has-name) | serious | 4.1.2 |
 | [title-has-content](#title-has-content) | serious | 2.4.2 |
 | [meta-viewport-zoomable](#meta-viewport-zoomable) | serious | 1.4.4 |
 | [no-meta-refresh](#no-meta-refresh) | serious | 2.2.1 |
@@ -42,8 +42,9 @@ child is announced as an unnamed button. Icon-only buttons need `aria-label`.
 
 ## input-button-has-name
 
-`<input type="button">` needs a `value` or `aria-label`; `<input type="image">`
-needs `alt`. Without them the control is announced as unnamed.
+`<input type="button">` needs a `value` or `aria-label`; without one it is
+announced as an unnamed button. (`<input type="image">` is covered by
+jsx-a11y's `alt-text`.)
 
 ## title-has-content
 
@@ -140,7 +141,12 @@ Computes the WCAG 1.4.3 contrast ratio when the text color is statically known
 — an inline literal or a Tailwind class (`text-gray-400`) — against the
 background of the element or of the nearest ancestor with a known background.
 Tailwind `dark:` variants and conditional class sets from `cn()` / `clsx()` are
-checked separately; `disabled:` and `placeholder:` text is exempt. Custom
+checked separately; `disabled:` and `placeholder:` text is exempt, and so is an
+inactive control — one that is always `disabled`, or the class set guarded by
+the same condition as its `disabled` / `aria-disabled` (`disabled={!inStock}`
+with `{ 'text-neutral-500': !inStock }`). A `before:` / `after:` background is
+paired with the text only when the pseudo-element covers the element
+(`inset-0`), not for a strike-through hairline. Custom
 theme colors come from `tailwind.config.*`, CSS `@theme` blocks, or the
 `tailwind.colors` config key. Dynamic styles, translucent colors and unknown
 theme colors are skipped — *partial* coverage by design. See the

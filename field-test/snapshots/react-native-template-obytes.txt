@@ -1,0 +1,4 @@
+# react-native-template-obytes @ fd9b358ed11913d2a49fd9ffa6582fe03ba130e7 (Expo + Uniwind)
+# platform: native; files scanned: 92; findings: 2
+app.config.ts:38:3 minor no-orientation-lock Expo config locks orientation to "portrait". WCAG 1.3.4 (AA) requires content to work in both portrait and landscape — users with mounted devices cannot rotate. Lock only if a single orientation is truly essential. Expo's app template sets this by default, so check it was a deliberate choice. Use 'default' to allow rotation.
+src/components/ui/select.tsx:191:9 serious touchable-has-role <Pressable> has no accessibilityRole — VoiceOver/TalkBack won't announce it as a button. Add accessibilityRole="button".

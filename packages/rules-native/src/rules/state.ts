@@ -1,6 +1,7 @@
 import { objectLiteralShape, staticExpression, staticString } from '@aishware/react-a11y-core';
 import { ARIA_PROPS } from '../aria.js';
 import {
+  RN_A11Y_PLUGIN,
   defineRule,
   staticAccessibilityStateValueValidity,
 } from '../util.js';
@@ -14,6 +15,7 @@ export const accessibilityStateValid = defineRule(
     id: 'accessibility-state-valid',
     severity: 'serious',
     wcag: ['4.1.2'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-accessibility-state' },
   },
   (el, ctx) => {
     const attr = el.attrs.get('accessibilityState');
@@ -98,9 +100,11 @@ export const liveRegionValid = defineRule(
     description: 'accessibilityLiveRegion / aria-live must use a supported value.',
     severity: 'serious',
     wcag: ['4.1.3'],
+    overlaps: { plugin: RN_A11Y_PLUGIN, rule: 'has-valid-accessibility-live-region', partial: true },
   },
   (el, ctx) => {
-    const native = staticString(el, 'accessibilityLiveRegion');
+    // has-valid-accessibility-live-region validates accessibilityLiveRegion; aria-live is ours alone.
+    const native = ctx.deferred ? undefined : staticString(el, 'accessibilityLiveRegion');
     if (native !== undefined && !LIVE_REGION_VALUES.has(native.trim())) {
       ctx.report({
         el,

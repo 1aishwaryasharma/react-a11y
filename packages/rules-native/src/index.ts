@@ -36,7 +36,7 @@ import {
 import { accessibilityValueValid } from './rules/value.js';
 
 export { ARIA_PROPS, KNOWN_ARIA_PROPS } from './aria.js';
-export { RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
+export { KNOWN_A11Y_PROPS, RN_ROLES, RN_ROLE_PROP_VALUES } from './rules/components.js';
 export { isIconComponent } from './util.js';
 
 export {
