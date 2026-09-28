@@ -12,7 +12,9 @@ looping animations, icon-only buttons, pressable Text, fixed-height text, and
 orientation locks in project config (`app.json`, `app.config.*`,
 `AndroidManifest.xml`, `Info.plist`). Touch-target, contrast and text-height
 rules resolve Tailwind / NativeWind / Uniwind / twrnc classes when
-`readProjectInfo(root)` is passed as `project`. Runtime and
+`readProjectInfo(root)` is passed as `project`. When that project has
+`eslint-plugin-react-native-a11y` installed, the checks it already makes are
+left to it ([details](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/rules/native.md#alongside-eslint-plugin-react-native-a11y)). Runtime and
 real-device checks remain essential; follow the
 [manual testing guide](https://github.com/1aishwaryasharma/react-a11y/blob/main/docs/manual-testing.md).
 

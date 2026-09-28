@@ -9,11 +9,15 @@ Static WCAG 2.2 accessibility analysis for React, Next.js, React Native, and
 Expo. It reports issues with file and line locations without requiring a
 browser, application build, or rendered UI.
 
-For web projects, react-a11y complements
+react-a11y supplements the ESLint accessibility plugins rather than replacing
+them. For web projects it adds WCAG 2.2, structural, focus, and project-wide
+checks to
 [`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)
-with WCAG 2.2, structural, focus, and project-wide checks that do not overlap
-its standard rules. For React Native, it checks component usage, focus and
-reading order, touch targets, text scaling, and project configuration.
+without repeating its rules. For React Native it adds focus and reading order,
+touch targets, text scaling, platform asymmetries and project configuration to
+[`eslint-plugin-react-native-a11y`](https://github.com/FormidableLabs/eslint-plugin-react-native-a11y),
+and leaves the checks that plugin makes to it when it is installed. See
+[Alongside ESLint](#alongside-eslint).
 
 ## Quick start
 
@@ -128,6 +132,32 @@ Tune it with the `tailwind` config key:
 
 Set `"tailwind": false` to disable it. Details are in the
 [native rules documentation](docs/rules/native.md#tailwind-nativewind-and-uniwind).
+
+## Alongside ESLint
+
+Keep your ESLint accessibility plugin; react-a11y covers what it does not.
+
+**Web, with eslint-plugin-jsx-a11y.** No web rule repeats a rule in jsx-a11y's
+recommended config. Where a rule sounds like a jsx-a11y one, it checks
+something else:
+
+| react-a11y | Closest jsx-a11y rule | Difference |
+| --- | --- | --- |
+| `button-has-accessible-name` | `control-has-associated-label` | off in jsx-a11y's recommended and strict configs |
+| `form-control-has-label` | `label-has-associated-control` | jsx-a11y checks each `<label>` has a control; react-a11y checks each control has a label, resolving `htmlFor` ↔ `id` across files |
+| `no-autocomplete-off` | `autocomplete-valid` | jsx-a11y validates `autoComplete` tokens; react-a11y flags `autoComplete="off"` on personal-data fields (WCAG 3.3.7) |
+| `heading-order` | `heading-has-content` | jsx-a11y checks a heading has text; react-a11y checks levels do not skip |
+
+**React Native, with eslint-plugin-react-native-a11y.** When that plugin is a
+dependency of the project or its workspace root, react-a11y leaves the checks
+it makes to it: 3 rules are skipped, 4 are narrowed to what the plugin does not
+check, and the other 24 always run. The run banner says so, and setting a
+rule's severity runs it in full. The
+[rule-by-rule table](docs/rules/native.md#alongside-eslint-plugin-react-native-a11y)
+lists each one.
+
+A rule id from either plugin in a react-a11y config prints a warning naming the
+plugin to configure it in.
 
 ## Rules
 
