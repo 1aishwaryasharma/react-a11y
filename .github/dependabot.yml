@@ -13,6 +13,10 @@ updates:
       # JavaScript compiler API, so a major bump needs deliberate porting.
       - dependency-name: typescript
         versions: [">=7"]
+      # @types/vscode must not be newer than engines.vscode in
+      # packages/vscode/package.json (vsce refuses to package otherwise).
+      # Raise both together when dropping support for older VS Code.
+      - dependency-name: "@types/vscode"
 
   - package-ecosystem: github-actions
     directory: /
@@ -26,3 +30,9 @@ updates:
     directory: /packages/webstorm
     schedule:
       interval: monthly
+    ignore:
+      # The plugin compiles with Kotlin api/languageVersion 1.9 so it runs on
+      # 2024.1 (sinceBuild 241), whose bundled stdlib is Kotlin 1.9. Kotlin 2.4
+      # no longer targets 1.9; lift this together with sinceBuild (242+).
+      - dependency-name: org.jetbrains.kotlin.jvm
+        versions: [">=2.4"]
