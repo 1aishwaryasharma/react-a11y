@@ -2,6 +2,15 @@
 
 All notable changes to the react-a11y VS Code extension are documented here.
 
+## 0.6.0 — 2026-10-09
+
+- Updated the bundled engine and rule packs to 0.6.0: inline
+  `react-a11y-disable` comments, test, story and mock files skipped by default,
+  deferral to eslint-plugin-react-native-a11y when it is installed, a warning
+  for unknown rule ids in the config, and fewer false positives in
+  `color-contrast`, `valid-accessibility-role` and the touchable rules.
+- Includes the 0.5.0 changes below, which were not published.
+
 ## 0.5.0 — 2026-09-02
 
 - Updated the bundled engine and rule packs to 0.5.0 (Tailwind/NativeWind/Uniwind

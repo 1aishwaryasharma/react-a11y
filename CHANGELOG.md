@@ -5,6 +5,11 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-09
+
+The first npm release since 0.4.0. 0.5.0 was written up here but never
+published, so this release also carries everything listed under 0.5.0.
+
 ### Added
 
 - A precision regression suite: `npm run field-test` scans eight open-source
@@ -87,6 +92,9 @@ All notable changes to this project are documented here. This project adheres to
   The published packages were not affected.
 
 ## [0.5.0] — 2026-09-02
+
+Not published to npm or the editor marketplaces; these changes first shipped
+in 0.6.0.
 
 ### Added
 
@@ -335,7 +343,9 @@ Initial release. Published under the `@aishware` scope; the installed command is
 - An upstream-parity test that keeps the React Native `accessibilityRole` list
   in sync with `eslint-plugin-react-native-a11y`.
 
-[0.5.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.5.0
+[Unreleased]: https://github.com/1aishwaryasharma/react-a11y/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.6.0
+[0.5.0]: https://github.com/1aishwaryasharma/react-a11y/compare/v0.4.0...v0.6.0
 [0.4.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.4.0
 [0.3.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.3.0
 [0.2.0]: https://github.com/1aishwaryasharma/react-a11y/releases/tag/v0.2.0
